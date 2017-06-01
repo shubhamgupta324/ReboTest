@@ -72,36 +72,42 @@ namespace ReboProject
                 float finalScore = 0;
                 float TopfinalScore = 0;
                 var resultFound = 1;
+                var readNextFile = 1;
                 // -------------------------------------loop through all files----------------------------------------------------
                 foreach (string fullFilePath in fileDetails)
                 {
-                    var ja = new JArray();
-                    var getTheIndividualFileName = fullFilePath.Split('\\');
-                    fileName = getTheIndividualFileName[getTheIndividualFileName.Length - 1]; // get the file name
-                    int index = fileName.LastIndexOf(".");
-                    fileName = fileName.Substring(0, index);
-                    //read the file
-                    Dictionary<int, Dictionary<int, string>> savePage = new Dictionary<int, Dictionary<int, string>>();  // save pagenumber and the lines in it
+                    if (readNextFile == 1) {
+                        var ja = new JArray();
+                        var getTheIndividualFileName = fullFilePath.Split('\\');
+                        fileName = getTheIndividualFileName[getTheIndividualFileName.Length - 1]; // get the file name
+                        int index = fileName.LastIndexOf(".");
+                        fileName = fileName.Substring(0, index);
+                        //read the file
+                        Dictionary<int, Dictionary<int, string>> savePage = new Dictionary<int, Dictionary<int, string>>();  // save pagenumber and the lines in it
 
-                    pdfRead(fullFilePath, out savePage); // read pdf
-                    //pdfReadSection(fullFilePath, out savePage);
-                    //pdfReadSectionCase2(fullFilePath, out savePage);
+                        pdfRead(fullFilePath, out savePage); // read pdf
+                                                             //pdfReadSection(fullFilePath, out savePage);
+                                                             //pdfReadSectionCase2(fullFilePath, out savePage);
 
-                    getAllFoundText(SearchWithin, resultSection, savePage, fileName, logic, out ja, out totalScoreDenominatorVal, out searchFieldScore); //  get the found text
-                    
-                    //--------------------scoring and final output ---------------------------------------------------------------------
-                    scoring(LeaseName, savePage, resultFormat, totalScoreDenominatorVal, searchFieldScore, ja, out ja1, out accptedValThere, out finalScore);
+                        getAllFoundText(SearchWithin, resultSection, savePage, fileName, logic, out ja, out totalScoreDenominatorVal, out searchFieldScore); //  get the found text
 
-                    
-                    for (int i = 0; i < ja1.Count; i++)// get only one highest score value
-                    {
-                        if (TopfinalScore < finalScore) 
+                        //--------------------scoring and final output ---------------------------------------------------------------------
+                        scoring(LeaseName, savePage, resultFormat, totalScoreDenominatorVal, searchFieldScore, ja, out ja1, out accptedValThere, out finalScore);
+
+
+                        for (int i = 0; i < ja1.Count; i++)// get only one highest score value
                         {
-                            TopfinalScore = finalScore;
-                            ja2.RemoveAll();
-                            ja2.Add(ja1[i]);
+                            if(type == 1)
+                                readNextFile = 0;
+                            if (TopfinalScore < finalScore)
+                            {
+                                TopfinalScore = finalScore;
+                                ja2.RemoveAll();
+                                ja2.Add(ja1[i]);
+                            }
                         }
-                    }   
+                    }
+                   
                 }
                 //---------------------save the result in folder----------------------------------------------
                 if (ja2.Count == 0)
@@ -163,13 +169,7 @@ namespace ReboProject
                     var index = sort == 2 ? pdfFiles.Length - (j + 1) : j; // get the file by order
                     var fileNameVal = pdfFiles[index];
                     var filepath = folderPath + "\\" + fileNameVal; // full path of file
-                    if (type == 1) // read single file 
-                    {
-                        fileDetails.Add(filepath);
-                        break;
-                    }
-                    else // read all files
-                        fileDetails.Add(filepath);
+                    fileDetails.Add(filepath);
                 }
             }
         }
