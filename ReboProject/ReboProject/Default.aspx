@@ -1,4 +1,4 @@
-﻿<%@ Page Title="Home Page" Language="C#"  AutoEventWireup="true" CodeBehind="Default.aspx.cs" Inherits="ReboProject._Default" %>
+﻿<%@ Page Title="Home Page" Language="C#"  AutoEventWireup="true" ValidateRequest = "false" CodeBehind="Default.aspx.cs" Inherits="ReboProject._Default" %>
 
 <!DOCTYPE html>
 
@@ -6,36 +6,70 @@
 <head id="Head1" runat="server">
 	<title>Accepted Result</title>
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    <link href="css/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <style>
+.setData {
+    border: 1px solid black;
+}
+.setData tr,td {
+    border: 1px solid black;
+}
+</style>
 </head>
 <body>
+
 	<form id="form1" runat="server">
 	    <table class="table table-bordered">
         <thead>
             <tr class="success">
                 <th>
                     Accepted Result<br /><br />
+                    <asp:Label runat="server" ID="lblStatus"></asp:Label>
                 </th>
             </tr>
         </thead>
         <tbody>
             <tr>
-                <td>
-                     <asp:DropDownList ID="DropDownList1" runat="server">
-                        <asp:ListItem Text="Admin management fee" Value="0" />
-                        <asp:ListItem Text="Security deposit" Value="1" />
-                        <asp:ListItem Text="Alteration" Value="2" />
-                        <asp:ListItem Text="Assign sublet" Value="3" />
-                        <asp:ListItem Text="Holdover" Value="4" />
-                        <asp:ListItem Text="Tenant audit" Value="5" />
-                        <asp:ListItem Text="Tenent sublet" Value="6" />
-                        <asp:ListItem Text="Late fee" Value="7" />
-                        <asp:ListItem Text="Permitted use" Value="8" />
-                        <asp:ListItem Text="Restoration surrender" Value="9" />
-                    </asp:DropDownList><br /><br />
-                    <input type="text"  class="input-text" placeholder="Enter text" style="width:500px;" runat="server" id="myTextBox" /><br /><br />
-					<asp:Button ID="Button1" runat="server" OnClick="TestClick" Text="Button" />
-                     <br /><br />
-                    <input type="text"  class="input-text" placeholder="Output" style="width:500px;" runat="server" id="Text1" /><br /><br />
+                <td style="padding:10px;">
+                    </div> 
+                    <asp:TextBox id="backEndData" TextMode="multiline" Columns="150" Rows="10" runat="server" />
+                    <br /><br />
+					<asp:Button ID="Button1" runat="server" OnClick="TestClick" Text="RESULT" />
+                    <asp:TextBox id="frontEndData" TextMode="multiline" Columns="150" Rows="10" style="display:none;" runat="server" />
+
+                    <div class="setData">
+
+                        <table >
+                            <td style="width:100px">
+                                FILENAME
+                            </td>
+                            <td style="width:100px">
+                                pageno
+                            </td>
+                            <td style="width:100px">
+                                search
+                            </td>
+                            <td style="width:100px">
+                                score
+                            </td>
+                            <td style="width:700px">
+                                OUTPUT
+                            </td>
+                        </table >
+
+                        <table class="setData" id="allVal">
+                            
+                        </table>
+
+                        <div class="LeaseSilent" style="display:none;">
+                            <input type="text"  class="input-text" placeholder="Enter text" style="width:500px;" runat="server" id="Text1" /><br /><br />
+                        </div>
+
+                    </div>
                 
                 </td>
             </tr>
@@ -45,8 +79,37 @@
     </form>
 </body>
 </html>
-<script>
+<script type="text/javascript">
 
-    
-    
+    function generateJson() {DivFoundText = $(".fndTxtDetailContent");
+        
+        value = { 'folder': '', 'FileOrder': { 'sort': fileOrderSort, 'type': fileOrderType }, 'SearchWithin': '1', 'searchFor': jsonObjFoundText, 'result': { 'section': '1', 'format': resultFormat } };
+
+        $("#backEndData").val(JSON.stringify(value));
+        $("#Button1").click();
+    }
+
+    $(document).ready(function () {
+        debugger;
+
+        $(".LeaseSilent").css("display", "none");
+        var jsonVal = $("#frontEndData").val();
+        htmlBuilderProject = [];
+        data = $.parseJSON(jsonVal)
+        if (data.length != 0) {
+            for (var i = 0; i < data.length; i++) {
+                var fileName = data[i].fileName;
+                var foundText = data[i].AllSearchFieldKeyword;
+                var pageNumber = data[i].pageNo;
+                var outputVal = data[i].output;
+                var scoreVal = data[i].score;
+                var leaseNameVal =data[i].leaseName;
+                htmlBuilderProject.push("<tr><td style='width:105px'>"+"("+leaseNameVal +")  "+ fileName + "</td ><td style='width:105px'>" + pageNumber + "</td > <td style='width:100px'>" + foundText + "</td><td style='width:115px'>" + scoreVal +"%"+ "</td><td style='width:600px'>" + outputVal + "</td></tr>");
+            }
+            $("#allVal").html(htmlBuilderProject.join(""));
+        }
+        else
+            $(".LeaseSilent").css("display", "block");
+    });
+
 </script>
