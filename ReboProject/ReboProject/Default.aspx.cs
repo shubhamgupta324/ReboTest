@@ -85,6 +85,7 @@ namespace ReboProject
 
                     pdfRead(fullFilePath, out savePage); // read pdf
                     //pdfReadSection(fullFilePath, out savePage);
+                    //pdfReadSectionCase2(fullFilePath, out savePage);
 
                     getAllFoundText(SearchWithin, resultSection, savePage, fileName, logic, out ja, out totalScoreDenominatorVal, out searchFieldScore); //  get the found text
                     
@@ -254,7 +255,7 @@ namespace ReboProject
                         totalRows++;
                         if ((prevRect.Bottom - lineGroup.Rect.Top) > 9 && totalRows == ordereddGroups.Count)// current line is > 9 points lower than previous
                         {
-                            foreach (var check in matchRegex)
+                            foreach (var check in matchRegex) // get para section number wise..
                             {
                                 String AllowedChars = check.Value;
                                 Regex regex = new Regex(AllowedChars);
@@ -302,6 +303,7 @@ namespace ReboProject
 
             }
         }
+
         
 
         //-----------------------------------------FOUND TEXT-----------------------------------------------------------------------------------
@@ -446,53 +448,6 @@ namespace ReboProject
                         }
                     }
                 }
-
-                // condition for and 
-                //if (gotResult == 1 && condition == "and") {
-                //    if (allLogic + 1 > allLogic)
-                //        break;
-                //    var getNextSearchFor = logic[allLogic+1]["searchFor"];
-                //    var getNextWithIn = logic[allLogic+1]["withIn"];
-                //    var ja3 = new JArray();
-                //    //for (int i = 0; i < ja.Count; i++) // get all the values to display on front end
-                //    //    ja3.Add(ja[i]);
-                //    var checkForAnd = JArray.Parse(ja.ToString()); // get all the accepted result
-                //    for (var l = 0; l < checkForAnd.Count(); l++)
-                //    {
-                //        for (var k = 0; k < getNextSearchFor.Count(); k++) // loop throuch all searchFor
-                //        {
-                //            var AllSearchFieldKeyword = (getNextSearchFor[k]["keyword"]).ToString(); // get the search field
-                //            var AllSearchFieldOp = (getNextSearchFor[k]["op"]).ToString().ToLower(); // get the search field op
-                //            var pageContent = checkForAnd[l]["pageContent"].ToString();
-                //            var matchDataWithInIt = Regex.Matches(pageContent, @"\b\s?" + AllSearchFieldKeyword + "\\w*\\b"); // find match
-                //            if (matchDataWithInIt.Count > 0) // if match there
-                //            {
-                //                for (var g = 0; g < getNextWithIn.Count(); g++) {
-                //                    var withInIt = (getNextWithIn[g]["keyword"]).ToString();
-                //                    var matchDataWithInItAndCondition = Regex.Matches(pageContent, @"\b\s?" + withInIt + "\\w*\\b"); // find match
-                //                    if (matchDataWithInItAndCondition.Count > 0) // if match there
-                //                    {
-                //                        gotResult = 0;
-                //                        var jo = new JObject();
-                //                        jo["foundText"] = checkForAnd[l]["foundText"].ToString();
-                //                        jo["AllSearchFieldKeyword"] = checkForAnd[l]["AllSearchFieldKeyword"].ToString();
-                //                        jo["fileName"] = checkForAnd[l]["fileName"].ToString();
-                //                        jo["pageNo"] = checkForAnd[l]["pageNo"].ToString();
-                //                        jo["pageContent"] = pageContent;
-                //                        jo["paraNumber"] = checkForAnd[l]["paraNumber"].ToString();
-                //                        ja3.Add(jo);
-                //                        break;
-                //                    }
-                //                }   
-                //            }
-                //        }
-                //    }
-                //    if (ja3.Count() > 0) {
-                //        ja.Clear();
-                //        for (int i = 0; i < ja3.Count; i++) // get all the values to display on front end
-                //            ja.Add(ja3[i]);
-                //    }
-                //}
             }
             
         }

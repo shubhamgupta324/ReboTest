@@ -12,26 +12,28 @@ namespace ReboProject
         {
             var foundTextSection = AllSearchFieldKeyword1.ToLower();
             //---------------------------REGEX--------------------------------------------------------
-            Dictionary<int, string> matchRegex = new Dictionary<int, string>();
-            matchRegex.Add(1, @"^(\d+\.(?:\d+\.?)*)"); //    (1.), (1.1) and (1.1.1)
-            matchRegex.Add(2, @"^(\d+(.\d+)+(\:\d+))"); //   (1.1:1)
-            matchRegex.Add(3, @"^(\d+(\:\d+))"); //  (1:1)
-            matchRegex.Add(4, @"^((section)\s\d+\.(?:\d+\.?)*)"); //   (section 1.), (section 1.1) and (section 1.1.1)
-            matchRegex.Add(5, @"^((section)\s\d+(.\d+)+(\:\d+))"); //    (section 1.1:1)
-            matchRegex.Add(6, @"^((section)\s\d+(\:\d+))"); //   (section 1:1)
-            matchRegex.Add(7, @"^([a-zA-Z]+\.)\s");  // a.  
-            matchRegex.Add(8, @"^(\(+[a-zA-Z]+\))\s");  // (a)
-            matchRegex.Add(9, @"^(\(+\d+\))\s");  // (1)
+            Dictionary<int, string> matchRegexNumeric = new Dictionary<int, string>();
+            matchRegexNumeric.Add(1, @"^(\d+\.(?:\d+\.?)*)"); //    (1.), (1.1) and (1.1.1)
+            matchRegexNumeric.Add(2, @"^(\d+(.\d+)+(\:\d+))"); //   (1.1:1)
+            matchRegexNumeric.Add(3, @"^(\d+(\:\d+))"); //  (1:1)
+            matchRegexNumeric.Add(4, @"^((section)\s\d+\.(?:\d+\.?)*)"); //   (section 1.), (section 1.1) and (section 1.1.1)
+            matchRegexNumeric.Add(5, @"^((section)\s\d+(.\d+)+(\:\d+))"); //    (section 1.1:1)
+            matchRegexNumeric.Add(6, @"^((section)\s\d+(\:\d+))"); //   (section 1:1)
+            matchRegexNumeric.Add(7, @"^([a-zA-Z]+\.)\s");  // a.  
+            matchRegexNumeric.Add(8, @"^(\(+[a-zA-Z]+\))\s");  // (a)
+            matchRegexNumeric.Add(9, @"^(\(+\d+\))\s");  // (1)
 
-            matchRegex.Add(10, @"^[ \t](\d+\.(?:\d+\.?)*)"); //    (1.), (1.1) and (1.1.1)
-            matchRegex.Add(11, @"^[ \t](\d+(.\d+)+(\:\d+))"); //   (1.1:1)
-            matchRegex.Add(12, @"^[ \t](\d+(\:\d+))"); //  (1:1)
-            matchRegex.Add(13, @"^[ \t]((section)\s\d+\.(?:\d+\.?)*)"); //   (section 1.), (section 1.1) and (section 1.1.1)
-            matchRegex.Add(14, @"^[ \t]((section)\s\d+(.\d+)+(\:\d+))"); //    (section 1.1:1)
-            matchRegex.Add(15, @"^[ \t]((section)\s\d+(\:\d+))"); //   (section 1:1)
-            matchRegex.Add(16, @"^[ \t]([a-zA-Z]+\.)\s");  // a.  
-            matchRegex.Add(17, @"^[ \t](\(+[a-zA-Z]+\))\s");  // (a)
-            matchRegex.Add(18, @"^[ \t](\(+\d+\))\s");  // (1)
+            matchRegexNumeric.Add(10, @"^[ \t](\d+\.(?:\d+\.?)*)"); //    (1.), (1.1) and (1.1.1)
+            matchRegexNumeric.Add(11, @"^[ \t](\d+(.\d+)+(\:\d+))"); //   (1.1:1)
+            matchRegexNumeric.Add(12, @"^[ \t](\d+(\:\d+))"); //  (1:1)
+            matchRegexNumeric.Add(13, @"^[ \t]((section)\s\d+\.(?:\d+\.?)*)"); //   (section 1.), (section 1.1) and (section 1.1.1)
+            matchRegexNumeric.Add(14, @"^[ \t]((section)\s\d+(.\d+)+(\:\d+))"); //    (section 1.1:1)
+            matchRegexNumeric.Add(15, @"^[ \t]((section)\s\d+(\:\d+))"); //   (section 1:1)
+            matchRegexNumeric.Add(16, @"^[ \t]([a-zA-Z]+\.)\s");  // a.  
+            matchRegexNumeric.Add(17, @"^[ \t](\(+[a-zA-Z]+\))\s");  // (a)
+            matchRegexNumeric.Add(18, @"^[ \t](\(+\d+\))\s");  // (1)
+
+            Dictionary<int, string> matchRegexNumeric1 = new Dictionary<int, string>();
 
             //-------------------------------------------------------------------------------------------
             var count = pageNo - 3;
@@ -49,7 +51,7 @@ namespace ReboProject
 
                     var entry2 = entry1.ElementAt(j);
                     var textLower = @entry2.ToLower().ToString();
-                    foreach (var check in matchRegex)
+                    foreach (var check in matchRegexNumeric)
                     {
                         String AllowedChars = check.Value;
                         Regex regex = new Regex(AllowedChars);

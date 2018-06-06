@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+This file is used by the publish/package process of your Web project. You can customize the behavior of this process
+by editing this MSBuild file. In order to learn more about this please visit https://go.microsoft.com/fwlink/?LinkID=208121. 
+-->
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <TimeStampOfAssociatedLegacyPublishXmlFile />
+    <_PublishTargetUrl>D:\Projects\reboDemoPublish</_PublishTargetUrl>
+  </PropertyGroup>
+  <ItemGroup>
+    <File Include="bin/ABCpdf.dll">
+      <publishTime>06/15/2017 14:25:32</publishTime>
+    </File>
+    <File Include="bin/Antlr3.Runtime.dll">
+      <publishTime>06/05/2018 11:11:04</publishTime>
+    </File>
+    <File Include="bin/AspNet.ScriptManager.jQuery.dll">
+      <publishTime>06/05/2018 11:11:00</publishTime>
+    </File>
+    <File Include="bin/AspNet.ScriptManager.jQuery.UI.Combined.dll">
+      <publishTime>06/05/2018 11:11:00</publishTime>
+    </File>
+    <File Include="bin/DnsClient.dll">
+      <publishTime>06/05/2018 11:11:00</publishTime>
+    </File>
+    <File Include="bin/DotNetOpenAuth.AspNet.dll">
+      <publishTime>06/05/2018 11:11:00</publishTime>
+    </File>
+    <File Include="bin/DotNetOpenAuth.Core.dll">
+      <publishTime>06/05/2018 11:11:00</publishTime>
+    </File>
+    <File Include="bin/DotNetOpenAuth.OAuth.Consumer.dll">
+      <publishTime>06/05/2018 11:11:00</publishTime>
+    </File>
+    <File Include="bin/DotNetOpenAuth.OAuth.dll">
+      <publishTime>06/05/2018 11:11:00</publishTime>
+    </File>
+    <File Include="bin/DotNetOpenAuth.OpenId.dll">
+      <publishTime>06/05/2018 11:11:00</publishTime>
+    </File>
+    <File Include="bin/DotNetOpenAuth.OpenId.RelyingParty.dll">
+      <publishTime>06/05/2018 11:11:01</publishTime>
+    </File>
+    <File Include="bin/EntityFramework.dll">
+      <publishTime>06/05/2018 11:11:01</publishTime>
+    </File>
+    <File Include="bin/Microsoft.AspNet.FriendlyUrls.dll">
+      <publishTime>06/05/2018 11:11:01</publishTime>
+    </File>
+    <File Include="bin/Microsoft.AspNet.Membership.OpenAuth.dll">
+      <publishTime>06/05/2018 11:11:02</publishTime>
+    </File>
+    <File Include="bin/Microsoft.AspNet.Web.Optimization.WebForms.dll">
+      <publishTime>06/05/2018 11:11:02</publishTime>
+    </File>
+    <File Include="bin/Microsoft.ScriptManager.MSAjax.dll">
+      <publishTime>06/05/2018 11:11:02</publishTime>
+    </File>
+    <File Include="bin/Microsoft.ScriptManager.WebForms.dll">
+      <publishTime>06/05/2018 11:11:02</publishTime>
+    </File>
+    <File Include="bin/Microsoft.Web.Infrastructure.dll">
+      <publishTime>06/05/2018 11:11:02</publishTime>
+    </File>
+    <File Include="bin/MongoDB.Bson.dll">
+      <publishTime>04/22/2018 04:14:48</publishTime>
+    </File>
+    <File Include="bin/MongoDB.Driver.Core.dll">
+      <publishTime>04/22/2018 04:15:10</publishTime>
+    </File>
+    <File Include="bin/MongoDB.Driver.dll">
+      <publishTime>05/16/2018 22:27:56</publishTime>
+    </File>
+    <File Include="bin/MongoDB.Driver.Legacy.dll">
+      <publishTime>05/16/2018 22:28:04</publishTime>
+    </File>
+    <File Include="bin/Newtonsoft.Json.dll">
+      <publishTime>01/28/2016 14:22:24</publishTime>
+    </File>
+    <File Include="bin/ReboProject.dll">
+      <publishTime>06/06/2018 17:05:40</publishTime>
+    </File>
+    <File Include="bin/ReboProject.pdb">
+      <publishTime>06/06/2018 17:05:40</publishTime>
+    </File>
+    <File Include="bin/System.Buffers.dll">
+      <publishTime>06/05/2018 11:11:04</publishTime>
+    </File>
+    <File Include="bin/System.Runtime.InteropServices.RuntimeInformation.dll">
+      <publishTime>06/05/2018 11:11:04</publishTime>
+    </File>
+    <File Include="bin/System.Web.Optimization.dll">
+      <publishTime>06/05/2018 11:11:02</publishTime>
+    </File>
+    <File Include="bin/System.Web.Providers.dll">
+      <publishTime>06/05/2018 11:11:02</publishTime>
+    </File>
+    <File Include="bin/WebGrease.dll">
+      <publishTime>06/05/2018 11:11:04</publishTime>
+    </File>
+    <File Include="Default.aspx">
+      <publishTime>06/05/2018 11:10:55</publishTime>
+    </File>
+    <File Include="favicon.ico">
+      <publishTime>06/05/2018 11:10:59</publishTime>
+    </File>
+    <File Include="Global.asax">
+      <publishTime>06/05/2018 11:10:55</publishTime>
+    </File>
+    <File Include="packages.config">
+      <publishTime>06/05/2018 15:11:54</publishTime>
+    </File>
+    <File Include="Web.config">
+      <publishTime>06/05/2018 19:22:01</publishTime>
+    </File>
+  </ItemGroup>
+</Project>
