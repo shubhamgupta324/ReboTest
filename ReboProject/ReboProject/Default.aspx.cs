@@ -110,13 +110,26 @@ namespace ReboProject
                    
                 }
                 //---------------------save the result in folder----------------------------------------------
-                if (ja2.Count == 0)
-                { // check if any result found
+                if (ja2.Count == 0)// check if any result found
                     resultFound = 0;
-                }
                 saveDataToFolder(resultFound, ja2, folderPath, fileName);
                 for (int i = 0; i < ja2.Count; i++) // get all the values to display on front end
                     ja3.Add(ja2[i]);
+                if (ja2.Count == 0)
+                {
+                    var ja4 = new JArray();
+                    var jo4 = new JObject();
+                    jo4["output"] = "Lease is silent";
+                    jo4["AllSearchFieldKeyword"] = "";
+                    jo4["fileName"] = "";
+                    jo4["pageNo"] = 0;
+                    jo4["score"] = 0;
+                    jo4["sectionVal"] = "";
+                    jo4["leaseName"] = LeaseName;
+                    ja4.Add(jo4);
+                    ja3.Add(ja4[0]);
+                }
+                
 
                 if (accptedValThere == 0) // if no result found "lease is silent"
                     Text1.Value = "Lease is silent";
