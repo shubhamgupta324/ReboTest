@@ -37,9 +37,10 @@ namespace ReboProject
             var resultSection = (int)backendObject["result"][0]["section"];// page or sentance or paragraph
             var resultFormat = backendObject["result"][0]["format"].ToString();// eg: {{filename}}; {{result}}: {{pagenumber}}
             var logic = backendObject["logic"]; // all searchFor and there respected withIn
+            var getResultAllFiles = 1;
 
             var accptedValThere = 0; // check if lease is silent or not
-            var ja3 = new JArray(); // display on front end
+            var jaDisplay = new JArray(); // display on front end
 
             // ------------------get the total score and the field to search-------------------------------
             Dictionary<string, int> searchFieldScore = new Dictionary<string, int>(); // saves the foundtext
@@ -55,8 +56,8 @@ namespace ReboProject
             for (var folderval = 0; folderval < subdirectoryEntries.Length; folderval++)
             {
                 // to save the final result
-                var ja1 = new JArray();
-                var ja2 = new JArray();
+                var jaAllResult = new JArray();
+                var jaSingleResult = new JArray();
 
                 // get the files to read
                 folderPath = subdirectoryEntries[folderval]; // get the folder to get the 
@@ -73,6 +74,7 @@ namespace ReboProject
                 float TopfinalScore = 0;
                 var resultFound = 1;
                 var readNextFile = 1;
+                var jaAllFileResult = new JArray(); // display on front end
                 // -------------------------------------loop through all files----------------------------------------------------
                 foreach (string fullFilePath in fileDetails)
                 {
@@ -92,32 +94,46 @@ namespace ReboProject
                         getAllFoundText(SearchWithin, resultSection, savePage, fileName, logic, out ja, out totalScoreDenominatorVal, out searchFieldScore); //  get the found text
 
                         //--------------------scoring and final output ---------------------------------------------------------------------
-                        scoring(LeaseName, savePage, resultFormat, totalScoreDenominatorVal, searchFieldScore, ja, out ja1, out accptedValThere, out finalScore);
+                        scoring(LeaseName, savePage, resultFormat, totalScoreDenominatorVal, searchFieldScore, ja, out jaAllResult, out accptedValThere, out finalScore);
 
-
-                        for (int i = 0; i < ja1.Count; i++)// get only one highest score value
+                        float TopfinalScoreAllFiles = 0;
+                        for (int i = 0; i < jaAllResult.Count; i++)// get only one highest score value
                         {
-                            if(type == 1)
-                                readNextFile = 0;
-                            if (TopfinalScore < finalScore)
+                            if (getResultAllFiles == 0) {
+                                if (type == 1)
+                                    readNextFile = 0;
+                                if (TopfinalScore < finalScore)
+                                {
+                                    TopfinalScore = finalScore;
+                                    jaSingleResult.RemoveAll();
+                                    jaSingleResult.Add(jaAllResult[i]);
+                                }
+                            }
+                            if (getResultAllFiles == 1 && type == 2)
                             {
-                                TopfinalScore = finalScore;
-                                ja2.RemoveAll();
-                                ja2.Add(ja1[i]);
+
+                                if (TopfinalScoreAllFiles < finalScore)
+                                {
+                                    TopfinalScoreAllFiles = finalScore;
+                                    //.RemoveAll();
+                                    jaSingleResult.Add(jaAllResult[i]);
+                                }
                             }
                         }
+                        if(jaSingleResult.Count !=0)
+                            jaAllFileResult.Add(jaSingleResult[0]);
                     }
-                   
+
                 }
                 //---------------------save the result in folder----------------------------------------------
-                if (ja2.Count == 0)// check if any result found
+                if (jaSingleResult.Count == 0)// check if any result found
                     resultFound = 0;
-                saveDataToFolder(resultFound, ja2, folderPath, fileName);
-                for (int i = 0; i < ja2.Count; i++) // get all the values to display on front end
-                    ja3.Add(ja2[i]);
-                if (ja2.Count == 0)
+                saveDataToFolder(resultFound, jaSingleResult, folderPath, fileName);
+                for (int i = 0; i < jaSingleResult.Count; i++) // get all the values to display on front end
+                    jaDisplay.Add(jaSingleResult[i]);
+                if (jaSingleResult.Count == 0)
                 {
-                    var ja4 = new JArray();
+                    var jaLeaseSilent = new JArray();
                     var jo4 = new JObject();
                     jo4["output"] = "Lease is silent";
                     jo4["AllSearchFieldKeyword"] = "";
@@ -126,16 +142,15 @@ namespace ReboProject
                     jo4["score"] = 0;
                     jo4["sectionVal"] = "";
                     jo4["leaseName"] = LeaseName;
-                    ja4.Add(jo4);
-                    ja3.Add(ja4[0]);
+                    jaLeaseSilent.Add(jo4);
+                    jaDisplay.Add(jaLeaseSilent[0]);
                 }
                 
-
-                if (accptedValThere == 0) // if no result found "lease is silent"
-                    Text1.Value = "Lease is silent";
+                //if (accptedValThere == 0) // if no result found "lease is silent"
+                //    Text1.Value = "Lease is silent";
 
             }
-            frontEndData.Text = ja3.ToString(); // set the data in front end
+            frontEndData.Text = jaDisplay.ToString(); // set the data in front end
         }
         
         // get the score and the field to search
@@ -513,9 +528,9 @@ namespace ReboProject
         //--------------------------------------------------------------------------------------------------------------------------------------
 
         // scoring and output
-        public void scoring(string LeaseName, Dictionary<int, Dictionary<int, string>> savePage,  string resultFormat, int totalScoreDenominatorVal, Dictionary<string, int> searchFieldScore, JArray ja, out JArray ja1 ,out int accptedValThere , out float finalScore) {
+        public void scoring(string LeaseName, Dictionary<int, Dictionary<int, string>> savePage,  string resultFormat, int totalScoreDenominatorVal, Dictionary<string, int> searchFieldScore, JArray ja, out JArray jaAllResult, out int accptedValThere , out float finalScore) {
 
-            ja1 = new JArray();
+            jaAllResult = new JArray();
             finalScore = 0;
             accptedValThere = 0;
             var getAllAcceptedText = JArray.Parse(ja.ToString()); // get all the accepted result
@@ -567,7 +582,7 @@ namespace ReboProject
                             jo1["score"] = finalScore;
                             jo1["sectionVal"] = getTheSectionValue;
                             jo1["leaseName"] = LeaseName;
-                            ja1.Add(jo1);
+                        jaAllResult.Add(jo1);
                             accptedValThere = 1;
                         
                     }
@@ -577,7 +592,7 @@ namespace ReboProject
 
 
         // save all data found in 
-        public void saveDataToFolder(int resultFound, JArray ja1, string folderPath, string fileName) {
+        public void saveDataToFolder(int resultFound, JArray jaAllResult, string folderPath, string fileName) {
 
             var saveDataFolder = folderPath + "\\output";
             var outputFilePath = saveDataFolder + "\\result.txt";
@@ -591,13 +606,13 @@ namespace ReboProject
 
             if (resultFound == 1) { // result found
                 var dataMain = new JArray();
-                for (var i = 0; i < ja1.Count; i++)
+                for (var i = 0; i < jaAllResult.Count; i++)
                 {
                     var data = new JObject();
-                    data["fileName"] = ja1[i]["fileName"].ToString();
-                    data["searchField"] = ja1[i]["AllSearchFieldKeyword"].ToString();
-                    data["pageNoVal"] = ja1[i]["pageNo"].ToString();
-                    data["sectionVal"] = ja1[i]["sectionVal"].ToString();
+                    data["fileName"] = jaAllResult[i]["fileName"].ToString();
+                    data["searchField"] = jaAllResult[i]["AllSearchFieldKeyword"].ToString();
+                    data["pageNoVal"] = jaAllResult[i]["pageNo"].ToString();
+                    data["sectionVal"] = jaAllResult[i]["sectionVal"].ToString();
                     dataMain.Add(data);
                 }
                 File.WriteAllText(pathString, dataMain.ToString());
