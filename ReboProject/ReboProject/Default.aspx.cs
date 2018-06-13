@@ -149,7 +149,7 @@ namespace ReboProject
                                 getAllFoundText(SearchWithin, resultSection, savePage, fileName, logic2, out jaOutput, out totalScoreDenominatorValLogic2, out searchFieldScoreLogic2); //  get the found text
                                 scoring(LeaseName, savePage, resultFormat, totalScoreDenominatorValLogic2, searchFieldScoreLogic2, jaOutput, condition1, multipleRead, out ja1, out accptedValThere, out finalScore);
                                 //condition2(pdfLibPara, pdfLibPageno, pdfLibParaNo, logic2, out jaOutput);
-                                if (ja1.Count != 0 && ja1[0]["Pageoutput"].ToString() != ja2[0]["Pageoutput"].ToString())
+                                if (ja1.Count != 0)
                                 {
                                     ja2[0]["output"] = ja2[0]["output"].ToString() + System.Environment.NewLine + ja1[0]["output"].ToString();
                                     ja2[0]["pageNo"] = ja2[0]["pageNo"].ToString() + "," + ja1[0]["pageNo"].ToString();
@@ -179,7 +179,7 @@ namespace ReboProject
 
                 var finalOutput = "";
                 if (ja2.HasValues)
-                    getCorrectSentance( ja2, out finalOutput);
+                    getCorrectSentance(ja2, out finalOutput);
 
                 //---------------------save the result in folder----------------------------------------------
                 if (ja2.Count == 0)// check if any result found
@@ -690,7 +690,7 @@ namespace ReboProject
         public void checklibrary(JArray ja2, Dictionary<string, List<string>> librarySet, string datapoint, out bool outputFound) {
             
             outputFound = false;
-            var getTheLibrary = librarySet[datapoint]; //  get all library for datapoint
+            var getTheLibrary = librarySet[datapoint.ToLower()]; //  get all library for datapoint
             for (var i=0; i<ja2.Count();i++) {
                 var outputConfig1 =ja2[i]["Pageoutput"].ToString(); // get  the para
 
@@ -828,7 +828,7 @@ namespace ReboProject
                 searchField.Add("Specific Provision");
                 searchField.Add("Item");
                 searchField.Add("Paraghaph");
-                librarySet.Add("Admin Management Fees", searchField);
+                librarySet.Add(datapoint.ToLower(), searchField);
             }
             
 
@@ -840,7 +840,7 @@ namespace ReboProject
                 searchField.Add("Item");
                 searchField.Add("Paraghaph");
                 searchField.Add("Security Deposit");
-                librarySet.Add("Security Deposit", searchField);
+                librarySet.Add(datapoint.ToLower(), searchField);
             }
             
 
@@ -852,7 +852,7 @@ namespace ReboProject
                 searchField.Add("Item");
                 searchField.Add("Paraghaph");
                 searchField.Add("Permitted Use");
-                librarySet.Add("Permitted Use", searchField);
+                librarySet.Add(datapoint.ToLower(), searchField);
             }
             
         }

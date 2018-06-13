@@ -68,31 +68,9 @@ namespace ReboProject
                         var match = regex.Match(text);
                         if (match.Success)
                         {
-                            var sectionVal = (match.Value);
-                            var pageCountForSection = i - 5;
-                            if (pageCountForSection <= 0)
-                                pageCountForSection = 0;
-                                for (var t=i;t> pageCountForSection; t++ ) {
-
-                                    var entryCurrentPage1 = savePage[i].Values;
-                                    var paraCountTotal = j-1; // paraNumber
-                                    if (i != t)
-                                        paraCountTotal = entryCurrentPage1.Count() - 1;
-                                    for (var k = paraCountTotal; k >= 0; k--) {
-                                        var entryCurrentPage2 = entryCurrentPage1.ElementAt(k);
-                                        foreach (var checkAlphabet in matchRegexNumeric)
-                                        {
-                                            String AllowedCharsAlphabet = checkAlphabet.Value;
-                                            Regex regexAlphabet = new Regex(AllowedCharsAlphabet);
-                                            var matchAlphabet = regexAlphabet.Match(entryCurrentPage2);
-                                            if (matchAlphabet.Success)
-                                            {
-                                                var sectionVaAlphabetl = matchAlphabet.Value +" "+ sectionVal;
-                                                return sectionVaAlphabetl;
-                                            }
-                                        }
-                                    }
-                                }
+                            var sectionVal = (match.Value).Replace("section", "");
+                            return sectionVal;
+                            
                         }
                     }
                 }
