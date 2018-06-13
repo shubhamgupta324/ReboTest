@@ -36,7 +36,11 @@
             <tr>
                 <td style="padding:10px;">
                     </div> 
+                    JSON 1
                     <asp:TextBox id="backEndData" TextMode="multiline" Columns="150" Rows="10" runat="server" />
+                    <br /><br />
+                    LIBRARY
+                    <asp:TextBox id="LibVal" TextMode="multiline" Columns="150" Rows="10" runat="server" />
                     <br /><br />
 					<asp:Button ID="Button1" runat="server" OnClick="TestClick" Text="RESULT" />
                     <asp:TextBox id="frontEndData" TextMode="multiline" Columns="150" Rows="10" style="display:none;" runat="server" />

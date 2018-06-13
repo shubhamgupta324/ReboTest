@@ -39,7 +39,13 @@ namespace ReboProject
             var resultSection = (int)backendObject["result"][0]["section"];// page or sentance or paragraph
             var resultFormat = backendObject["result"][0]["format"].ToString();// eg: {{filename}}; {{result}}: {{pagenumber}}
             var logic = backendObject["logic"]; // all searchFor and there respected withIn
-            var logic2 = backendObject["logic2"]; // all searchFor and there respected withIn
+            var set1 = backendObject["Set2"]; // all searchFor and there respected withIn
+
+            var libraryVal = ""; // get all the library value
+            if ((LibVal.Text) != "")
+                libraryVal = LibVal.Text;
+                
+
 
             var accptedValThere = 0; // check if lease is silent or not
             var ja3 = new JArray(); // display on front end
@@ -115,71 +121,11 @@ namespace ReboProject
                    
                 }
 
-                if (logic2 .HasValues) {
-                    // check for second condition 
-                    var jaOutput = new JArray();
-                    var outputFound = false;
-                    Dictionary<string, List<string>> librarySet = new Dictionary<string, List<string>>();
-                    List<string> pdfLibPara = new List<string>();
-                    getLibrary(datapoint, out librarySet);
-                    var totalScoreDenominatorValLogic2 = 0;
-                    Dictionary<string, int> searchFieldScoreLogic2 = new Dictionary<string, int>();
-                    checklibrary(ja2, librarySet, datapoint, out outputFound);
-                    condition1 = false;
 
-                    if (ja2.HasValues)
-                    {
-                        if (outputFound == true)
-                        { // run the second configuration 
-                            getAllFoundText(SearchWithin, resultSection, savePage, fileName, logic2, out jaOutput, out totalScoreDenominatorValLogic2, out searchFieldScoreLogic2); //  get the found text
-                            scoring(LeaseName, savePage, resultFormat, totalScoreDenominatorValLogic2, searchFieldScoreLogic2, jaOutput, condition1, multipleRead, out ja1, out accptedValThere, out finalScore);
-                            if (ja1.HasValues)
-                            {
-                                ja2[0]["output"] = ja2[0]["output"].ToString() + ja1[0]["output"].ToString();
-                                ja2[0]["pageNo"] = ja2[0]["pageNo"].ToString() + "," + ja1[0]["pageNo"].ToString();
-                            }
-                        }
-                        else
-                        { // search the library in pdf and run the second condition
-                            List<int> pdfLibPageno = new List<int>();
-                            List<int> pdfLibParaNo = new List<int>();
-                            searchLibInPDF(savePage, librarySet, datapoint, out pdfLibPara, out pdfLibPageno, out pdfLibParaNo);
-                            if (pdfLibPara.Count() != 0)
-                            {
-                                getAllFoundText(SearchWithin, resultSection, savePage, fileName, logic2, out jaOutput, out totalScoreDenominatorValLogic2, out searchFieldScoreLogic2); //  get the found text
-                                scoring(LeaseName, savePage, resultFormat, totalScoreDenominatorValLogic2, searchFieldScoreLogic2, jaOutput, condition1, multipleRead, out ja1, out accptedValThere, out finalScore);
-                                //condition2(pdfLibPara, pdfLibPageno, pdfLibParaNo, logic2, out jaOutput);
-                                if (ja1.Count != 0)
-                                {
-                                    ja2[0]["output"] = ja2[0]["output"].ToString() + System.Environment.NewLine + ja1[0]["output"].ToString();
-                                    ja2[0]["pageNo"] = ja2[0]["pageNo"].ToString() + "," + ja1[0]["pageNo"].ToString();
-                                    if(ja2[0]["pageNo"].ToString().EndsWith("."))
-                                        ja2[0]["Pageoutput"] = ja2[0]["Pageoutput"].ToString() + ja1[0]["Pageoutput"].ToString();
-                                    else
-                                        ja2[0]["Pageoutput"] = ja2[0]["Pageoutput"].ToString() + "." + ja1[0]["Pageoutput"].ToString();
-
-                                }
-                                else
-                                {
-                                    for (var i = 0; i < pdfLibPara.Count(); i++)
-                                    {
-                                        var getTheSectionValue = processing.SectionVal(savePage, pdfLibPageno[i], pdfLibParaNo[i]); // get the section value
-                                        if (getTheSectionValue == "false")
-                                            getTheSectionValue = "?";
-                                        var output = resultFormat.Replace("{{Document Name}}", "").Replace("{{Paragraph Number}}", getTheSectionValue).Replace("{{result}}", pdfLibPara[i]).Replace("{{found text}}", "....");
-                                        ja2[0]["output"] = ja2[0]["output"].ToString() + System.Environment.NewLine + output;
-                                        ja2[0]["pageNo"] = ja2[0]["pageNo"].ToString() + "," + pdfLibPageno[i];
-                                    }
-                                }
-                            }
-                        }
-
-                    }
-                }
-
-                var finalOutput = "";
-                if (ja2.HasValues)
-                    getCorrectSentance(ja2, out finalOutput);
+                // logic 2
+                if (set1.HasValues)
+                    checkLogic(libraryVal, ja1, resultFormat, condition1, set1, datapoint, ja2, SearchWithin, resultSection, savePage, fileName, LeaseName, out ja2);
+                    
 
                 //---------------------save the result in folder----------------------------------------------
                 if (ja2.Count == 0)// check if any result found
@@ -687,15 +633,15 @@ namespace ReboProject
 
 
         // check library step2
-        public void checklibrary(JArray ja2, Dictionary<string, List<string>> librarySet, string datapoint, out bool outputFound) {
+        public void checklibrary(JArray ja2, string[] librarySet, string datapoint, out bool outputFound) {
             
             outputFound = false;
-            var getTheLibrary = librarySet[datapoint.ToLower()]; //  get all library for datapoint
+            //var getTheLibrary = librarySet[datapoint.ToLower()]; //  get all library for datapoint
             for (var i=0; i<ja2.Count();i++) {
                 var outputConfig1 =ja2[i]["Pageoutput"].ToString(); // get  the para
 
-                for (var singleSF=0; singleSF < getTheLibrary.Count(); singleSF++ ) {
-                    var matchData = Regex.Matches(outputConfig1, @"\b\s?" + getTheLibrary[singleSF] + "\\w*\\b"); // search if library in para
+                for (var singleSF = 0; singleSF < librarySet.Count(); singleSF++) {
+                    var matchData = Regex.Matches(outputConfig1, @"\b\s?" + librarySet[singleSF] + "\\w*\\b"); // search if library in para
                     if (matchData.Count > 0) {
                         outputFound = true; // library found 
                         break;
@@ -704,167 +650,117 @@ namespace ReboProject
             }
         }
 
-        // chech the second configuration
-        public void condition2(List<string> pdfLibPara, List<int> pdfLibPageno, List<int> pdfLibParaNo, JToken logic2 ,out JArray jaOutput) {
-            jaOutput = new JArray();
-            for (var allLogic = 0; allLogic < logic2.Count(); allLogic++)
-            {
-                
-                var getSearchFor = logic2[allLogic]["searchFor"];
-                var getWithIn = logic2[allLogic]["withIn"];
-                var getSubCase = logic2[allLogic]["subCase"];
-                for (var i = 0; i < pdfLibPara.Count(); i++)
-                {
-                    var singlePdfLibPara = pdfLibPara[i]; // get  the para
-                    var singlePdfLibParaNo = pdfLibParaNo[i]; // get  the para
-                    var singlePdfLibPageno = pdfLibPageno[i];
-                    for (var k = 0; k < getSearchFor.Count(); k++)
-                    {
-                        bool checkAfterSubCaseSearchFor = true;
-                        var AllSearchFieldKeyword = (getSearchFor[k]["keyword"]).ToString(); // get the search field
-                        var AllSearchFieldCaseCheck = (getSearchFor[k]["caseCheck"]).ToString().ToLower(); // get the search field op
-                        var matchData = Regex.Matches(singlePdfLibPara, @"\b\s?" + AllSearchFieldKeyword + "\\w*\\b"); // search if library in para
-                        if (matchData.Count > 0)
-                        {
-
-                            if (AllSearchFieldCaseCheck == "yes")
-                                subCaseSearch(singlePdfLibPara, AllSearchFieldKeyword, getSubCase, out checkAfterSubCaseSearchFor);
-                            else
-                                checkAfterSubCaseSearchFor = true;
-
-                            if (checkAfterSubCaseSearchFor == true)
-                            {
-
-                                if (getWithIn.Count() > 0)
-                                {
-                                    for (var g = 0; g < getWithIn.Count(); g++) // search for within fields
-                                    {
-                                        bool checkAfterSubCaseWithIn = true;
-                                        var withInIt = (getWithIn[g]["keyword"]).ToString();
-                                        var withInCaseCheck = (getWithIn[g]["caseCheck"]).ToString().ToLower();
-                                        var matchDataWithInIt = Regex.Matches(singlePdfLibPara, @"\b\s?" + withInIt + "\\w*\\b");
-                                        if (withInIt == "$")
-                                            matchDataWithInIt = Regex.Matches(singlePdfLibPara, @"([$]+)"); // find match    
-                                        if (withInIt == "%")
-                                            matchDataWithInIt = Regex.Matches(singlePdfLibPara, @"(\d+%)"); // find match
-
-                                        if (matchDataWithInIt.Count > 0) // if match there
-                                        {
-                                            if (withInCaseCheck == "yes")// check for cases
-                                                subCaseSearch(singlePdfLibPara, withInIt, getSubCase, out checkAfterSubCaseWithIn);
-
-                                            if (checkAfterSubCaseWithIn == true) {
-                                                var joOutput = new JObject();
-                                                joOutput["output"] = singlePdfLibPara;
-                                                joOutput["Paraoutput"] = singlePdfLibPara;
-                                                joOutput["pageno"] = singlePdfLibPageno;
-                                                joOutput["paraNo"] = singlePdfLibParaNo;
-                                                jaOutput.Add(joOutput);
-                                                break;
-                                            }
-                                            
-                                        }
-                                    }
-                                }
-
-                                else {
-                                    var joOutput = new JObject();
-                                    joOutput["output"] = singlePdfLibPara;
-                                    joOutput["Paraoutput"] = singlePdfLibPara;
-                                    joOutput["pageno"] = singlePdfLibPageno;
-                                    joOutput["paraNo"] = singlePdfLibParaNo;
-                                    jaOutput.Add(joOutput);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-
-            }
-
-        }
-
         // check the library in whole pdf
-        public void searchLibInPDF(Dictionary<int, Dictionary<int, string>> savePage, Dictionary<string, List<string>> librarySet , string datapoint , out List<string>  pdfLibPara, out List<int> pdfLibPageno, out List<int> pdfLibParaNo)
+        public void searchLibInPDF(Dictionary<int, Dictionary<int, string>> savePage, string[] librarySet , string datapoint , out List<string>  pdfLibPara, out List<int> pdfLibPageno, out List<int> pdfLibParaNo)
         {
             pdfLibPara = new List<string>();
             pdfLibParaNo = new List<int>();
             pdfLibPageno = new List<int>();
             var pageCount = 0;
-            foreach (KeyValuePair<int, Dictionary<int, string>> entry in savePage)
-            {
-                pageCount += 1;
-                foreach (var checkPage in entry.Value) {
-                    var para = checkPage.Value;
-                    var paraNo = checkPage.Key;
-                    var librarySetVal = librarySet[datapoint];
-                    for (var i = 0; i < librarySetVal.Count(); i++) {
-                        var singleLibVAl = librarySetVal[i];
-                        var matchData = Regex.Matches(para, @"\b\s?" + singleLibVAl + "\\w*\\b"); // search if library in para
-                        if (matchData.Count > 0)
+            try {
+                foreach (KeyValuePair<int, Dictionary<int, string>> entry in savePage)
+                {
+                    pageCount += 1;
+                    foreach (var checkPage in entry.Value)
+                    {
+                        var para = checkPage.Value;
+                        var paraNo = checkPage.Key;
+                        //var librarySetVal = librarySet[datapoint.ToLower()];
+                        for (var i = 0; i < librarySet.Count(); i++)
                         {
-                            pdfLibPara.Add(para);
-                            pdfLibParaNo.Add(paraNo);
-                            pdfLibPageno.Add(pageCount);
-                            break;
+                            var singleLibVAl = librarySet[i];
+                            var matchData = Regex.Matches(para, @"\b\s?" + singleLibVAl + "\\w*\\b"); // search if library in para
+                            if (matchData.Count > 0)
+                            {
+                                pdfLibPara.Add(para);
+                                pdfLibParaNo.Add(paraNo);
+                                pdfLibPageno.Add(pageCount);
+                                break;
+                            }
                         }
+
                     }
-                   
                 }
             }
+            catch (Exception ex) {
+                throw ex;
+            }
+            
 
         }
 
-        // library set
-        public void getLibrary(string datapoint, out Dictionary<string, List<string>> librarySet)
+        public void checkLogic(string libraryVal, JArray ja1, string resultFormat, bool condition1, JToken set1,string datapoint,JArray ja2, int SearchWithin, int resultSection, Dictionary<int, Dictionary<int, string>> savePage, string fileName,string LeaseName, out JArray ja5)
         {
-            
-            librarySet = new Dictionary<string, List<string>>();
-            List<string> searchField = new List<string>();
-            if (datapoint.ToLower() == "admin management fees") {
-                // Admin Management Fees
-                searchField.Add("Basic Lease Provisions");
-                searchField.Add("Specific Provision");
-                searchField.Add("Item");
-                searchField.Add("Paraghaph");
-                librarySet.Add(datapoint.ToLower(), searchField);
-            }
-            
+            ja5 = new JArray();
+            var SearchWithinlogic2 = (int)set1[0]["SearchWithin"];
+            var sortlogic2 = (int)set1[0]["FileOrder"]["sort"]; // asc or desc
+            var typelogic2 = (int)set1[0]["FileOrder"]["type"]; // Single File Search or All File Search
+            var multipleReadlogic2 = (int)set1[0]["MultipleRead"];
+            var logic2 = set1[0]["logic"];
 
-            if (datapoint.ToLower() == "security deposit") {
-                // Security Deposit
-                searchField.Clear();
-                searchField.Add("Basic Lease Provisions");
-                searchField.Add("Specific Provision");
-                searchField.Add("Item");
-                searchField.Add("Paraghaph");
-                searchField.Add("Security Deposit");
-                librarySet.Add(datapoint.ToLower(), searchField);
-            }
-            
+            if (logic2.HasValues)
+            {
+                string[] LibArr = null;
+                // check for second condition 
+                var jaOutput = new JArray();
+                var outputFound = false;
+                List<string> pdfLibPara = new List<string>();
+                LibArr = libraryVal.Split('|');
+                var totalScoreDenominatorValLogic2 = 0;
+                Dictionary<string, int> searchFieldScoreLogic2 = new Dictionary<string, int>();
+                checklibrary(ja2, LibArr, datapoint, out outputFound); // check if output of first logic has library value
+                condition1 = false;
+                var accptedValThere = 0;
+                float finalScore = 0;
+                if (ja2.HasValues)
+                {
+                    if (outputFound == true)// check if output of first logic has library value
+                    { // run the second configuration 
+                        getAllFoundText(SearchWithin, resultSection, savePage, fileName, logic2, out jaOutput, out totalScoreDenominatorValLogic2, out searchFieldScoreLogic2); //  get the found text
+                        scoring(LeaseName, savePage, resultFormat, totalScoreDenominatorValLogic2, searchFieldScoreLogic2, jaOutput, condition1, multipleReadlogic2, out ja1, out accptedValThere, out finalScore);
+                        if (ja1.HasValues)
+                        {
+                            ja2[0]["output"] = ja2[0]["output"].ToString() + ja1[0]["output"].ToString();
+                            ja2[0]["pageNo"] = ja2[0]["pageNo"].ToString() + "," + ja1[0]["pageNo"].ToString();
+                        }
+                    }
+                    else
+                    { // search the library in pdf and run the second condition
+                        List<int> pdfLibPageno = new List<int>();
+                        List<int> pdfLibParaNo = new List<int>();
+                        searchLibInPDF(savePage, LibArr, datapoint, out pdfLibPara, out pdfLibPageno, out pdfLibParaNo);
+                        if (pdfLibPara.Count() != 0)
+                        {
+                            getAllFoundText(SearchWithin, resultSection, savePage, fileName, logic2, out jaOutput, out totalScoreDenominatorValLogic2, out searchFieldScoreLogic2); //  get the found text
+                            scoring(LeaseName, savePage, resultFormat, totalScoreDenominatorValLogic2, searchFieldScoreLogic2, jaOutput, condition1, multipleReadlogic2, out ja1, out accptedValThere, out finalScore);
+                            if (ja1.Count != 0)
+                            {
+                                ja2[0]["output"] = ja2[0]["output"].ToString() + System.Environment.NewLine + ja1[0]["output"].ToString();
+                                ja2[0]["pageNo"] = ja2[0]["pageNo"].ToString() + "," + ja1[0]["pageNo"].ToString();
+                                if (ja2[0]["pageNo"].ToString().EndsWith("."))
+                                    ja2[0]["Pageoutput"] = ja2[0]["Pageoutput"].ToString() + ja1[0]["Pageoutput"].ToString();
+                                else
+                                    ja2[0]["Pageoutput"] = ja2[0]["Pageoutput"].ToString() + "." + ja1[0]["Pageoutput"].ToString();
 
-            if (datapoint.ToLower() == "permitted use") {
-                // Permitted Use
-                searchField.Clear();
-                searchField.Add("Basic Lease Provisions");
-                searchField.Add("Specific Provision");
-                searchField.Add("Item");
-                searchField.Add("Paraghaph");
-                searchField.Add("Permitted Use");
-                librarySet.Add(datapoint.ToLower(), searchField);
+                            }
+                            else
+                            {
+                                for (var i = 0; i < pdfLibPara.Count(); i++)
+                                {
+                                    var getTheSectionValue = processing.SectionVal(savePage, pdfLibPageno[i], pdfLibParaNo[i]); // get the section value
+                                    if (getTheSectionValue == "false")
+                                        getTheSectionValue = "?";
+                                    var output = resultFormat.Replace("{{Document Name}}", "").Replace("{{Paragraph Number}}", getTheSectionValue).Replace("{{result}}", pdfLibPara[i]).Replace("{{found text}}", "....");
+                                    ja2[0]["output"] = ja2[0]["output"].ToString() + System.Environment.NewLine + output;
+                                    ja2[0]["pageNo"] = ja2[0]["pageNo"].ToString() + "," + pdfLibPageno[i];
+                                }
+                            }
+                        }
+                    }
+                    for (int i = 0; i < ja2.Count; i++) // get all the values to display on front end
+                        ja5.Add(ja2[i]);
+                }
             }
-            
         }
-
-        public void getCorrectSentance(JArray ja2, out string finalOutput) {
-
-            finalOutput = "";
-           
-            var outputPara = ja2[0]["Pageoutput"].ToString();
-
-        }
-        
-
     }
 }
