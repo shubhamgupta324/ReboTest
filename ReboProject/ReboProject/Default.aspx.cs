@@ -25,7 +25,6 @@ namespace ReboProject
         }
         protected void TestClick(object sender, EventArgs e)
         {
-            
             string backEndVal = backEndData.Text;
             if (backEndVal == "")
                 return;
@@ -39,14 +38,12 @@ namespace ReboProject
             var resultSection = (int)backendObject["result"][0]["section"];// page or sentance or paragraph
             var resultFormat = backendObject["result"][0]["format"].ToString();// eg: {{filename}}; {{result}}: {{pagenumber}}
             var logic = backendObject["logic"]; // all searchFor and there respected withIn
-            var set1 = backendObject["Set2"]; // all searchFor and there respected withIn
+            var set2 = backendObject["Set2"]; // all searchFor and there respected withIn
 
             var libraryVal = ""; // get all the library value
             if ((LibVal.Text) != "")
                 libraryVal = LibVal.Text;
                 
-
-
             var accptedValThere = 0; // check if lease is silent or not
             var ja3 = new JArray(); // display on front end
 
@@ -102,6 +99,8 @@ namespace ReboProject
 
                         getAllFoundText(SearchWithin, resultSection, savePage, fileName, logic, out ja, out totalScoreDenominatorVal, out searchFieldScore); //  get the found text
 
+                        
+
                         //--------------------scoring and final output ---------------------------------------------------------------------
                         scoring(LeaseName, savePage, resultFormat, totalScoreDenominatorVal, searchFieldScore, ja, condition1, multipleRead, out ja1, out accptedValThere, out finalScore);
 
@@ -120,11 +119,10 @@ namespace ReboProject
                     }
                    
                 }
-
-
+                
                 // logic 2
-                if (set1.HasValues)
-                    checkLogic(libraryVal, ja1, resultFormat, condition1, set1, datapoint, ja2, SearchWithin, resultSection, savePage, fileName, LeaseName, out ja2);
+                if (set2.HasValues)
+                    checkLogic(libraryVal, ja1, resultFormat, condition1, set2, datapoint, ja2, SearchWithin, resultSection, savePage, fileName, LeaseName, out ja2);
                     
 
                 //---------------------save the result in folder----------------------------------------------
@@ -351,7 +349,6 @@ namespace ReboProject
                 var getSearchFor = logic[allLogic]["searchFor"];
                 var getWithIn = logic[allLogic]["withIn"];
                 var getSubCase = logic[allLogic]["subCase"];
-                //var getBegin = logic[allLogic]["begin"];
 
                 if (gotResult == 0)// all condition under 'or' 
                 {
@@ -360,9 +357,7 @@ namespace ReboProject
                     for (var k = 0; k < getSearchFor.Count(); k++) // loop throuch all searchFor
                     {
                         var AllSearchFieldKeyword = (getSearchFor[k]["keyword"]).ToString(); // get the search field
-                        //var AllSearchFieldOp = (getSearchFor[k]["op"]).ToString().ToLower(); // get the search field op
                         var AllSearchFieldCaseCheck = (getSearchFor[k]["caseCheck"]).ToString().ToLower(); // get the search field op
-                        //var AllSearchFieldBegin = (getSearchFor[k]["beginWith"]).ToString().ToLower(); // get the search field op
 
                         bool checkAfterSubCaseSearchFor = true;
                         var pageCount = 0;
@@ -388,13 +383,7 @@ namespace ReboProject
                                         checkAfterSubCaseSearchFor = true;
 
                                     if (checkAfterSubCaseSearchFor == true) {
-
-                                        //if (AllSearchFieldBegin == "yes")
-                                        //    beginSearch(getLineText, AllSearchFieldKeyword, getSubCase, out checkAfterSubCaseSearchFor);
-                                        //else
-                                        //    checkAfterSubCaseSearchFor = true;
-
-
+                                        
                                         string foundTextFinal = "";
                                         var SearchWithinText = "";
 
@@ -428,11 +417,11 @@ namespace ReboProject
                                         // check if withIn values are there 
                                         if (getWithIn.Count() > 0)
                                         {
+                                            var foundWithIn = "";
                                             for (var g = 0; g < getWithIn.Count(); g++) // search for within fields
                                             {
                                                 bool checkAfterSubCaseWithIn = true;
                                                 var withInIt = (getWithIn[g]["keyword"]).ToString();
-                                                //var withInItOp = (getWithIn[g]["op"]).ToString().ToLower();
                                                 var withInCaseCheck = (getWithIn[g]["caseCheck"]).ToString().ToLower();
                                                 var  matchDataWithInIt = Regex.Matches(SearchWithinText, @"\b\s?" + withInIt + "\\w*\\b");
                                                 if (withInIt == "$")
@@ -448,17 +437,20 @@ namespace ReboProject
                                                     if (checkAfterSubCaseWithIn == true)
                                                     {
                                                         gotResult = 1;
-                                                        var jo = new JObject();
-                                                        jo["foundText"] = foundTextFinal;
-                                                        jo["AllSearchFieldKeyword"] = AllSearchFieldKeyword;
-                                                        jo["fileName"] = fileName.Split('.')[0];
-                                                        jo["pageNo"] = pageCount;
-                                                        jo["pageContent"] = SearchWithinText;
-                                                        jo["paraNumber"] = paraNumber;
-                                                        ja.Add(jo);
-                                                        break;
+                                                        foundWithIn = (foundWithIn == "") ? withInIt : ","+ withInIt;
                                                     }
                                                 }
+                                            }
+                                            if (foundWithIn != "") {
+                                                var jo = new JObject();
+                                                jo["foundText"] = foundTextFinal;
+                                                jo["AllSearchFieldKeyword"] = AllSearchFieldKeyword;
+                                                jo["fileName"] = fileName.Split('.')[0];
+                                                jo["pageNo"] = pageCount;
+                                                jo["pageContent"] = SearchWithinText;
+                                                jo["foundWithIn"] = foundWithIn;
+                                                jo["paraNumber"] = paraNumber;
+                                                ja.Add(jo);
                                             }
                                         }
 
@@ -471,6 +463,7 @@ namespace ReboProject
                                             jo["fileName"] = fileName.Split('.')[0];
                                             jo["pageNo"] = pageCount;
                                             jo["pageContent"] = SearchWithinText;
+                                            jo["foundWithIn"] = "";
                                             jo["paraNumber"] = paraNumber;
                                             ja.Add(jo);
                                         }
@@ -689,14 +682,14 @@ namespace ReboProject
 
         }
 
-        public void checkLogic(string libraryVal, JArray ja1, string resultFormat, bool condition1, JToken set1,string datapoint,JArray ja2, int SearchWithin, int resultSection, Dictionary<int, Dictionary<int, string>> savePage, string fileName,string LeaseName, out JArray ja5)
+        public void checkLogic(string libraryVal, JArray ja1, string resultFormat, bool condition1, JToken set2,string datapoint,JArray ja2, int SearchWithin, int resultSection, Dictionary<int, Dictionary<int, string>> savePage, string fileName,string LeaseName, out JArray ja5)
         {
             ja5 = new JArray();
-            var SearchWithinlogic2 = (int)set1[0]["SearchWithin"];
-            var sortlogic2 = (int)set1[0]["FileOrder"]["sort"]; // asc or desc
-            var typelogic2 = (int)set1[0]["FileOrder"]["type"]; // Single File Search or All File Search
-            var multipleReadlogic2 = (int)set1[0]["MultipleRead"];
-            var logic2 = set1[0]["logic"];
+            var SearchWithinlogic2 = (int)set2[0]["SearchWithin"];
+            var sortlogic2 = (int)set2[0]["FileOrder"]["sort"]; // asc or desc
+            var typelogic2 = (int)set2[0]["FileOrder"]["type"]; // Single File Search or All File Search
+            var multipleReadlogic2 = (int)set2[0]["MultipleRead"];
+            var logic2 = set2[0]["logic"];
 
             if (logic2.HasValues)
             {
