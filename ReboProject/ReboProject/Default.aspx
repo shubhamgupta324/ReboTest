@@ -48,7 +48,7 @@
                     <div class="setData">
 
                         <table >
-                            <td style="width:100px">
+                            <td style="max-width:100px">
                                 FILENAME
                             </td>
                             <td style="width:100px">
@@ -68,13 +68,10 @@
                         <table class="setData" id="allVal">
                             
                         </table>
-
                         <div class="LeaseSilent" style="display:none;">
                             <input type="text"  class="input-text" placeholder="Enter text" style="width:500px;" runat="server" id="Text1" /><br /><br />
                         </div>
-
                     </div>
-                
                 </td>
             </tr>
         </tbody>
@@ -108,7 +105,7 @@
                 var outputVal = data[i].output;
                 var scoreVal = data[i].score;
                 var leaseNameVal =data[i].leaseName;
-                htmlBuilderProject.push("<tr><td style='width:105px'>"+"("+leaseNameVal +")  "+ fileName + "</td ><td style='width:105px'>" + pageNumber + "</td > <td style='width:100px'>" + foundText + "</td><td style='width:115px'>" + scoreVal +"%"+ "</td><td style='width:600px'>" + outputVal + "</td></tr>");
+                htmlBuilderProject.push("<tr><td style='max-width:305px'>"+"("+leaseNameVal +")  "+ fileName + "</td ><td style='width:50px'>" + pageNumber + "</td > <td style='width:100px'>" + foundText + "</td><td style='width:115px'>" + scoreVal +"%"+ "</td><td style='width:600px'>" + outputVal + "</td></tr>");
             }
             $("#allVal").html(htmlBuilderProject.join(""));
         }
