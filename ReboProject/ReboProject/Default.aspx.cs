@@ -23,11 +23,11 @@ namespace ReboProject
         }
         protected void TestClick(object sender, EventArgs e)
         {
+            var watch = new System.Diagnostics.Stopwatch();
+            watch.Start();
             string backEndVal = backEndData.Text; // get the value from front end
             if (backEndVal == "") // check if it has value else return
                 return;
-
-            try {
                 // -------------get the common data----------------
                 var backendObject = JObject.Parse(backEndVal.ToString()); // complete json 
                 var folder = backendObject["folder"].ToString();// folder path
@@ -70,6 +70,7 @@ namespace ReboProject
                     var LeaseName = "";
                     Dictionary<int, Dictionary<int, string>> savePage = new Dictionary<int, Dictionary<int, string>>();  // save pagenumber and the lines in it
                     Dictionary<int, Dictionary<int, string>> savePageLib = new Dictionary<int, Dictionary<int, string>>();  // save pagenumber and the lines in it
+                    Dictionary<int, string> OutputMatch = new Dictionary<int, string>();
                                                                                                                             //--------------------loop through all configuration------------
                     for (var configurationVal = 0; configurationVal < configuration.Count(); configurationVal++)
                     {
@@ -93,17 +94,23 @@ namespace ReboProject
                         var outputFound = false;
                         if (connectorVal == 2)
                         { // check if the last output contain the library value
-                            checklibrary(jaLibCheck, LibArr, out outputFound); // check if output of first logic has library value
-                            if (outputFound == false)
-                            { // check the whole pdf for library 
-                                if (!jaLibCheck.HasValues)
-                                    break;
-                                pdfRead(jaLibCheck[0]["completeFilePath"].ToString(), out savePage); // read pdf
-                                searchLibInPDF( getExclusion,exclusionCount, savePage, LibArr, datapoint, out pdfLibPara, out pdfLibPageno, out pdfLibParaNo);
-                                savePageLib = savePage;
-                                executeConfiguration = pdfLibPara.Count() != 0 ? executeConfiguration = true : executeConfiguration = false; // if found get the second para else skip
+                            if (LibArr[0] != "")
+                            {
+                                checklibrary(jaLibCheck, LibArr, out outputFound); // check if output of first logic has library value
+                                if (outputFound == false)
+                                { // check the whole pdf for library 
+                                    if (!jaLibCheck.HasValues)
+                                        break;
+                                    pdfRead(jaLibCheck[0]["completeFilePath"].ToString(), out savePage); // read pdf
+                                    searchLibInPDF(getExclusion, exclusionCount, savePage, LibArr, datapoint, out pdfLibPara, out pdfLibPageno, out pdfLibParaNo);
+                                    savePageLib = savePage;
+                                    executeConfiguration = pdfLibPara.Count() != 0 ? executeConfiguration = true : executeConfiguration = false; // if found get the second para else skip
+                                }
                             }
+                            else
+                                executeConfiguration = false;
                         }
+
                         if (executeConfiguration == true)
                         { // check if to execute configuration
                             var sort = (int)configuration[myKey - 1]["FileOrder"]["sort"]; // asc or desc
@@ -147,7 +154,7 @@ namespace ReboProject
                                     getAllFoundText(exclusionCount, fullFilePath, SearchWithin, resultSection, savePage, fileName, logic, out ja, out totalScoreDenominatorVal, out searchFieldScore); //  get the found text
 
                                     //--------------------scoring and final output ---------------------------------------------------------------------
-                                    scoring(LeaseName, savePage, resultFormat, totalScoreDenominatorVal, searchFieldScore, ja, multipleRead, out ja1, out accptedValThere, out finalScore);
+                                    scoring(OutputMatch,LeaseName, savePage, resultFormat, totalScoreDenominatorVal, searchFieldScore, ja, multipleRead, out ja1, out accptedValThere, out finalScore);
 
                                     for (int i = 0; i < ja1.Count; i++)// get only one highest score value
                                     {
@@ -171,6 +178,8 @@ namespace ReboProject
                                 jaLibCheck.Add(ja3[0]);
                                 gotValueForConfiguration = true;
                                 saveDataToFolder(ja3, folderPath);
+                                if(!OutputMatch.ContainsKey(connectorVal))
+                                    OutputMatch.Add(connectorVal, ja2[0]["Pageoutput"].ToString());
                             }
 
                             else
@@ -189,10 +198,12 @@ namespace ReboProject
                                     jaLibCheck.Add(ja3[0]);
                                     gotValueForConfiguration = true;
                                     saveDataToFolder(ja3, folderPath);
+                                    if (!OutputMatch.ContainsKey(connectorVal))
+                                        OutputMatch.Add(connectorVal,ja2[0]["Pageoutput"].ToString());
                                 }
                             }
                         }
-                        if (connectorVal == 2 && outputFound == false)
+                        if (connectorVal == 2 && outputFound == false && LibArr[0] != "")
                         {
                             if (pdfLibPara.Count() == 1 && gotValueForConfiguration == false)
                             {
@@ -208,6 +219,8 @@ namespace ReboProject
                                 else
                                     ja3[0]["Pageoutput"] = ja3[0]["Pageoutput"].ToString() + ". " + pdfLibPara[0];
                                 saveDataToFolder(ja3, folderPath);
+                                if (!OutputMatch.ContainsKey(connectorVal))
+                                    OutputMatch.Add(connectorVal, pdfLibPara[0]);
                             }
                         }
                     }
@@ -235,10 +248,8 @@ namespace ReboProject
 
                 }
                 frontEndData.Text = finalOutput.ToString(); // set the data in front end
-            }
-            catch (Exception ex) {
-
-            }
+            watch.Stop();
+            displayTime.Text = (watch.ElapsedMilliseconds / 60000).ToString() + " mins";
         }
 
         // get the score and the field to search
@@ -479,11 +490,11 @@ namespace ReboProject
                                         if (getWithIn.Count() > 0)
                                         {
                                             var acceptPara = "";
+                                            var checkExclusion = true;
                                             for (var g = 0; g < getWithIn.Count(); g++) // search for within fields
                                             {
                                                 bool checkAfterSubCaseWithIn = true;
                                                 bool checkAfterSubCaseWithInExclusion = true;
-                                                var checkExclusion = true;
                                                 var withInIt = (getWithIn[g]["keyword"]).ToString();
                                                 var withInCaseCheck = (getWithIn[g]["caseCheck"]).ToString().ToLower();
                                                 var matchDataWithInIt = Regex.Matches(SearchWithinText, @"\b\s?" + withInIt + "\\b");
@@ -572,11 +583,10 @@ namespace ReboProject
         }
         
         //--------------------------------------------------------------------------------------------------------------------------------------
-
-        // scoring and output
-        public void scoring(string LeaseName, Dictionary<int, Dictionary<int, string>> savePage, string resultFormat, int totalScoreDenominatorVal, Dictionary<string, int> searchFieldScore, JArray ja, int multipleRead, out JArray ja1, out int accptedValThere, out float finalScore)
+        
+        public void scoring(Dictionary<int, string> OutputMatch, string LeaseName, Dictionary<int, Dictionary<int, string>> savePage, string resultFormat, int totalScoreDenominatorVal, Dictionary<string, int> searchFieldScore, JArray ja, int multipleRead, out JArray ja1, out int accptedValThere, out float finalScore)
         {
-
+            var onlyTopResult = true;
             ja1 = new JArray();
             finalScore = 0;
             accptedValThere = 0;
@@ -610,12 +620,17 @@ namespace ReboProject
             if (scoreVal.Count() != 0)
             { // if dictionary has val
                 var accurateVal = scoreVal.OrderByDescending(x => x.Value); // sort the dictionary to get the highest val
-                var accurateValKey = accurateVal.First().Key; // key of highest value
-                var accurateValValue = accurateVal.First().Value; // value of highest value
                 foreach (KeyValuePair<int, float> entry in accurateVal)
                 { // loop to get all the highest value
+                    var outputSame = false;
+                    var pageContent = getAllAcceptedText[entry.Key]["pageContent"].ToString();
+                    foreach (var getOutputToCheck in OutputMatch)
+                    {
+                        if (getOutputToCheck.Value == pageContent)
+                            outputSame = true;
+                    }
                     // save the output for the file
-                    if (entry.Value == accurateValValue)
+                    if (onlyTopResult == true && outputSame == false)
                     { // get all the highest score value
                         var foundText = getAllAcceptedText[entry.Key]["foundText"].ToString();
                         var AllSearchFieldKeyword1 = getAllAcceptedText[entry.Key]["AllSearchFieldKeyword"];
@@ -629,7 +644,7 @@ namespace ReboProject
                         if (getTheSectionValue == "false")
                             getTheSectionValue = "?";
 
-                        var output = resultFormat.Replace("{{Document Name}}", "<b>"+ fileNameVal.ToString() + "</b>").Replace("{{Paragraph Number}}", "<b>"+getTheSectionValue + "</b>").Replace("{{result}}", foundText).Replace("{{found text}}", AllSearchFieldKeyword1.ToString());
+                        var output = resultFormat.Replace("{{Document Name}}", "<b>" + fileNameVal.ToString() + "</b>").Replace("{{Paragraph Number}}", "<b>" + getTheSectionValue + "</b>").Replace("{{result}}", foundText).Replace("{{found text}}", AllSearchFieldKeyword1.ToString());
                         var jo1 = new JObject();
                         jo1["output"] = output;
                         jo1["Pageoutput"] = foundText;
@@ -637,15 +652,18 @@ namespace ReboProject
                         jo1["fileName"] = fileNameVal;
                         jo1["pageNo"] = pageNo;
                         jo1["score"] = finalScore;
+                        jo1["pageContent"] = pageContent;
                         jo1["sectionVal"] = getTheSectionValue;
                         jo1["leaseName"] = LeaseName;
                         jo1["completeFilePath"] = completeFilePathVal;
                         ja1.Add(jo1);
                         accptedValThere = 1;
+                        onlyTopResult = false;
                     }
                 }
             }
         }
+
 
         // save all data found in 
         public void saveDataToFolder(JArray jArray, string folderPath)

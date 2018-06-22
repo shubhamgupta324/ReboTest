@@ -43,8 +43,9 @@
                     <asp:TextBox id="LibVal" TextMode="multiline" Columns="150" Rows="10" runat="server" />
                     <br /><br />
 					<asp:Button ID="Button1" runat="server" OnClick="TestClick" Text="RESULT" />
+                    <asp:TextBox ID="displayTime" runat="server"></asp:TextBox>
                     <asp:TextBox id="frontEndData" TextMode="multiline" Columns="150" Rows="10" style="display:none;" runat="server" />
-
+                    
                     <div class="setData">
 
                         <table >
