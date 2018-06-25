@@ -61,6 +61,9 @@
                             <td style="width:100px">
                                 score
                             </td>
+                            <td style="width:100px">
+                                Within
+                            </td>
                             <td style="width:700px">
                                 OUTPUT
                             </td>
@@ -105,8 +108,9 @@
                 var pageNumber = data[i].pageNo;
                 var outputVal = data[i].output;
                 var scoreVal = data[i].score;
+                var foundWithInVal = data[i].foundWithIn;
                 var leaseNameVal =data[i].leaseName;
-                htmlBuilderProject.push("<tr><td style='max-width:305px'>"+"("+leaseNameVal +")  "+ fileName + "</td ><td style='width:50px'>" + pageNumber + "</td > <td style='width:100px'>" + foundText + "</td><td style='width:115px'>" + scoreVal +"%"+ "</td><td style='width:600px'>" + outputVal + "</td></tr>");
+                htmlBuilderProject.push("<tr><td style='max-width:305px'>"+"("+leaseNameVal +")  "+ fileName + "</td ><td style='width:50px'>" + pageNumber + "</td > <td style='width:100px'>" + foundText + "</td><td style='width:115px'>" + scoreVal +"%"+ "</td><td style='width:115px'>" + foundWithInVal + "</td><td style='width:600px'>" + outputVal + "</td></tr>");
             }
             $("#allVal").html(htmlBuilderProject.join(""));
         }
