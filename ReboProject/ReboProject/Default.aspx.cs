@@ -124,6 +124,7 @@ namespace ReboProject
                         
 
                         Dictionary<string, int> searchFieldScore = new Dictionary<string, int>(); // saves the foundtext
+                        Dictionary<string, int> withInScore = new Dictionary<string, int>(); // saves the foundtext
                         var totalScoreDenominatorVal = 0; // get the total score of all the search field
                         var ja1 = new JArray();
                         var ja2 = new JArray();
@@ -155,7 +156,7 @@ namespace ReboProject
 
                                 pdfRead(fullFilePath, out savePage); // read pdf
 
-                                getAllFoundText(exclusionCount, fullFilePath, SearchWithin, resultSection, savePage, fileName, logic, out ja, out totalScoreDenominatorVal, out searchFieldScore); //  get the found text
+                                getAllFoundText(exclusionCount, fullFilePath, SearchWithin, resultSection, savePage, fileName, logic, out ja, out totalScoreDenominatorVal, out searchFieldScore, out withInScore); //  get the found text
 
                                 //--------------------scoring and final output ---------------------------------------------------------------------
                                 scoring(OutputMatch,LeaseName, savePage, resultFormat, totalScoreDenominatorVal, searchFieldScore, ja, multipleRead, out ja1, out accptedValThere, out finalScore);
@@ -268,10 +269,11 @@ namespace ReboProject
         }
 
         // get the score and the field to search
-        public void getTotalScore(JToken withIn, JToken searchFor, out int totalScoreDenominatorVal, out Dictionary<string, int> searchFieldScore)
+        public void getTotalScore(JToken withIn, JToken searchFor, out int totalScoreDenominatorVal, out Dictionary<string, int> searchFieldScore, out Dictionary<string,int> withInScore)
         {
             totalScoreDenominatorVal = 0;
             searchFieldScore = new Dictionary<string, int>();
+            withInScore = new Dictionary<string, int>();
             // searchFor
             for (var k = 0; k < searchFor.Count(); k++) // loop throuch all searchFor
             {
@@ -291,6 +293,7 @@ namespace ReboProject
                 var withInscore = (int)(withIn[h]["score"]);
                 if (!searchFieldScore.ContainsKey(withInKeyword))
                 {
+                    withInScore.Add(withInKeyword, withInscore);
                     searchFieldScore.Add(withInKeyword, withInscore);// add the value for score
                     totalScoreDenominatorVal += withInscore;
                 }
@@ -439,9 +442,9 @@ namespace ReboProject
         
         //-----------------------------------------FOUND TEXT-----------------------------------------------------------------------------------
         // get all the searched data 
-        public void getAllFoundText(int exclusionCount, string fullFilePath, int SearchWithin, int resultSection, Dictionary<int, Dictionary<int, string>> savePage, string fileName, JToken logic, out JArray ja, out int totalScoreDenominatorVal, out Dictionary<string, int> searchFieldScore)
+        public void getAllFoundText(int exclusionCount, string fullFilePath, int SearchWithin, int resultSection, Dictionary<int, Dictionary<int, string>> savePage, string fileName, JToken logic, out JArray ja, out int totalScoreDenominatorVal, out Dictionary<string, int> searchFieldScore, out Dictionary<string, int> withInScore)
         {
-
+            withInScore = new Dictionary<string, int>();
             totalScoreDenominatorVal = 0;
             searchFieldScore = new Dictionary<string, int>();
             ja = new JArray();
@@ -455,7 +458,7 @@ namespace ReboProject
 
                 if (gotResult == 0)// all condition under 'or' 
                 {
-                    getTotalScore(getWithIn, getSearchFor, out totalScoreDenominatorVal, out searchFieldScore);
+                    getTotalScore(getWithIn, getSearchFor, out totalScoreDenominatorVal, out searchFieldScore,out withInScore);
 
                     for (var k = 0; k < getSearchFor.Count(); k++) // loop throuch all searchFor
                     {
