@@ -217,22 +217,32 @@ namespace ReboProject
                     {
                         if (pdfLibPara.Count() == 1 && gotValueForConfiguration == false)
                         {
+                            var outputSame = false;
+                            foreach (var getOutputToCheck in OutputMatch)
+                            {
+                                if (getOutputToCheck.Value == pdfLibPara[0])
+                                {
+                                    outputSame = true;
+                                    break;
+                                }
+                            }
+                            if (!OutputMatch.ContainsKey(connectorVal) && outputSame == false) {
 
-                            var getTheSectionValue = processing.SectionVal(savePageLib, pdfLibPageno[0], pdfLibParaNo[0]); // get the section value
-                            if (getTheSectionValue == "false")
-                                getTheSectionValue = "?";
-                            var output = resultFormat.Replace("{{Document Name}}", "").Replace("{{Paragraph Number}}", "<b>" + getTheSectionValue + "</b>").Replace("{{result}}", pdfLibPara[0]).Replace("{{found text}}", "....");
-                            ja3[0]["output"] = ja3[0]["output"].ToString() + System.Environment.NewLine + output;
-                            ja3[0]["foundWithIn"] = ja3[0]["foundWithIn"].ToString() + " || Library";
-                            ja3[0]["AllSearchFieldKeyword"] = ja3[0]["AllSearchFieldKeyword"].ToString() + " || Library";
-                            ja3[0]["pageNo"] = ja3[0]["pageNo"].ToString() + " , " + pdfLibPageno[0];
-                            if (ja3[0]["Pageoutput"].ToString().EndsWith("."))
-                                ja3[0]["Pageoutput"] = ja3[0]["Pageoutput"].ToString() + pdfLibPara[0];
-                            else
-                                ja3[0]["Pageoutput"] = ja3[0]["Pageoutput"].ToString() + ". " + pdfLibPara[0];
-                            saveDataToFolder(ja3, folderPath);
-                            if (!OutputMatch.ContainsKey(connectorVal))
                                 OutputMatch.Add(connectorVal, pdfLibPara[0]);
+                                var getTheSectionValue = processing.SectionVal(savePageLib, pdfLibPageno[0], pdfLibParaNo[0]); // get the section value
+                                if (getTheSectionValue == "false")
+                                    getTheSectionValue = "?";
+                                var output = resultFormat.Replace("{{Document Name}}", "").Replace("{{Paragraph Number}}", "<b>" + getTheSectionValue + "</b>").Replace("{{result}}", pdfLibPara[0]).Replace("{{found text}}", "....");
+                                ja3[0]["output"] = ja3[0]["output"].ToString() + System.Environment.NewLine + output;
+                                ja3[0]["foundWithIn"] = ja3[0]["foundWithIn"].ToString() + " || Library";
+                                ja3[0]["AllSearchFieldKeyword"] = ja3[0]["AllSearchFieldKeyword"].ToString() + " || Library";
+                                ja3[0]["pageNo"] = ja3[0]["pageNo"].ToString() + " , " + pdfLibPageno[0];
+                                if (ja3[0]["Pageoutput"].ToString().EndsWith("."))
+                                    ja3[0]["Pageoutput"] = ja3[0]["Pageoutput"].ToString() + pdfLibPara[0];
+                                else
+                                    ja3[0]["Pageoutput"] = ja3[0]["Pageoutput"].ToString() + ". " + pdfLibPara[0];
+                                saveDataToFolder(ja3, folderPath);
+                            }
                         }
                     }
                 }
