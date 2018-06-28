@@ -46,6 +46,7 @@
                     <asp:TextBox ID="displayTime" runat="server"></asp:TextBox>
                     <asp:TextBox id="frontEndData" TextMode="multiline" Columns="150" Rows="10" style="display:none;" runat="server" />
                     
+                    
                     <div class="setData">
 
                         <table >
@@ -66,6 +67,9 @@
                             </td>
                             <td style="width:700px">
                                 OUTPUT
+                            </td>
+                            <td style="width:700px">
+                                Sentances
                             </td>
                         </table >
 
@@ -109,8 +113,9 @@
                 var outputVal = data[i].output;
                 var scoreVal = data[i].score;
                 var foundWithInVal = data[i].foundWithIn;
-                var leaseNameVal =data[i].leaseName;
-                htmlBuilderProject.push("<tr><td style='max-width:305px'>"+"("+leaseNameVal +")  "+ fileName + "</td ><td style='width:50px'>" + pageNumber + "</td > <td style='width:100px'>" + foundText + "</td><td style='width:115px'>" + scoreVal +"%"+ "</td><td style='width:115px'>" + foundWithInVal + "</td><td style='width:600px'>" + outputVal + "</td></tr>");
+                var leaseNameVal = data[i].leaseName;
+                var correctStringVal =data[i].correctString;
+                htmlBuilderProject.push("<tr><td style='max-width:305px'>"+"("+leaseNameVal +")  "+ fileName + "</td ><td style='width:50px'>" + pageNumber + "</td > <td style='width:100px'>" + foundText + "</td><td style='width:115px'>" + scoreVal +"%"+ "</td><td style='width:115px'>" + foundWithInVal + "</td><td style='width:600px'>" + outputVal + "</td><td style='width:600px'>" + correctStringVal + "</td></tr>");
             }
             $("#allVal").html(htmlBuilderProject.join(""));
         }
