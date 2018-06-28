@@ -321,9 +321,11 @@ namespace ReboProject
             {
                 var withInKeyword = (withIn[h]["keyword"]).ToString();
                 var withInscore = (int)(withIn[h]["score"]);
+                if (!withInScore.ContainsKey(withInKeyword)) // for getting correct sentence
+                    withInScore.Add(withInKeyword, withInscore);
                 if (!searchFieldScore.ContainsKey(withInKeyword))
                 {
-                    withInScore.Add(withInKeyword, withInscore);
+                    
                     searchFieldScore.Add(withInKeyword, withInscore);// add the value for score
                     totalScoreDenominatorVal += withInscore;
                 }
