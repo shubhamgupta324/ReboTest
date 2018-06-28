@@ -76,6 +76,7 @@
                             <input type="text"  class="input-text" placeholder="Enter text" style="width:500px;" runat="server" id="Text1" /><br /><br />
                         </div>
                     </div>
+                    <asp:TextBox id="notAbstractedLeaseVal" TextMode="multiline" Columns="50" Rows="5"  runat="server" />
                 </td>
             </tr>
         </tbody>
