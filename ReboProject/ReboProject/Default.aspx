@@ -69,7 +69,7 @@
                                 OUTPUT
                             </td>
                             <td style="width:700px">
-                                Sentances
+                                Sentences
                             </td>
                         </table >
 
