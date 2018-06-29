@@ -196,7 +196,11 @@ namespace ReboProject
                                 ja3[0]["output"] = ja3[0]["output"].ToString() + System.Environment.NewLine + ja2[0]["output"].ToString();
                                 ja3[0]["pageNo"] = ja3[0]["pageNo"].ToString() + " , " + ja2[0]["pageNo"].ToString();
                                 ja3[0]["fileName"] = ja3[0]["fileName"].ToString() + " , " + ja2[0]["fileName"].ToString();
-                                ja3[0]["foundWithIn"] = ja3[0]["foundWithIn"].ToString() + " || " + ja2[0]["foundWithIn"].ToString();
+                                ja3[0]["foundWithIn"] = ja3[0]["foundWithIn"].ToString() + " || " + ja2[0]["foundWithIn"].ToString(); 
+                                if(ja3[0]["score"].ToString() == "")
+                                    ja3[0]["score"] = ja3[0]["score"].ToString() + ja2[0]["score"].ToString();
+                                else
+                                    ja3[0]["score"] = ja3[0]["score"].ToString() + " || " + ja2[0]["score"].ToString();
                                 ja3[0]["AllSearchFieldKeyword"] = ja3[0]["AllSearchFieldKeyword"].ToString() + " || " + ja2[0]["AllSearchFieldKeyword"].ToString();
                                 
                                 if (ja3[0]["Pageoutput"].ToString().EndsWith("."))
@@ -382,7 +386,7 @@ namespace ReboProject
 
                 for (var singleSF = 0; singleSF < librarySet.Count(); singleSF++)
                 {
-                    var matchData = Regex.Matches(outputConfig1, @"\b\s?" + librarySet[singleSF] + "\\b"); // search if library in para
+                    var matchData = Regex.Matches(outputConfig1, @"\b\s?" + librarySet[singleSF] + "(\\s|\\b)"); // search if library in para
                     if (librarySet[singleSF].IndexOf("\"") == 0)
                     {
                         var searchVal = (librarySet[singleSF]).Replace("\"", "");
@@ -406,7 +410,7 @@ namespace ReboProject
                 if (checkForVal == (getSubCase[i]["checkFor"]).ToString())
                 {
                     var keyword = (getSubCase[i]["keyword"]).ToString();
-                    var matchDataWithInIt = Regex.Matches(lineToCheck, @"\b\s?" + keyword + "\\b"); // find match
+                    var matchDataWithInIt = Regex.Matches(lineToCheck, @"\b\s?" + keyword + "(\\s|\\b)"); // find match
                     if (keyword.IndexOf("\"") == 0)
                     {
                         var searchVal = (keyword).Replace("\"", "");
@@ -485,7 +489,7 @@ namespace ReboProject
                             {
                                 paraNumber += 1;
                                 var getLineText = checkPage.Value; // get the  line text
-                                var matchData = Regex.Matches(getLineText, @"\b\s?" + AllSearchFieldKeyword + "\\b"); // find match
+                                var matchData = Regex.Matches(getLineText, @"\b\s?" + AllSearchFieldKeyword + "(\\s|\\b)"); // find match
                                 if ((AllSearchFieldKeyword).IndexOf("\"") == 0)
                                 {
                                     var searchVal = (AllSearchFieldKeyword).Replace("\"", "");
@@ -544,7 +548,7 @@ namespace ReboProject
                                                 bool checkAfterSubCaseWithInExclusion = true;
                                                 var withInIt = (getWithIn[g]["keyword"]).ToString();
                                                 var withInCaseCheck = (getWithIn[g]["caseCheck"]).ToString().ToLower();
-                                                var matchDataWithInIt = Regex.Matches(SearchWithinText, @"\b\s?" + withInIt + "\\b");
+                                                var matchDataWithInIt = Regex.Matches(SearchWithinText, @"\b\s?" + withInIt + "(\\s|\\b)");
                                                 if ((withInIt).IndexOf("\"") == 0)
                                                 {
                                                     var searchVal = (withInIt).Replace("\"", "");
@@ -569,7 +573,7 @@ namespace ReboProject
                                                         {
                                                             countWithInInAPara += 1;
                                                             gotResult = 1;
-                                                            acceptParaWithIn += (acceptParaWithIn == "") ? withInIt : "," + withInIt;
+                                                            acceptParaWithIn += (acceptParaWithIn == "") ? withInIt : ", " + withInIt;
                                                         }
                                                         else
                                                             break;
@@ -646,16 +650,17 @@ namespace ReboProject
             accptedValThere = 0;
             var getAllAcceptedText = JArray.Parse(ja.ToString()); // get all the accepted result
             Dictionary<int, float> scoreVal = new Dictionary<int, float>();
+            Dictionary<int, string> saveScoringKeyword = new Dictionary<int, string>();
             for (var l = 0; l < getAllAcceptedText.Count(); l++)
             {
                 var pageContent = getAllAcceptedText[l]["pageContent"].ToString(); // get the page value to search all search fileds
                 var scorePerSearch = 0;
                 double finalScorePerSearch = 0;
-
+                var setScoringKeyword = "";
                 foreach (KeyValuePair<string, int> singleSearchFieldScore in searchFieldScore)
                 { //  loop through all the search field
                     
-                    var matchDataWithInIt = Regex.Matches(pageContent, @"\b\s?" + singleSearchFieldScore.Key + "\\b"); // find match
+                    var matchDataWithInIt = Regex.Matches(pageContent, @"\b\s?" + singleSearchFieldScore.Key + "(\\s|\\b)"); // find match
                     if ((singleSearchFieldScore.Key).IndexOf("\"") == 0)
                     {
                         var searchVal = (singleSearchFieldScore.Key).Replace("\"", "");
@@ -670,14 +675,18 @@ namespace ReboProject
 
                     if (matchDataWithInIt.Count > 0)
                     {
+                        setScoringKeyword = setScoringKeyword + singleSearchFieldScore.Key + " | " ;
+
                         if (multipleRead == 0)
                             scorePerSearch += singleSearchFieldScore.Value; // increment the score
                         else
                             scorePerSearch += (singleSearchFieldScore.Value * matchDataWithInIt.Count); // increment the score
                     }
                 }
+                setScoringKeyword = "("+ setScoringKeyword + ")";
                 finalScorePerSearch = ((double)scorePerSearch / (double)totalScoreDenominatorVal) * 100; // get the percentage
                 scoreVal.Add(l, (float)finalScorePerSearch); // save that in deictionary
+                saveScoringKeyword.Add(l, setScoringKeyword);
             }
             if (scoreVal.Count() != 0)
             { // if dictionary has val
@@ -694,6 +703,7 @@ namespace ReboProject
                     // save the output for the file
                     if (onlyTopResult == true && outputSame == false)
                     { // get all the highest score value
+                        var getAllScoringKeyword = saveScoringKeyword[entry.Key];
                         var foundText = getAllAcceptedText[entry.Key]["foundText"].ToString();
                         var AllSearchFieldKeyword1 = getAllAcceptedText[entry.Key]["AllSearchFieldKeyword"];
                         var paraNumber = (int)getAllAcceptedText[entry.Key]["paraNumber"];
@@ -714,7 +724,7 @@ namespace ReboProject
                         jo1["AllSearchFieldKeyword"] = AllSearchFieldKeyword1;
                         jo1["fileName"] = fileNameVal;
                         jo1["pageNo"] = pageNo;
-                        jo1["score"] = finalScore;
+                        jo1["score"] = finalScore +"%"+" - " + getAllScoringKeyword;
                         jo1["foundWithIn"] = withInValFound;
                         jo1["pageContent"] = pageContent;
                         jo1["sectionVal"] = getTheSectionValue;
@@ -778,7 +788,7 @@ namespace ReboProject
                         for (var i = 0; i < librarySet.Count(); i++)
                         {
                             var singleLibVAl = librarySet[i];
-                            var matchData = Regex.Matches(para, @"\b\s?" + singleLibVAl + "\\b"); // search if library in para
+                            var matchData = Regex.Matches(para, @"\b\s?" + singleLibVAl + "(\\s|\\b)"); // search if library in para
                             if ((singleLibVAl).IndexOf("\"") == 0)
                             {
                                 var searchVal = (singleLibVAl).Replace("\"", "");
@@ -812,7 +822,7 @@ namespace ReboProject
             var count = 0;
             for (var i = 0; i < getExclusion.Count(); i++)
             {
-                var matchExclusion = Regex.Matches(SearchWithinText, @"\b\s?" + getExclusion[i]["keyword"].ToString() + "\\b"); // find match
+                var matchExclusion = Regex.Matches(SearchWithinText, @"\b\s?" + getExclusion[i]["keyword"].ToString() + "(\\s|\\b)"); // find match
                 if ((getExclusion[i]["keyword"].ToString()).IndexOf("\"") == 0)
                 {
                     var searchVal = (getExclusion[i]["keyword"].ToString()).Replace("\"", "");
