@@ -83,7 +83,7 @@ namespace ReboProject
             return sectiongot;
         }
 
-        public static string getCompleteParaSection(JArray ja2, Dictionary<int, Dictionary<int, string>> saveSectionNoAllFiles, Dictionary<Dictionary<int, string>, int> saveAllSection, string outputPara)
+        public static string getCompleteParaSection(JArray ja2, Dictionary<int, Dictionary<int, string>> saveSectionNoAllFiles, Dictionary<Dictionary<int, string>, int> saveAllSection, string outputPara, string DefaultSectionName, JToken SectionName)
         {
             var jarrayVal = ja2;
             var pageNo = (int)ja2[0]["pageNo"]; // get the pageno of output
@@ -96,7 +96,7 @@ namespace ReboProject
                 foundPara = outputPara;
             var finalSectionOutput = "";
             var checkNextSection = true;
-            
+            var getFirstLine = "";
             for (int i = 0; i < saveAllSection.Count; i++)
             {
                 List<string> allPara = new List<string>();
@@ -107,6 +107,7 @@ namespace ReboProject
                 {
                     if (sectionDictionary.Values.ElementAt(j).ToString().Trim() == foundPara.Trim())
                     {
+                        getFirstLine = sectionDictionary.Values.ElementAt(0).ToString().Trim();
                         allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
                         finalSectionOutput =SectionValParagraph(allPara, sectionDictionary.Values.ElementAt(j).ToString());
                         checkNextSection = false;
@@ -115,6 +116,35 @@ namespace ReboProject
                     else
                         allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
                 }
+            }
+            var toSearch = "";
+            Dictionary<int, string> regexDictionary = new Dictionary<int, string>();
+            regexDictionary.Add(1, @""); //    1.
+            regexDictionary.Add(2, @"[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[\\s]?"); //    1.1 
+            if (!String.IsNullOrEmpty(finalSectionOutput)) {
+                var foundSectionName = false;
+                foreach (var item in SectionName)
+                {
+                    toSearch = item["keyword"].ToString();
+                    Regex regex1 = new Regex("^(?i)" + toSearch + "[\\s]*([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}[\\s]|\\d{0,3}[\\s])");
+                    var match1 = regex1.Match(getFirstLine); // check if match found
+                    if (match1.Success)
+                    {
+                        foundSectionName = true;
+                        finalSectionOutput = match1.Value + " " + finalSectionOutput;
+                    }
+                    else {
+                        Regex regex2 = new Regex("^(?i)" + toSearch + "[\\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[\\s]?");
+                        var match2 = regex2.Match(getFirstLine); // check if match found
+                        if (match2.Success)
+                        {
+                            foundSectionName = true;
+                            finalSectionOutput = match2.Value + " " + finalSectionOutput;
+                        }
+                    }
+                }
+                if(foundSectionName == false)
+                    finalSectionOutput = DefaultSectionName + " " + finalSectionOutput;
             }
             return finalSectionOutput;
         }
