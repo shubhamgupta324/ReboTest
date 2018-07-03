@@ -13,7 +13,6 @@ namespace ReboProject
         // get the complete section once
         public static string getSectionForPara(string para)
         {
-
             var sectiongot = "";
 
             Dictionary<int, string> regexDictionary = new Dictionary<int, string>();
@@ -117,29 +116,28 @@ namespace ReboProject
                         allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
                 }
             }
+
             var toSearch = "";
             Dictionary<int, string> regexDictionary = new Dictionary<int, string>();
-            regexDictionary.Add(1, @""); //    1.
-            regexDictionary.Add(2, @"[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[\\s]?"); //    1.1 
+            regexDictionary.Add(1, "[\\s]*([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}[\\s]|\\d{0,2}[\\s])"); //    1.
+            regexDictionary.Add(3, "[\\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[\\s]?"); //    1.1 
+            regexDictionary.Add(2, "[\\s]*([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}|\\d{0,2})$"); //    1.1 
             if (!String.IsNullOrEmpty(finalSectionOutput)) {
                 var foundSectionName = false;
                 foreach (var item in SectionName)
                 {
-                    toSearch = item["keyword"].ToString();
-                    Regex regex1 = new Regex("^(?i)" + toSearch + "[\\s]*([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}[\\s]|\\d{0,3}[\\s])");
-                    var match1 = regex1.Match(getFirstLine); // check if match found
-                    if (match1.Success)
-                    {
-                        foundSectionName = true;
-                        finalSectionOutput = match1.Value + " " + finalSectionOutput;
-                    }
-                    else {
-                        Regex regex2 = new Regex("^(?i)" + toSearch + "[\\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[\\s]?");
-                        var match2 = regex2.Match(getFirstLine); // check if match found
-                        if (match2.Success)
+                    if (foundSectionName == false) {
+                        foreach (var regexVal in regexDictionary)
                         {
-                            foundSectionName = true;
-                            finalSectionOutput = match2.Value + " " + finalSectionOutput;
+                            toSearch = item["keyword"].ToString();
+                            Regex regex1 = new Regex("^(?i)" + toSearch + regexVal.Value);
+                            var match1 = regex1.Match(getFirstLine); // check if match found
+                            if (match1.Success)
+                            {
+                                foundSectionName = true;
+                                finalSectionOutput = match1.Value + " " + finalSectionOutput;
+                                break;
+                            }
                         }
                     }
                 }
