@@ -3,17 +3,126 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Text.RegularExpressions;
+using Newtonsoft.Json.Linq;
 
 namespace ReboProject
 {
     public class processing
     {
-       
-        public static string SectionValParagraph(Dictionary<int, Dictionary<int, string>> savePage, int pageNo, int paraNumber)
+        // get the complete section once
+        public static string getSectionForPara(string para)
         {
 
+            var sectiongot = "";
+
+            Dictionary<int, string> regexDictionary = new Dictionary<int, string>();
+
+            regexDictionary.Add(1, @"^(\d{1,3}\.(:\d+\.?)*)\s"); //    1.
+            regexDictionary.Add(2, @"^(\d{1,3}\.\d(?:\d+\.?)*)"); //    1.1 
+            regexDictionary.Add(3, @"^[\s]*((?i)(section)\s\d+\.(:\d+\.?)*)\s"); //    section 1.
+            regexDictionary.Add(4, @"^[\s]*((?i)(sectionss)\s\d+\.\d(?:\d+\.?)*)"); //    section 1.1 
+            regexDictionary.Add(5, @"^[\s]*((?i)(article)\s\d)"); //   article 1,
+            regexDictionary.Add(6, @"^[\s]*((?i)(article)\s\d+\.(?:\d+\.?)*)"); //  article 1.1 
+            regexDictionary.Add(7, @"^[\s]*(\d{1,3}[:])\s"); //   1:
+            regexDictionary.Add(8, @"^[\s]*(\d{1,3}[)])\s"); //   1)
+            regexDictionary.Add(9, @"^[\s]*(\d{1,3}[]])\s"); //   1]
+            regexDictionary.Add(10, @"^[\s]*([[]+\d+[]])\s"); //   [1]
+            regexDictionary.Add(11, @"^[\s]*([[(]+\d+[)])\s"); //   (1)
+
+            regexDictionary.Add(12, @"^[\s]*[(](?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[)]\s"); //    (xvii)
+            regexDictionary.Add(13, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}\s"); //    xvii
+            regexDictionary.Add(14, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[)]\s"); //    xvii)
+            regexDictionary.Add(15, @"^[\s]*[[](?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[]]\s"); //    [xvii]
+            regexDictionary.Add(16, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[]]\s"); //    xvii]
+            regexDictionary.Add(17, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[:]\s"); //    xvii:
+            regexDictionary.Add(18, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[.]\s"); //    xvii.
+            regexDictionary.Add(19, @"^[\s]*(?i)(section)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}"); //    section xvii
+            regexDictionary.Add(20, @"^[\s]*(?i)(article)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}"); //    article xvii
+
+            regexDictionary.Add(21, @"^[\s]*[(](?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[)]\s"); //    (XVII)
+            regexDictionary.Add(22, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}\s"); //    XVII
+            regexDictionary.Add(23, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[)]\s"); //    XVII)
+            regexDictionary.Add(24, @"^[\s]*[[](?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[]]\s"); //    [XVII]
+            regexDictionary.Add(25, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[]]\s"); //    XVII]
+            regexDictionary.Add(26, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[:]\s"); //    XVII:
+            regexDictionary.Add(27, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[.]\s"); //    XVII.
+            regexDictionary.Add(28, @"^[\s]*(?i)(section)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}"); //    section XVII
+            regexDictionary.Add(29, @"^[\s]*(?i)(article)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}"); //    article XVII
+
+            regexDictionary.Add(30, @"^[\s]*([a-z][.])\s");  //  a.
+            regexDictionary.Add(31, @"^[\s]*([a-z][:])\s");  //  a:
+            regexDictionary.Add(32, @"^[\s]*([(][a-z][)])\s");  //    (a)
+            regexDictionary.Add(33, @"^[\s]*([a-z][)])\s");  // a)
+            regexDictionary.Add(34, @"^[\s]*([[][a-z][]])\s");  //   a]
+            regexDictionary.Add(35, @"^[\s]*([a-z][]])\s");  //     [a]
+            regexDictionary.Add(36, @"^[\s]*((?i)(section)[\s]*[a-z])");  //      section a
+            regexDictionary.Add(37, @"^[\s]*((?i)(article)[\s]*[a-z])");  //      article a
+            regexDictionary.Add(38, @"^[\s]*([A-Z][.])\s");  // A.
+            regexDictionary.Add(39, @"^[\s]*([A-Z][:])\s");  // A:
+            regexDictionary.Add(40, @"^[\s]*([(][A-Z][)])\s");  // (A)
+            regexDictionary.Add(41, @"^[\s]*([A-Z][)])\s");  // A)
+            regexDictionary.Add(42, @"^[\s]*([[][A-Z][]])\s");  // A]
+            regexDictionary.Add(43, @"^[\s]*([A-Z][]])\s");  // [A]
+            regexDictionary.Add(44, @"^[\s]*((?i)(section)[\s]*[A-Z])\s");  // section A
+            regexDictionary.Add(45, @"^[\s]*((?i)(ARTICLE)[\s]*[A-Z])");  // ARTICLE A  
+
+            foreach (var item in regexDictionary)
+            {
+                Regex regex = new Regex(item.Value);
+                var match = regex.Match(para); // check if match found
+                if (match.Success)
+                {
+                    sectiongot = match.Value.Trim();
+                    break;
+                }
+            }
+            if (String.IsNullOrEmpty(sectiongot))
+                sectiongot = null; // if section not found for para then section = null
+
+            return sectiongot;
+        }
+
+        public static string getCompleteParaSection(JArray ja2, Dictionary<int, Dictionary<int, string>> saveSectionNoAllFiles, Dictionary<Dictionary<int, string>, int> saveAllSection, string outputPara)
+        {
+            var jarrayVal = ja2;
+            var pageNo = (int)ja2[0]["pageNo"]; // get the pageno of output
+            var paraNo = (int)ja2[0]["paraNo"]; // 
+            var sectionNo = ja2[0]["sectionVal"].ToString();
+            var foundPara = "";
+            if (outputPara == "")
+                foundPara = ja2[0]["output"].ToString();
+            else
+                foundPara = outputPara;
+            var finalSectionOutput = "";
+            var checkNextSection = true;
+            
+            for (int i = 0; i < saveAllSection.Count; i++)
+            {
+                List<string> allPara = new List<string>();
+                if (checkNextSection == false)
+                    break;
+                var sectionDictionary = saveAllSection.Keys.ElementAt(i);
+                for (int j = 0; j < sectionDictionary.Count; j++)
+                {
+                    if (sectionDictionary.Values.ElementAt(j).ToString() == foundPara)
+                    {
+                        allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
+                        finalSectionOutput =SectionValParagraph(allPara, sectionDictionary.Values.ElementAt(j).ToString());
+                        checkNextSection = false;
+                        break;
+                    }
+                    else
+                        allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
+                }
+            }
+            return finalSectionOutput;
+        }
+
+        public static string SectionValParagraph(List<string> allPara, string ouputPara)
+        {
+            List<string> sectionList = new List<string>();
             Dictionary<string, string> getTopVal = new Dictionary<string, string>();
-            getTopVal.Add("lowCaseAlpha","a");
+            getTopVal.Add("lowCaseAlpha", "a");
             getTopVal.Add("upCaseAlpha", "A");
             getTopVal.Add("lowCaseNumeric", "i");
             getTopVal.Add("upCaseNumeric", "I");
@@ -29,28 +138,27 @@ namespace ReboProject
             notations.Add(7, "section");
             notations.Add(8, "article");
 
+            Dictionary<int, string> matchRegexNumericSection = new Dictionary<int, string>();
+            matchRegexNumericSection.Add(4, @"^[\s]*((?i)(sectionss)\s\d+\.\d(?:\d+\.?)*)"); //    section 1.1 
+            matchRegexNumericSection.Add(2, @"^(\d{1,3}\.\d(?:\d+\.?)*)"); //    1.1 
+            matchRegexNumericSection.Add(3, @"^[\s]*((?i)(section)\s\d+\.(:\d+\.?)*)\s"); //    section 1.
+            matchRegexNumericSection.Add(5, @"^[\s]*((?i)(article)\s\d)"); //   article 1,
+            matchRegexNumericSection.Add(6, @"^[\s]*((?i)(article)\s\d+\.(?:\d+\.?)*)"); //  article 1.1 
+
             Dictionary<int, string> matchRegexNumeric = new Dictionary<int, string>();
             // NUMBERS
-            matchRegexNumeric.Add(1, @"^[\s]*(\d+\.(:\d+\.?)*)\s"); //    1.
-            matchRegexNumeric.Add(2, @"^[\s]*(\d+\.(?:\d+\.?)*)"); //    1., 1.1 
-            matchRegexNumeric.Add(3, @"^[\s]*((section)\s\d+\.(:\d+\.?)*)\s"); //    section 1.
-            matchRegexNumeric.Add(4, @"^[\s]*((section)\s\d+\.(?:\d+\.?)*)"); //   section 1., section 1.1 
-            matchRegexNumeric.Add(5, @"^[\s]*((article)\s\d)"); //   article 1,
-            matchRegexNumeric.Add(6, @"^[\s]*((article)\s\d+\.(?:\d+\.?)*)"); //   article 1., article 1.1 
-            matchRegexNumeric.Add(7, @"^[\s]*(\d+[:])\s"); //   1:
-            matchRegexNumeric.Add(8, @"^[\s]*(\d+[)])\s"); //   1)
-            matchRegexNumeric.Add(9, @"^[\s]*(\d+[]])\s"); //   1]
+            matchRegexNumeric.Add(1, @"^(\d{1,3}\.(:\d+\.?)*)\s"); //    1.
+            matchRegexNumeric.Add(2, @"^(\d{1,3}\.\d(?:\d+\.?)*)"); //    1.1 
+            matchRegexNumeric.Add(3, @"^[\s]*((?i)(section)\s\d+\.(:\d+\.?)*)\s"); //    section 1.
+            matchRegexNumeric.Add(4, @"^[\s]*((?i)(sectionss)\s\d+\.\d(?:\d+\.?)*)"); //    section 1.1 
+            matchRegexNumeric.Add(5, @"^[\s]*((?i)(article)\s\d)"); //   article 1,
+            matchRegexNumeric.Add(6, @"^[\s]*((?i)(article)\s\d+\.(?:\d+\.?)*)"); //  article 1.1 
+            matchRegexNumeric.Add(7, @"^[\s]*(\d{1,3}[:])\s"); //   1:
+            matchRegexNumeric.Add(8, @"^[\s]*(\d{1,3}[)])\s"); //   1)
+            matchRegexNumeric.Add(9, @"^[\s]*(\d{1,3}[]])\s"); //   1]
             matchRegexNumeric.Add(10, @"^[\s]*([[]+\d+[]])\s"); //   [1]
             matchRegexNumeric.Add(11, @"^[\s]*([[(]+\d+[)])\s"); //   (1)
-            matchRegexNumeric.Add(54, @"^[\s]*((Section)\s\d+\.(:\d+\.?)*)\s"); //    Section 1.
-            matchRegexNumeric.Add(55, @"^[\s]*((Article)\s\d)"); //   Article 1,
-            matchRegexNumeric.Add(56, @"^[\s]*((Section)\s\d+\.(?:\d+\.?)*)"); //   Section 1., Section 1.1 
-            matchRegexNumeric.Add(57, @"^[\s]*((Article)\s\d)"); //   Article 1., Article 1.1 
-            matchRegexNumeric.Add(58, @"^[\s]*((SECTION)\s\d+\.(?:\d+\.?)*)"); //   Section 1., Section 1.1 
-            matchRegexNumeric.Add(59, @"^[\s]*((ARTICLE)\s\d)"); //   Article 1., Article 1.1 
-
-            // ROMAN
-            // upper
+            
             matchRegexNumeric.Add(12, @"^[\s]*[(](?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[)]\s"); //    (xvii)
             matchRegexNumeric.Add(13, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}\s"); //    xvii
             matchRegexNumeric.Add(14, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[)]\s"); //    xvii)
@@ -58,14 +166,9 @@ namespace ReboProject
             matchRegexNumeric.Add(16, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[]]\s"); //    xvii]
             matchRegexNumeric.Add(17, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[:]\s"); //    xvii:
             matchRegexNumeric.Add(18, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[.]\s"); //    xvii.
-            matchRegexNumeric.Add(19, @"^[\s]*(section)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}\s"); //    section xvii
-            matchRegexNumeric.Add(20, @"^[\s]*(article)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}"); //    article xvii
-            matchRegexNumeric.Add(52, @"^[\s]*(Section)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}\s"); //    Section xvii
-            matchRegexNumeric.Add(53, @"^[\s]*(Article)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}"); //    Article xvii
-            matchRegexNumeric.Add(60, @"^[\s]*(SECTION)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}\s"); //    SECTION xvii
-            matchRegexNumeric.Add(61, @"^[\s]*(ARTICLE)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}"); //    ARTICLE xvii
-
-            // lower
+            matchRegexNumeric.Add(19, @"^[\s]*((?i)(section))[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}"); //    section xvii
+            matchRegexNumeric.Add(20, @"^[\s]*((?i)(article))[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}"); //    article xvii
+            
             matchRegexNumeric.Add(21, @"^[\s]*[(](?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[)]\s"); //    (XVII)
             matchRegexNumeric.Add(22, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}\s"); //    XVII
             matchRegexNumeric.Add(23, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[)]\s"); //    XVII)
@@ -73,58 +176,41 @@ namespace ReboProject
             matchRegexNumeric.Add(25, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[]]\s"); //    XVII]
             matchRegexNumeric.Add(26, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[:]\s"); //    XVII:
             matchRegexNumeric.Add(27, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[.]\s"); //    XVII.
-            matchRegexNumeric.Add(28, @"^[\s]*(section)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}\s"); //    section XVII
-            matchRegexNumeric.Add(29, @"^[\s]*(article)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}"); //    article XVII
-            matchRegexNumeric.Add(50, @"^[\s]*(Section)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}\s"); //    Section XVII
-            matchRegexNumeric.Add(51, @"^[\s]*(Article)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}"); //    Article XVII
-            matchRegexNumeric.Add(62, @"^[\s]*(SECTION)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}\s"); //    SECTION XVII
-            matchRegexNumeric.Add(63, @"^[\s]*(ARTICLE)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}"); //    ARTICLE XVII
-
-            // ALPHABET
+            matchRegexNumeric.Add(28, @"^[\s]*((?i)(section))[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}"); //    section XVII
+            matchRegexNumeric.Add(29, @"^[\s]*((?i)(article))[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}"); //    article XVII
+            
             matchRegexNumeric.Add(30, @"^[\s]*([a-z][.])\s");  //  a.
-            matchRegexNumeric.Add(31, @"^[\s]*([a-z][:])\s");  //  a: 
-            matchRegexNumeric.Add(32, @"^[\s]*([(][a-z][)])\s");  //    (a) 
-            matchRegexNumeric.Add(33, @"^[\s]*([a-z][)])\s");  // a) 
-            matchRegexNumeric.Add(34, @"^[\s]*([[][a-z][]])\s");  //   a] 
+            matchRegexNumeric.Add(31, @"^[\s]*([a-z][:])\s");  //  a:
+            matchRegexNumeric.Add(32, @"^[\s]*([(][a-z][)])\s");  //    (a)
+            matchRegexNumeric.Add(33, @"^[\s]*([a-z][)])\s");  // a)
+            matchRegexNumeric.Add(34, @"^[\s]*([[][a-z][]])\s");  //   a]
             matchRegexNumeric.Add(35, @"^[\s]*([a-z][]])\s");  //     [a]
-            matchRegexNumeric.Add(36, @"^[\s]*((section)[\s]*[a-z])\s");  //      section a 
-            matchRegexNumeric.Add(37, @"^[\s]*((article)[\s]*[a-z])");  //      article a
-            matchRegexNumeric.Add(46, @"^[\s]*((Section)[\s]*[a-z])\s");  //    Section a
-            matchRegexNumeric.Add(47, @"^[\s]*((Article)[\s]*[a-z])");  //    Article a
-            matchRegexNumeric.Add(64, @"^[\s]*((SECTION)[\s]*[a-z])\s");  //    SECTION a
-            matchRegexNumeric.Add(65, @"^[\s]*((ARTICLE)[\s]*[a-z])");  //    ARTICLE a
-            matchRegexNumeric.Add(38, @"^[\s]*([A-Z][.])\s");  // A. 
-            matchRegexNumeric.Add(39, @"^[\s]*([A-Z][:])\s");  // A: 
-            matchRegexNumeric.Add(40, @"^[\s]*([(][A-Z][)])\s");  // (A) 
-            matchRegexNumeric.Add(41, @"^[\s]*([A-Z][)])\s");  // A) 
-            matchRegexNumeric.Add(42, @"^[\s]*([[][A-Z][]])\s");  // A]  
-            matchRegexNumeric.Add(43, @"^[\s]*([A-Z][]])\s");  // [A]    
-            matchRegexNumeric.Add(44, @"^[\s]*((section)[\s]*[A-Z])\s");  // section A    
-            matchRegexNumeric.Add(45, @"^[\s]*((article)[\s]*[A-Z])");  // article A    
-            matchRegexNumeric.Add(48, @"^[\s]*((Section)[\s]*[A-Z])\s");  // section A   
-            matchRegexNumeric.Add(49, @"^[\s]*((Article)[\s]*[A-Z])");  // Article A  
-            matchRegexNumeric.Add(66, @"^[\s]*((SECTION)[\s]*[A-Z])\s");  // SECTION A   
-            matchRegexNumeric.Add(67, @"^[\s]*((ARTICLE)[\s]*[A-Z])");  // ARTICLE A   
+            matchRegexNumeric.Add(36, @"^[\s]*(((?i)(section))[\s]*[a-z])");  //      section a
+            matchRegexNumeric.Add(37, @"^[\s]*(((?i)(article))[\s]*[a-z])");  //      article a
+            matchRegexNumeric.Add(38, @"^[\s]*([A-Z][.])\s");  // A.
+            matchRegexNumeric.Add(39, @"^[\s]*([A-Z][:])\s");  // A:
+            matchRegexNumeric.Add(40, @"^[\s]*([(][A-Z][)])\s");  // (A)
+            matchRegexNumeric.Add(41, @"^[\s]*([A-Z][)])\s");  // A)
+            matchRegexNumeric.Add(42, @"^[\s]*([[][A-Z][]])\s");  // A]
+            matchRegexNumeric.Add(43, @"^[\s]*([A-Z][]])\s");  // [A]
+            matchRegexNumeric.Add(44, @"^[\s]*(((?i)(section))[\s]*[A-Z])\s");  // section A
+            matchRegexNumeric.Add(45, @"^[\s]*(((?i)(ARTICLE))[\s]*[A-Z])");  // ARTICLE A  
 
-            //next 68
+            
             Dictionary<int, string> connections = new Dictionary<int, string>();
-            connections.Add(1,"numberVal"); //    1.
-            connections.Add(2, ""); //    1., 1.1 
-            connections.Add(3, "numberVal"); //    section 1.
-            connections.Add(4, ""); //   section 1., section 1.1 
-            connections.Add(5, "numberVal"); //   article 1.,
-            connections.Add(6, ""); //   article 1., article 1.1 
+
+            connections.Add(1, "numberVal"); //    1.
+            connections.Add(2, ""); //    1.1 
+            connections.Add(3, ""); //    section 1.
+            connections.Add(4, ""); //    section 1.1 
+            connections.Add(5, ""); //   article 1,
+            connections.Add(6, ""); //  article 1.1 
             connections.Add(7, "numberVal"); //   1:
             connections.Add(8, "numberVal"); //   1)
             connections.Add(9, "numberVal"); //   1]
-            connections.Add(10,"numberVal"); //   [1]
-            connections.Add(11,"numberVal"); //   (1)
-            connections.Add(54, "numberVal"); //   [1]
-            connections.Add(55, "numberVal"); //   (1)
-            connections.Add(56, ""); //   Section 1., Section 1.1 
-            connections.Add(57, ""); //   Article 1., Article 1.1 
-            connections.Add(58, ""); //   SECTION 1., SECTION 1.1 
-            connections.Add(59, ""); //   ARTICLE 1., ARTICLE 1.1 
+            connections.Add(10, "numberVal"); //   [1]
+            connections.Add(11, "numberVal"); //   (1)
+            
             connections.Add(12, "lowCaseNumeric"); //    (xvii)
             connections.Add(13, "lowCaseNumeric"); //    xvii
             connections.Add(14, "lowCaseNumeric"); //    xvii)
@@ -132,12 +218,9 @@ namespace ReboProject
             connections.Add(16, "lowCaseNumeric"); //    xvii]
             connections.Add(17, "lowCaseNumeric"); //    xvii:
             connections.Add(18, "lowCaseNumeric"); //    xvii.
-            connections.Add(19, "lowCaseNumeric"); //    section xvii
-            connections.Add(20, "lowCaseNumeric"); //    article xvii
-            connections.Add(52, "lowCaseNumeric"); //    section xvii
-            connections.Add(53, "lowCaseNumeric"); //    article xvii
-            connections.Add(60, "lowCaseNumeric"); //    SECTION xvii
-            connections.Add(61, "lowCaseNumeric"); //    ARTICLE xvii
+            connections.Add(19, ""); //    section xvii
+            connections.Add(20, ""); //    article xvii
+            
             connections.Add(21, "upCaseNumeric"); //    (XVII)
             connections.Add(22, "upCaseNumeric"); //    XVII
             connections.Add(23, "upCaseNumeric"); //    XVII)
@@ -145,167 +228,520 @@ namespace ReboProject
             connections.Add(25, "upCaseNumeric"); //    XVII]
             connections.Add(26, "upCaseNumeric"); //    XVII:
             connections.Add(27, "upCaseNumeric"); //    XVII.
-            connections.Add(28, "upCaseNumeric"); //    section XVII
-            connections.Add(29, "upCaseNumeric"); //    article XVII
-            connections.Add(50, "upCaseNumeric"); //    section XVII
-            connections.Add(51, "upCaseNumeric"); //    article XVII
-            connections.Add(62, "upCaseNumeric"); //    SECTION XVII
-            connections.Add(63, "upCaseNumeric"); //    ARTICLE XVII
-            connections.Add(30, "lowCaseAlpha");  //   A.
-            connections.Add(31, "lowCaseAlpha");  //  A:
-            connections.Add(32, "lowCaseAlpha");  //   (A)
-            connections.Add(33, "lowCaseAlpha");  //  A)
-            connections.Add(34, "lowCaseAlpha");  //   A]
-            connections.Add(35, "lowCaseAlpha");  //      [A]
-            connections.Add(36, "lowCaseAlpha");  //    section A
-            connections.Add(37, "lowCaseAlpha");  //     article A
-            connections.Add(48, "lowCaseAlpha");  //     Section A
-            connections.Add(49, "lowCaseAlpha");  //     Article A 
-            connections.Add(66, "lowCaseAlpha");  //     SECTION A
-            connections.Add(67, "lowCaseAlpha");  //     ARTICLE A 
-            connections.Add(38, "upCaseAlpha");  // a. 
-            connections.Add(39, "upCaseAlpha");  // a: 
-            connections.Add(40, "upCaseAlpha");  // (a)  
-            connections.Add(41, "upCaseAlpha");  // a)
-            connections.Add(42, "upCaseAlpha");  // a]  
-            connections.Add(43, "upCaseAlpha");  // [a]     
-            connections.Add(44, "upCaseAlpha");  // section a    
-            connections.Add(45, "upCaseAlpha");  // article a   
-            connections.Add(46, "upCaseAlpha");  // section a    
-            connections.Add(47, "upCaseAlpha");  // article a    
-            connections.Add(64, "upCaseAlpha");  // SECTION a    
-            connections.Add(65, "upCaseAlpha");  // ARTICLE a  
+            connections.Add(28, ""); //    section XVII
+            connections.Add(29, ""); //    article XVII
+            
+            connections.Add(30, "lowCaseAlpha");  //  a.
+            connections.Add(31, "lowCaseAlpha");  //  a:
+            connections.Add(32, "lowCaseAlpha");  //    (a)
+            connections.Add(33, "lowCaseAlpha");  // a)
+            connections.Add(34, "lowCaseAlpha");  //   a]
+            connections.Add(35, "lowCaseAlpha");  //     [a]
+            connections.Add(36, "");  //      section a
+            connections.Add(37, "");  //      article a
+            
+            connections.Add(38, "upCaseAlpha");  // A.
+            connections.Add(39, "upCaseAlpha");  // A:
+            connections.Add(40, "upCaseAlpha");  // (A)
+            connections.Add(41, "upCaseAlpha");  // A)
+            connections.Add(42, "upCaseAlpha");  // A]
+            connections.Add(43, "upCaseAlpha");  // [A]
+            connections.Add(44, "");  // section A
+            connections.Add(45, "");  // ARTICLE A  
 
-
+            
             List<string> allSectionVal = new List<string>();
 
-            var searchNow = "";
-            var regexNow = "";
+            
             var notationFoundIn = "";
-            var pageNoVal = pageNo;
-            var paraNoVal = paraNumber;
-            var completeSectionFound = false;
-            bool checkNextGenSection = true;
-            var lastSection = "";
-            var checkNextSection = true;
-            for (var j = 0; j < 5; j++) { // loop till 5th gen
-                if (completeSectionFound == false && checkNextGenSection == true) { // check if final gen found
-                    paraNoVal = paraNoVal - 1;
-                    if (searchNow !="" && regexNow !="" && lastSection != searchNow)
+            var checkNextPara = true;
+            var matchNextRegex = true;
+            var nextToSearchVal = "";
+            var regexToSearchNext ="";
+            var lastRegexVal = "";
+            var endSearch = false;
+            var checkNextSectionInPara = true;
+            var nextNotationtionToSearchVal = "";
+            List<string> newSetOfParas = new List<string>();
+            for (var j = 0; j < 5; j++)
+            { // loop till 5th gen
+                //if (sectionList.Count == 5) // check if got five section val
+                //    break;
+                if (endSearch == true) // end the section process
+                    break;
+                if (nextToSearchVal != "" && nextNotationtionToSearchVal != "" && regexToSearchNext != "") // check if the next srction val , notation val and next regex given or not
+                {
+                    matchNextRegex = true;
+                    for (int q = allPara.Count-1; q >=0; q--) // loop through all the para
                     {
-                        var NextsectionVal = 0;
-                        int nextPageNo = 0;
-                        int nextParaNo = 0;
-                        string nextRegex = "";
-                        string nextNotation = "";
-                        string nextSectionFound = "";
-                        saveDataToFolder(getTopVal,connections, searchNow, regexNow, notationFoundIn, pageNoVal, paraNoVal, matchRegexNumeric, savePage, notations, out NextsectionVal, out checkNextGenSection, out nextPageNo, out nextParaNo, out nextRegex, out nextNotation,out nextSectionFound, out lastSection, out checkNextSection);
-                        if (checkNextGenSection == true) {
-                            var getConnectionName = connections[NextsectionVal];
-                            if (getConnectionName != "") {
-                                var getFirstVal = getTopVal[getConnectionName];
-                                searchNow = getFirstVal;
-                            }
-                            else
-                                searchNow = "";
-                            regexNow = nextRegex;
-                            notationFoundIn = nextNotation;
-                            pageNoVal = nextPageNo;
-                            paraNoVal = nextParaNo;
-                            allSectionVal.Add(nextSectionFound);
-                        }
-                    }
-                    else if(checkNextSection == true)
-                    {
-                        var checkNextPage = true;
-                        for (int i = pageNoVal; i > 0; i--) // loop through all the pages
+                        if (matchNextRegex == false) // to end the loop
+                            break;
+                        var para = allPara[q];
+                        var secondregexMatch = "";
+                        var secondOutputFound = "";
+                        var secondregexMatchFound = false;
+                        foreach (var item in matchRegexNumericSection)
                         {
-                            if (checkNextPage == false) // read next page or not
+                            Regex secondRegex = new Regex(item.Value.ToString());
+                            var secondMatch = secondRegex.Match(para); // check if match found
+                            if (secondMatch.Success) {
+                                secondOutputFound = secondMatch.Value.Trim();
+                                secondregexMatch = item.Value.ToString();
+                                secondregexMatchFound = true;
                                 break;
-                            var entry1 = savePage[i].Values;// get the content of current page
-                            var paraCount = paraNoVal; // paraNumber // get the para number of result in current page
-
-                            if (i != pageNoVal) // if previous page 
-                                paraCount = entry1.Count() - 1; // take all para in a page to check
-
-                            var checkNextPara = true;
-                            for (var k = paraCount; k >= 0; k--) // start from the para till top
+                            }
+                        }
+                         // get the para val
+                        Regex regex = new Regex(regexToSearchNext);
+                        var match = regex.Match(para); // check if match found
+                        if (match.Success || secondregexMatchFound == true) { // if the match found
+                            if (secondregexMatchFound == true && match.Success == false)
                             {
-                                if (checkNextPara == false) // read next para or not
-                                    break;
-                                var entry2 = entry1.ElementAt(k); // get the para\
+                                sectionList.Add(secondOutputFound);
+                                endSearch = true;
+                                matchNextRegex = false;
+                                break;
+                            }
 
-                                var matchNext = true;
-                                foreach (var check in matchRegexNumeric) // loop through all the regex
+                            var sectionGotInPara1 = "";
+                            var notationGotInPara1 = "";
+                            getNotationType(notations, match.Value.Trim(), out sectionGotInPara1, out notationGotInPara1); // get the setion val and the notation of match found
+                            if (sectionGotInPara1 == nextToSearchVal && notationGotInPara1 == nextNotationtionToSearchVal) {// if the found section and the prev section value are of same type then move ahead
+                                allPara.RemoveRange(q, allPara.Count - (q)); // remove the other para
+                                matchNextRegex = true;
+                                for (int k = allPara.Count-1; k >=0 ; k--) // again loop through all the para to get the parent section of the prev section
                                 {
-                                    if (matchNext == false) // need to check next regex
+                                    if (matchNextRegex == false)// to end the loop
                                         break;
-                                    String AllowedChars = check.Value;
-                                    Regex regex = new Regex(AllowedChars);
-                                    var match = regex.Match(entry2); // check if match found
-
-                                    if (match.Success) // if found
+                                    var para1 = allPara[k]; // get the para value
+                                    for (int l = 0; l < matchRegexNumeric.Count; l++) // match the regex
                                     {
-                                        var keyToFindConnection = check.Key;
-                                        //var sectionGot = match.Value;
-                                        var sectionGot = "";
-                                        if (connections[check.Key] != "")
-                                            getNotationType(notations, match.Value.Trim(), out sectionGot, out notationFoundIn);
-                                        
-
-                                        var getValueFromConnection = connections[keyToFindConnection];
-                                        if (sectionGot != "")
+                                        var regexValForNextSection = matchRegexNumeric.Values.ElementAt(l).ToString(); // get the regex
+                                        if (regexToSearchNext == regexValForNextSection || lastRegexVal == regexValForNextSection) // if the current regex and the prev regex same then continue else move ahead
+                                            continue;
+                                        Regex regexForNextSection = new Regex(regexValForNextSection);
+                                        var matchForNextSection = regexForNextSection.Match(para1); // check if match found
+                                        if (matchForNextSection.Success) // if found
                                         {
-                                            if (sectionGot != getTopVal[getValueFromConnection])
-                                                searchNow = getTopVal[getValueFromConnection];
-                                            allSectionVal.Add(match.Value.Trim());
-                                            paraNoVal = k;
-                                            if(paraNoVal ==0)
-                                                pageNoVal = i-1;
+                                            lastRegexVal = regexValForNextSection;
+                                            sectionList.Add(matchForNextSection.Value.Trim());
+                                            var sectionGotInParaVal = "";
+                                            var notationGotInParaVal = "";
+                                            getNotationType(notations, matchForNextSection.Value.Trim(), out sectionGotInParaVal, out notationGotInParaVal); 
+                                            var keyToFindConnectionInPara = matchRegexNumeric.Keys.ElementAt(l);
+                                            var getValueFromConnectionInPara = connections[keyToFindConnectionInPara];
+                                            if (getValueFromConnectionInPara != "")
+                                            {
+                                                if (getTopVal[getValueFromConnectionInPara].ToString() == matchForNextSection.Value.Trim())
+                                                {
+                                                    checkNextSectionInPara = false;
+                                                    regexToSearchNext = "";
+                                                    nextToSearchVal = "";
+                                                    nextNotationtionToSearchVal = "";
+                                                    allPara.RemoveRange(k, allPara.Count - (k));
+                                                    newSetOfParas = allPara;
+                                                    matchNextRegex = false;
+                                                    break;
+                                                }
+                                                else
+                                                {
+                                                    regexToSearchNext = regexValForNextSection;
+                                                    nextToSearchVal = getTopVal[getValueFromConnectionInPara].ToString();
+                                                    nextNotationtionToSearchVal = notationGotInParaVal;
+                                                    allPara.RemoveRange(k, allPara.Count - (k));
+                                                    newSetOfParas = allPara;
+                                                    matchNextRegex = false;
+                                                    break;
+                                                }
+                                            }
                                             else
-                                                pageNoVal = i;
-                                            lastSection = sectionGot;
-                                            regexNow = AllowedChars;
-                                            matchNext = false;
-                                            checkNextPage = false;
-                                            checkNextPara = false;
-                                            break;
+                                            {
+                                                checkNextSectionInPara = false;
+                                                nextToSearchVal = "";
+                                                regexToSearchNext = "";
+                                                nextNotationtionToSearchVal = "";
+                                                newSetOfParas = null;
+                                                endSearch = true;
+                                                matchNextRegex = false;
+                                                break;
+                                            }
                                         }
-                                        else if (getValueFromConnection == "")
-                                        {
-                                            checkNextSection = false;
-                                            searchNow = "";
-                                            allSectionVal.Add(match.Value.Trim());
-                                            paraNoVal = k;
-                                            if (paraNoVal == 0)
-                                                pageNoVal = i - 1;
-                                            else
-                                                pageNoVal = i;
-                                            lastSection = sectionGot;
-                                            regexNow = AllowedChars;
-                                            matchNext = false;
-                                            checkNextPage = false;
-                                            checkNextPara = false;
-                                            break;
-                                        }
-                                        else
-                                            completeSectionFound = true;
                                     }
                                 }
                             }
+                            else // if the sectionval and the notation is not same continue
+                                continue;
                         }
-                        if (allSectionVal.Count() == j)
+                    }
+
+                }
+                else if(checkNextSectionInPara == true) {
+                    var foundFirstMatch = false;
+                    for (var h = allPara.Count - 1; h >=0; h--) {
+                        if (foundFirstMatch == true)
                             break;
-                    } 
+                        var para = allPara[h];
+                        matchNextRegex = true;
+                        for (int k = 0; k < matchRegexNumeric.Count; k++)
+                        {
+                            if (matchNextRegex == false)
+                                break;
+                            var regexVal = matchRegexNumeric.Values.ElementAt(k).ToString(); // get the regex
+                            if (lastRegexVal == regexVal)
+                                continue;
+                            Regex regex = new Regex(regexVal);
+                            var match = regex.Match(para); // check if match found
+                            
+                            if (match.Success) // if found
+                            {
+                                lastRegexVal = regexVal;
+                                foundFirstMatch = true;
+                                sectionList.Add(match.Value.Trim());
+                                
+                                var sectionGot = "";
+                                var sectionFound = match.Value.Trim();
+                                getNotationType(notations, match.Value.Trim(), out sectionGot, out notationFoundIn);
+                                var keyToFindConnection = matchRegexNumeric.Keys.ElementAt(k);
+                                var getValueFromConnectionFirst = connections[keyToFindConnection];
+                                allPara.RemoveRange(h, allPara.Count - h);
+                                if (getValueFromConnectionFirst == "") {
+                                    nextToSearchVal = "";
+                                    regexToSearchNext = "";
+                                    nextNotationtionToSearchVal = "";
+                                    newSetOfParas = null;
+                                    endSearch = true;
+                                    matchNextRegex = false;
+                                    break;
+                                }
+                                else {
+                                    if (sectionGot != getTopVal[getValueFromConnectionFirst].ToString())
+                                    {
+                                        regexToSearchNext = regexVal;
+                                        nextToSearchVal = getTopVal[getValueFromConnectionFirst].ToString();
+                                        nextNotationtionToSearchVal = notationFoundIn;
+                                        allPara.RemoveRange(h, allPara.Count - (h));
+                                        matchNextRegex = false;
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        regexToSearchNext = "";
+                                        nextToSearchVal = "";
+                                        nextNotationtionToSearchVal = "";
+                                        matchNextRegex = false;
+                                    }
+                                }
+                                
+                            }
+                        }
+                    }
                 }
             }
             var finalSectionOutput = "";
-            for (int i = allSectionVal.Count; i >0; i--)
+            for (int i = sectionList.Count-1; i >= 0; i--)
             {
-                finalSectionOutput = finalSectionOutput +" "+allSectionVal[i-1];
+                finalSectionOutput = finalSectionOutput + " " + sectionList[i];
             }
             return finalSectionOutput;
         }
+
+        //public static string SectionValParagraph(Dictionary<int, Dictionary<int, string>> savePage, int pageNo, int paraNumber)
+        //{
+
+        //    Dictionary<string, string> getTopVal = new Dictionary<string, string>();
+        //    getTopVal.Add("lowCaseAlpha","a");
+        //    getTopVal.Add("upCaseAlpha", "A");
+        //    getTopVal.Add("lowCaseNumeric", "i");
+        //    getTopVal.Add("upCaseNumeric", "I");
+        //    getTopVal.Add("numberVal", "1");
+
+        //    Dictionary<int, string> notations = new Dictionary<int, string>();
+        //    notations.Add(1, "(,)");
+        //    notations.Add(2, "[,]");
+        //    notations.Add(3, "]");
+        //    notations.Add(4, ")");
+        //    notations.Add(5, ".");
+        //    notations.Add(6, ":");
+        //    notations.Add(7, "section");
+        //    notations.Add(8, "article");
+
+        //    Dictionary<int, string> matchRegexNumeric = new Dictionary<int, string>();
+        //    // NUMBERS
+        //    matchRegexNumeric.Add(1, @"^[\s]*(\d+\.(:\d+\.?)*)\s"); //    1.
+        //    matchRegexNumeric.Add(2, @"^[\s]*(\d+\.(?:\d+\.?)*)"); //    1., 1.1 
+        //    matchRegexNumeric.Add(3, @"^[\s]*((section)\s\d+\.(:\d+\.?)*)\s"); //    section 1.
+        //    matchRegexNumeric.Add(4, @"^[\s]*((section)\s\d+\.(?:\d+\.?)*)"); //   section 1., section 1.1 
+        //    matchRegexNumeric.Add(5, @"^[\s]*((article)\s\d)"); //   article 1,
+        //    matchRegexNumeric.Add(6, @"^[\s]*((article)\s\d+\.(?:\d+\.?)*)"); //   article 1., article 1.1 
+        //    matchRegexNumeric.Add(7, @"^[\s]*(\d+[:])\s"); //   1:
+        //    matchRegexNumeric.Add(8, @"^[\s]*(\d+[)])\s"); //   1)
+        //    matchRegexNumeric.Add(9, @"^[\s]*(\d+[]])\s"); //   1]
+        //    matchRegexNumeric.Add(10, @"^[\s]*([[]+\d+[]])\s"); //   [1]
+        //    matchRegexNumeric.Add(11, @"^[\s]*([[(]+\d+[)])\s"); //   (1)
+        //    matchRegexNumeric.Add(54, @"^[\s]*((Section)\s\d+\.(:\d+\.?)*)\s"); //    Section 1.
+        //    matchRegexNumeric.Add(55, @"^[\s]*((Article)\s\d)"); //   Article 1,
+        //    matchRegexNumeric.Add(56, @"^[\s]*((Section)\s\d+\.(?:\d+\.?)*)"); //   Section 1., Section 1.1 
+        //    matchRegexNumeric.Add(57, @"^[\s]*((Article)\s\d)"); //   Article 1., Article 1.1 
+        //    matchRegexNumeric.Add(58, @"^[\s]*((SECTION)\s\d+\.(?:\d+\.?)*)"); //   Section 1., Section 1.1 
+        //    matchRegexNumeric.Add(59, @"^[\s]*((ARTICLE)\s\d)"); //   Article 1., Article 1.1 
+
+        //    // ROMAN
+        //    // upper
+        //    matchRegexNumeric.Add(12, @"^[\s]*[(](?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[)]\s"); //    (xvii)
+        //    matchRegexNumeric.Add(13, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}\s"); //    xvii
+        //    matchRegexNumeric.Add(14, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[)]\s"); //    xvii)
+        //    matchRegexNumeric.Add(15, @"^[\s]*[[](?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[]]\s"); //    [xvii]
+        //    matchRegexNumeric.Add(16, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[]]\s"); //    xvii]
+        //    matchRegexNumeric.Add(17, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[:]\s"); //    xvii:
+        //    matchRegexNumeric.Add(18, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[.]\s"); //    xvii.
+        //    matchRegexNumeric.Add(19, @"^[\s]*(section)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}\s"); //    section xvii
+        //    matchRegexNumeric.Add(20, @"^[\s]*(article)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}"); //    article xvii
+        //    matchRegexNumeric.Add(52, @"^[\s]*(Section)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}\s"); //    Section xvii
+        //    matchRegexNumeric.Add(53, @"^[\s]*(Article)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}"); //    Article xvii
+        //    matchRegexNumeric.Add(60, @"^[\s]*(SECTION)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}\s"); //    SECTION xvii
+        //    matchRegexNumeric.Add(61, @"^[\s]*(ARTICLE)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}"); //    ARTICLE xvii
+
+        //    // lower
+        //    matchRegexNumeric.Add(21, @"^[\s]*[(](?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[)]\s"); //    (XVII)
+        //    matchRegexNumeric.Add(22, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}\s"); //    XVII
+        //    matchRegexNumeric.Add(23, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[)]\s"); //    XVII)
+        //    matchRegexNumeric.Add(24, @"^[\s]*[[](?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[]]\s"); //    [XVII]
+        //    matchRegexNumeric.Add(25, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[]]\s"); //    XVII]
+        //    matchRegexNumeric.Add(26, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[:]\s"); //    XVII:
+        //    matchRegexNumeric.Add(27, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[.]\s"); //    XVII.
+        //    matchRegexNumeric.Add(28, @"^[\s]*(section)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}\s"); //    section XVII
+        //    matchRegexNumeric.Add(29, @"^[\s]*(article)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}"); //    article XVII
+        //    matchRegexNumeric.Add(50, @"^[\s]*(Section)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}\s"); //    Section XVII
+        //    matchRegexNumeric.Add(51, @"^[\s]*(Article)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}"); //    Article XVII
+        //    matchRegexNumeric.Add(62, @"^[\s]*(SECTION)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}\s"); //    SECTION XVII
+        //    matchRegexNumeric.Add(63, @"^[\s]*(ARTICLE)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}"); //    ARTICLE XVII
+
+        //    // ALPHABET
+        //    matchRegexNumeric.Add(30, @"^[\s]*([a-z][.])\s");  //  a.
+        //    matchRegexNumeric.Add(31, @"^[\s]*([a-z][:])\s");  //  a: 
+        //    matchRegexNumeric.Add(32, @"^[\s]*([(][a-z][)])\s");  //    (a) 
+        //    matchRegexNumeric.Add(33, @"^[\s]*([a-z][)])\s");  // a) 
+        //    matchRegexNumeric.Add(34, @"^[\s]*([[][a-z][]])\s");  //   a] 
+        //    matchRegexNumeric.Add(35, @"^[\s]*([a-z][]])\s");  //     [a]
+        //    matchRegexNumeric.Add(36, @"^[\s]*((section)[\s]*[a-z])\s");  //      section a 
+        //    matchRegexNumeric.Add(37, @"^[\s]*((article)[\s]*[a-z])");  //      article a
+        //    matchRegexNumeric.Add(46, @"^[\s]*((Section)[\s]*[a-z])\s");  //    Section a
+        //    matchRegexNumeric.Add(47, @"^[\s]*((Article)[\s]*[a-z])");  //    Article a
+        //    matchRegexNumeric.Add(64, @"^[\s]*((SECTION)[\s]*[a-z])\s");  //    SECTION a
+        //    matchRegexNumeric.Add(65, @"^[\s]*((ARTICLE)[\s]*[a-z])");  //    ARTICLE a
+        //    matchRegexNumeric.Add(38, @"^[\s]*([A-Z][.])\s");  // A. 
+        //    matchRegexNumeric.Add(39, @"^[\s]*([A-Z][:])\s");  // A: 
+        //    matchRegexNumeric.Add(40, @"^[\s]*([(][A-Z][)])\s");  // (A) 
+        //    matchRegexNumeric.Add(41, @"^[\s]*([A-Z][)])\s");  // A) 
+        //    matchRegexNumeric.Add(42, @"^[\s]*([[][A-Z][]])\s");  // A]  
+        //    matchRegexNumeric.Add(43, @"^[\s]*([A-Z][]])\s");  // [A]    
+        //    matchRegexNumeric.Add(44, @"^[\s]*((section)[\s]*[A-Z])\s");  // section A    
+        //    matchRegexNumeric.Add(45, @"^[\s]*((article)[\s]*[A-Z])");  // article A    
+        //    matchRegexNumeric.Add(48, @"^[\s]*((Section)[\s]*[A-Z])\s");  // section A   
+        //    matchRegexNumeric.Add(49, @"^[\s]*((Article)[\s]*[A-Z])");  // Article A  
+        //    matchRegexNumeric.Add(66, @"^[\s]*((SECTION)[\s]*[A-Z])\s");  // SECTION A   
+        //    matchRegexNumeric.Add(67, @"^[\s]*((ARTICLE)[\s]*[A-Z])");  // ARTICLE A   
+
+        //    //next 68
+        //    Dictionary<int, string> connections = new Dictionary<int, string>();
+        //    connections.Add(1,"numberVal"); //    1.
+        //    connections.Add(2, ""); //    1., 1.1 
+        //    connections.Add(3, "numberVal"); //    section 1.
+        //    connections.Add(4, ""); //   section 1., section 1.1 
+        //    connections.Add(5, "numberVal"); //   article 1.,
+        //    connections.Add(6, ""); //   article 1., article 1.1 
+        //    connections.Add(7, "numberVal"); //   1:
+        //    connections.Add(8, "numberVal"); //   1)
+        //    connections.Add(9, "numberVal"); //   1]
+        //    connections.Add(10,"numberVal"); //   [1]
+        //    connections.Add(11,"numberVal"); //   (1)
+        //    connections.Add(54, "numberVal"); //   [1]
+        //    connections.Add(55, "numberVal"); //   (1)
+        //    connections.Add(56, ""); //   Section 1., Section 1.1 
+        //    connections.Add(57, ""); //   Article 1., Article 1.1 
+        //    connections.Add(58, ""); //   SECTION 1., SECTION 1.1 
+        //    connections.Add(59, ""); //   ARTICLE 1., ARTICLE 1.1 
+        //    connections.Add(12, "lowCaseNumeric"); //    (xvii)
+        //    connections.Add(13, "lowCaseNumeric"); //    xvii
+        //    connections.Add(14, "lowCaseNumeric"); //    xvii)
+        //    connections.Add(15, "lowCaseNumeric"); //    [xvii]
+        //    connections.Add(16, "lowCaseNumeric"); //    xvii]
+        //    connections.Add(17, "lowCaseNumeric"); //    xvii:
+        //    connections.Add(18, "lowCaseNumeric"); //    xvii.
+        //    connections.Add(19, "lowCaseNumeric"); //    section xvii
+        //    connections.Add(20, "lowCaseNumeric"); //    article xvii
+        //    connections.Add(52, "lowCaseNumeric"); //    section xvii
+        //    connections.Add(53, "lowCaseNumeric"); //    article xvii
+        //    connections.Add(60, "lowCaseNumeric"); //    SECTION xvii
+        //    connections.Add(61, "lowCaseNumeric"); //    ARTICLE xvii
+        //    connections.Add(21, "upCaseNumeric"); //    (XVII)
+        //    connections.Add(22, "upCaseNumeric"); //    XVII
+        //    connections.Add(23, "upCaseNumeric"); //    XVII)
+        //    connections.Add(24, "upCaseNumeric"); //    [XVII]
+        //    connections.Add(25, "upCaseNumeric"); //    XVII]
+        //    connections.Add(26, "upCaseNumeric"); //    XVII:
+        //    connections.Add(27, "upCaseNumeric"); //    XVII.
+        //    connections.Add(28, "upCaseNumeric"); //    section XVII
+        //    connections.Add(29, "upCaseNumeric"); //    article XVII
+        //    connections.Add(50, "upCaseNumeric"); //    section XVII
+        //    connections.Add(51, "upCaseNumeric"); //    article XVII
+        //    connections.Add(62, "upCaseNumeric"); //    SECTION XVII
+        //    connections.Add(63, "upCaseNumeric"); //    ARTICLE XVII
+        //    connections.Add(30, "lowCaseAlpha");  //   A.
+        //    connections.Add(31, "lowCaseAlpha");  //  A:
+        //    connections.Add(32, "lowCaseAlpha");  //   (A)
+        //    connections.Add(33, "lowCaseAlpha");  //  A)
+        //    connections.Add(34, "lowCaseAlpha");  //   A]
+        //    connections.Add(35, "lowCaseAlpha");  //      [A]
+        //    connections.Add(36, "lowCaseAlpha");  //    section A
+        //    connections.Add(37, "lowCaseAlpha");  //     article A
+        //    connections.Add(48, "lowCaseAlpha");  //     Section A
+        //    connections.Add(49, "lowCaseAlpha");  //     Article A 
+        //    connections.Add(66, "lowCaseAlpha");  //     SECTION A
+        //    connections.Add(67, "lowCaseAlpha");  //     ARTICLE A 
+        //    connections.Add(38, "upCaseAlpha");  // a. 
+        //    connections.Add(39, "upCaseAlpha");  // a: 
+        //    connections.Add(40, "upCaseAlpha");  // (a)  
+        //    connections.Add(41, "upCaseAlpha");  // a)
+        //    connections.Add(42, "upCaseAlpha");  // a]  
+        //    connections.Add(43, "upCaseAlpha");  // [a]     
+        //    connections.Add(44, "upCaseAlpha");  // section a    
+        //    connections.Add(45, "upCaseAlpha");  // article a   
+        //    connections.Add(46, "upCaseAlpha");  // section a    
+        //    connections.Add(47, "upCaseAlpha");  // article a    
+        //    connections.Add(64, "upCaseAlpha");  // SECTION a    
+        //    connections.Add(65, "upCaseAlpha");  // ARTICLE a  
+
+
+        //    List<string> allSectionVal = new List<string>();
+
+        //    var searchNow = "";
+        //    var regexNow = "";
+        //    var notationFoundIn = "";
+        //    var pageNoVal = pageNo;
+        //    var paraNoVal = paraNumber;
+        //    var completeSectionFound = false;
+        //    bool checkNextGenSection = true;
+        //    var lastSection = "";
+        //    var checkNextSection = true;
+        //    for (var j = 0; j < 5; j++) { // loop till 5th gen
+        //        if (completeSectionFound == false && checkNextGenSection == true) { // check if final gen found
+        //            paraNoVal = paraNoVal - 1;
+        //            if (searchNow !="" && regexNow !="" && lastSection != searchNow)
+        //            {
+        //                var NextsectionVal = 0;
+        //                int nextPageNo = 0;
+        //                int nextParaNo = 0;
+        //                string nextRegex = "";
+        //                string nextNotation = "";
+        //                string nextSectionFound = "";
+        //                saveDataToFolder(getTopVal,connections, searchNow, regexNow, notationFoundIn, pageNoVal, paraNoVal, matchRegexNumeric, savePage, notations, out NextsectionVal, out checkNextGenSection, out nextPageNo, out nextParaNo, out nextRegex, out nextNotation,out nextSectionFound, out lastSection, out checkNextSection);
+        //                if (checkNextGenSection == true) {
+        //                    var getConnectionName = connections[NextsectionVal];
+        //                    if (getConnectionName != "") {
+        //                        var getFirstVal = getTopVal[getConnectionName];
+        //                        searchNow = getFirstVal;
+        //                    }
+        //                    else
+        //                        searchNow = "";
+        //                    regexNow = nextRegex;
+        //                    notationFoundIn = nextNotation;
+        //                    pageNoVal = nextPageNo;
+        //                    paraNoVal = nextParaNo;
+        //                    allSectionVal.Add(nextSectionFound);
+        //                }
+        //            }
+        //            else if(checkNextSection == true)
+        //            {
+        //                var checkNextPage = true;
+        //                for (int i = pageNoVal; i > 0; i--) // loop through all the pages
+        //                {
+        //                    if (checkNextPage == false) // read next page or not
+        //                        break;
+        //                    var entry1 = savePage[i].Values;// get the content of current page
+        //                    var paraCount = paraNoVal; // paraNumber // get the para number of result in current page
+
+        //                    if (i != pageNoVal) // if previous page 
+        //                        paraCount = entry1.Count() - 1; // take all para in a page to check
+
+        //                    var checkNextPara = true;
+        //                    for (var k = paraCount; k >= 0; k--) // start from the para till top
+        //                    {
+        //                        if (checkNextPara == false) // read next para or not
+        //                            break;
+        //                        var entry2 = entry1.ElementAt(k); // get the para\
+
+        //                        var matchNext = true;
+        //                        foreach (var check in matchRegexNumeric) // loop through all the regex
+        //                        {
+        //                            if (matchNext == false) // need to check next regex
+        //                                break;
+        //                            String AllowedChars = check.Value;
+        //                            Regex regex = new Regex(AllowedChars);
+        //                            var match = regex.Match(entry2); // check if match found
+
+        //                            if (match.Success) // if found
+        //                            {
+        //                                var keyToFindConnection = check.Key;
+        //                                //var sectionGot = match.Value;
+        //                                var sectionGot = "";
+        //                                if (connections[check.Key] != "")
+        //                                    getNotationType(notations, match.Value.Trim(), out sectionGot, out notationFoundIn);
+                                        
+
+        //                                var getValueFromConnection = connections[keyToFindConnection];
+        //                                if (sectionGot != "")
+        //                                {
+        //                                    if (sectionGot != getTopVal[getValueFromConnection])
+        //                                        searchNow = getTopVal[getValueFromConnection];
+        //                                    allSectionVal.Add(match.Value.Trim());
+        //                                    paraNoVal = k;
+        //                                    if(paraNoVal ==0)
+        //                                        pageNoVal = i-1;
+        //                                    else
+        //                                        pageNoVal = i;
+        //                                    lastSection = sectionGot;
+        //                                    regexNow = AllowedChars;
+        //                                    matchNext = false;
+        //                                    checkNextPage = false;
+        //                                    checkNextPara = false;
+        //                                    break;
+        //                                }
+        //                                else if (getValueFromConnection == "")
+        //                                {
+        //                                    checkNextSection = false;
+        //                                    searchNow = "";
+        //                                    allSectionVal.Add(match.Value.Trim());
+        //                                    paraNoVal = k;
+        //                                    if (paraNoVal == 0)
+        //                                        pageNoVal = i - 1;
+        //                                    else
+        //                                        pageNoVal = i;
+        //                                    lastSection = sectionGot;
+        //                                    regexNow = AllowedChars;
+        //                                    matchNext = false;
+        //                                    checkNextPage = false;
+        //                                    checkNextPara = false;
+        //                                    break;
+        //                                }
+        //                                else
+        //                                    completeSectionFound = true;
+        //                            }
+        //                        }
+        //                    }
+        //                }
+        //                if (allSectionVal.Count() == j)
+        //                    break;
+        //            } 
+        //        }
+        //    }
+        //    var finalSectionOutput = "";
+        //    for (int i = allSectionVal.Count; i >0; i--)
+        //    {
+        //        finalSectionOutput = finalSectionOutput +" "+allSectionVal[i-1];
+        //    }
+        //    return finalSectionOutput;
+        //}
 
         public static void saveDataToFolder(Dictionary<string,string> getTopVal, Dictionary<int,string> connections, string searchNow,string regexNow,string notationFoundIn,int pageNoVal,int paraNoVal, Dictionary<int,string> matchRegexNumeric, Dictionary<int, Dictionary<int, string>> savePage, Dictionary<int, string> notations, out int NextsectionVal ,out bool foundVal, out int nextPageNo, out int nextParaNo, out string nextRegex, out string nextNotation ,out string nextSectionFound, out string lastSection, out bool checkNextSection)
         {
@@ -483,6 +919,8 @@ namespace ReboProject
                         }   
                     }
                 }
+                if (found == true)
+                    break;
             }
         }
 
@@ -649,6 +1087,8 @@ namespace ReboProject
             
             return finalSection;
         }
+
+        
 
     }
 }
