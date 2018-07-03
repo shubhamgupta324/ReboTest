@@ -24,11 +24,11 @@ namespace ReboProject
             var watch = new System.Diagnostics.Stopwatch(); // get the time
             watch.Start();
             
-            string backEndVal = backEndData.Text; // get the json from front end
+             string backEndVal = backEndData.Text; // get the json from front end
             string abbreviationVal = LibVal.Text.ToString(); // get the json from front end abbreviation
             if (backEndVal == "") // check if it has value else return
                 return;
-            var backendObject = JObject.Parse(backEndVal.ToString()); // complete  json
+             var backendObject = JObject.Parse(backEndVal.ToString()); // complete  json
             var abbreviationObject = JObject.Parse(abbreviationVal); // complete json abbreviation
             var multipleDatapointJson = backendObject["Datapoint"]; // get json for all datapoints
             var sectionLib = backendObject["sectionLib"]; // section library
@@ -62,7 +62,7 @@ namespace ReboProject
             Dictionary<string, Dictionary<int, Dictionary<int, string>>> saveSectionNoAllFiles = new Dictionary<string, Dictionary<int, Dictionary<int, string>>>();  // save section for each page
             Dictionary<string, Dictionary<Dictionary<int, string>, int>> saveAllSection = new Dictionary<string, Dictionary<Dictionary<int, string>, int>>();  // save section for each page
             Dictionary<string, Dictionary<int, Dictionary<int, string>>> saveAllSectionRegex = new Dictionary<string, Dictionary<int, Dictionary<int, string>>>();  // save section for each page
-
+            Dictionary<string, string> sectionTree = new Dictionary<string, string>();  // save section for each page
             for (var folderval = 0; folderval < subdirectoryEntries.Length; folderval++) // loop through all the lease
             {
                 folderPath = subdirectoryEntries[folderval]; // get the first folder
@@ -76,10 +76,12 @@ namespace ReboProject
                     Dictionary<int, Dictionary<int, string>> saveSectionNo = new Dictionary<int, Dictionary<int, string>>();  // save section for each para 
                     Dictionary<Dictionary<int, string>, int> saveSection = new Dictionary<Dictionary<int, string>, int>();  // save section 
                     Dictionary<int, Dictionary<int, string>> savePageSectionRegex = new Dictionary<int, Dictionary<int, string>>(); // save section regex
+                    var finalJson = "";
                     filepath = folderPath + "\\" + fileNameVal; // full path of file
                     fileFullPath.Add(filepath); // save the path of pdf read
-                    pdfRead(collectSectionLib, filepath, out savePageSingleFile, out saveSectionNo, out saveSection, out savePageSectionRegex); // read pdf
+                    pdfRead(collectSectionLib, filepath, out savePageSingleFile, out saveSectionNo, out saveSection, out savePageSectionRegex, out finalJson); // read pdf
                     saveAllSection.Add(filepath, saveSection);
+                    sectionTree.Add(filepath, finalJson);
                     saveAllSectionRegex.Add(filepath, savePageSectionRegex);
                     saveSectionNoAllFiles.Add(filepath, saveSectionNo); // entering section
                     savePageAllFiles.Add(filepath, savePageSingleFile); // entering para
@@ -130,6 +132,7 @@ namespace ReboProject
                     Dictionary<int, Dictionary<int, string>> savePageSectionRegex = new Dictionary<int, Dictionary<int, string>>();  // save regex for line
                     Dictionary<Dictionary<int, string>, int> getSaveSection = new Dictionary<Dictionary<int, string>, int>();  // save section
                     Dictionary<int, Dictionary<int, string>> savePageLib = new Dictionary<int, Dictionary<int, string>>();  // duplicate of savePage
+                    var singleFileSectionTree = "";
                     Dictionary<int, string> OutputMatch = new Dictionary<int, string>();
                     Dictionary<int, string> PageNoMatch = new Dictionary<int, string>();
                     string getCorrectSentances = "";
@@ -252,6 +255,7 @@ namespace ReboProject
                                     savePageSection = saveSectionNoAllFiles[fullFilePath];
                                     getSaveSection = saveAllSection[fullFilePath];
                                     savePageSectionRegex = saveAllSectionRegex[fullFilePath];
+                                    singleFileSectionTree = sectionTree[fullFilePath];
 
                                     getPageNo(savePage.Count(), startPage, endPage, out startPageVal, out endPageVal);
                                     List<Dictionary<Dictionary<string, int>, int>> dataSet = new List<Dictionary<Dictionary<string, int>, int>>();
@@ -299,10 +303,11 @@ namespace ReboProject
                                 var getTheCompleteSectionValue = "";
                                 savePageSection = saveSectionNoAllFiles[ja2[0]["completeFilePath"].ToString()];
                                 getSaveSection = saveAllSection[ja2[0]["completeFilePath"].ToString()];
+                                singleFileSectionTree = sectionTree[ja2[0]["completeFilePath"].ToString()];
                                 var outputPara = "";
                                 if (SearchWithin == 3) // para
                                 {
-                                    getTheCompleteSectionValue = processing.getCompleteParaSection(SectionNoCount, ja2, savePageSection, getSaveSection, outputPara, DefaultSectionName, SectionName); // get the section value
+                                    getTheCompleteSectionValue = processing.getCompleteParaSection(SectionNoCount, ja2, savePageSection, getSaveSection, outputPara, DefaultSectionName, SectionName, singleFileSectionTree); // get the section value
                                     ja2[0]["sectionVal"] = getTheCompleteSectionValue.Replace(",", " ");
                                 }
                                 if (SearchWithin == 2) // section
@@ -317,6 +322,7 @@ namespace ReboProject
                                     getSectionAndFileNameAndSearchJO["fileName"] = ja2[0]["fileName"].ToString();
                                     getSectionAndFileNameAndSearchJO["sectionNo"] = ja2[0]["sectionVal"].ToString();
                                     getSectionAndFileNameAndSearchJO["searchFor"] = ja2[0]["AllSearchFieldKeyword"].ToString();
+                                    getSectionAndFileNameAndSearchJO["withIn"] = ja2[0]["foundWithIn"].ToString();
                                     getSectionAndFileNameAndSearchJA.Add(getSectionAndFileNameAndSearchJO);
                                 }
                             }
@@ -387,6 +393,7 @@ namespace ReboProject
                                     getSectionAndFileNameAndSearchJO["fileName"] = fileNameForLib;
                                     getSectionAndFileNameAndSearchJO["sectionNo"] = "";
                                     getSectionAndFileNameAndSearchJO["searchFor"] = "";
+                                    getSectionAndFileNameAndSearchJO["withIn"] = "";
                                     getSectionAndFileNameAndSearchJA.Add(getSectionAndFileNameAndSearchJO);
                                     ja3[0]["foundWithIn"] = ja3[0]["foundWithIn"].ToString() + " ||| Library";
                                     ja3[0]["AllSearchFieldKeyword"] = ja3[0]["AllSearchFieldKeyword"].ToString() + " ||| Library";
@@ -533,12 +540,16 @@ namespace ReboProject
         }
         
         // get the paragraph lines
-        public void pdfRead(string collectSectionLib, string filepath, out Dictionary<int, Dictionary<int, string>> savePage, out Dictionary<int, Dictionary<int, string>> savePageSection, out Dictionary<Dictionary<int, string>, int> saveSection, out Dictionary<int, Dictionary<int, string>> savePageSectionRegex)
+        public void pdfRead(string collectSectionLib, string filepath, out Dictionary<int, Dictionary<int, string>> savePage, out Dictionary<int, Dictionary<int, string>> savePageSection, out Dictionary<Dictionary<int, string>, int> saveSection, out Dictionary<int, Dictionary<int, string>> savePageSectionRegex, out string finalJson)
         {
+            finalJson = "";
             savePage = new Dictionary<int, Dictionary<int, string>>();
             savePageSection = new Dictionary<int, Dictionary<int, string>>();
             savePageSectionRegex = new Dictionary<int, Dictionary<int, string>>();
             saveSection = new Dictionary<Dictionary<int, string>, int>();
+            Dictionary<Dictionary<int, string>, int> saveSectionWithsectionNo = new Dictionary<Dictionary<int, string>, int>();
+            Dictionary<Dictionary<int, string>, int> saveSectionWithRegex = new Dictionary<Dictionary<int, string>, int>();
+            List<string> sectionNameFound = new List<string>();
             var nextSection = 0;
             using (Doc doc = new Doc())
             {
@@ -546,7 +557,15 @@ namespace ReboProject
                 short PageIndex = 1;
                 var lastSectionPageNo = 0;
                 Dictionary<int, string> saveSectionPara = new Dictionary<int, string>();
+                Dictionary<int, string> saveSectionSectionNo = new Dictionary<int, string>();
+                Dictionary<int, string> saveSectionRegex = new Dictionary<int, string>();
                 var lastLine = "";
+                var lastSection = "";
+                var lastRegex = "";
+                List<string> saveSectionName = new List<string>();
+                saveSectionName.Add("section");
+                saveSectionName.Add("article");
+                StringBuilder sbSection = new StringBuilder();
                 while (PageIndex <= doc.PageCount) // save the value in dictionary 
                 {
                     TextOperation op = new TextOperation(doc);
@@ -556,6 +575,7 @@ namespace ReboProject
                     IList<TextGroup> theGroups = op.Group(op.Select(0, theText.Length));
                     List<TextGroup> ordereddGroups = theGroups.OrderByDescending(o => o.Rect.Top).ToList();
                     StringBuilder sb1 = new StringBuilder();
+                    
                     XRect prevRect = new XRect("0 0 0 0");
 
                     Dictionary<int, string> saveLines = new Dictionary<int, string>();
@@ -565,98 +585,204 @@ namespace ReboProject
                     
                     List<string> sectionNoCheck = new List<string>();
                     var lineCount = 0;
-                    var searchFound = 0;
                     var nextPara = false;
                     var firstParaNoSection = false;
+                    var pdfLine = "";
+                    var pageCount = 1;
                     foreach (TextGroup lineGroup in ordereddGroups)
                     {
                         if (lineGroup.Text.Trim() == "")
                             continue;
+                        pdfLine = lineGroup.Text.Trim();
                         nextPara = false;
                         if ((prevRect.Bottom - lineGroup.Rect.Top) > 8.5)
                             nextPara = true;
                         lineCount++;
                         bool section = false;
-                        checkSection(collectSectionLib, lineGroup.Text.Trim(), out section);
+                        var headingLength = Int32.Parse(WebConfigurationManager.AppSettings["headingLength"]);
+                        if(pdfLine.Length <= headingLength)
+                            checkSection(collectSectionLib, pdfLine, out section);
 
-                        if (section != true)
-                            sectionNoCheck = processing.getSectionForPara(lineGroup.Text.Trim(), lastLine, nextPara); // get the section value
+                        if (section == true)
+                        {
+                            foreach (var item in saveSectionName)
+                            {
+                                Regex regex = new Regex(@"^(?i)("+ item + ")");
+                                var match = regex.Match(pdfLine); // check if match found
+                                if (match.Success)
+                                {
+                                    sectionNoCheck = processing.getSectionForPara(pdfLine, lastLine, nextPara); // get the section value
+                                    break;
+                                }
+                            }
+                        }
                         else
+                            sectionNoCheck = processing.getSectionForPara(pdfLine, lastLine, nextPara); // get the section value
+                        if (sectionNoCheck.Count() == 0)
                         {
                             sectionNoCheck.Add(null);
                             sectionNoCheck.Add(null);
                         }
+
+                        // new para found OR new section number found OR new Section found
                         if (nextPara == true || sectionNoCheck.ElementAt(0) != null || section == true)
-                        { // current line is > 9 points lower than previous
-                            searchFound++;
-                            if (lastLine == "")
-                                saveLines.Add(i, lineGroup.Text.Trim());
-                            else
-                                saveLines.Add(i, sb1.ToString());
-                            // get section
-                            if (searchFound == 1 & lineCount > 1)
+                        {
+                            if (sb1.ToString().Trim() != "")
                             {
-                                saveSectionNo.Add(i, null);
-                                saveSectionNoRegex.Add(i, null);
-                                saveSectionNo.Add(i+1, sectionNoCheck[0]);
-                                saveSectionNoRegex.Add(i+1, sectionNoCheck[1]);
-                                firstParaNoSection = true;
-                            }
-                            else
-                            {
-                                if (firstParaNoSection == false)
+                                saveLines.Add(i, sb1.ToString().Trim());
+                                if (lastSection != "")
                                 {
-                                    saveSectionNo.Add(i, sectionNoCheck[0]);
-                                    saveSectionNoRegex.Add(i, sectionNoCheck[1]);
+                                    saveSectionNo.Add(i, lastSection);
+                                    saveSectionNoRegex.Add(i, lastRegex);
                                 }
                                 else
                                 {
-                                    saveSectionNo.Add(i+1, sectionNoCheck[0]);
-                                    saveSectionNoRegex.Add(i+1, sectionNoCheck[1]);
+                                    saveSectionNo.Add(i, null);
+                                    saveSectionNoRegex.Add(i, null);
                                 }
+                                lastSection = sectionNoCheck[0];
+                                lastRegex = sectionNoCheck[1];
+                                i++;
                             }
-                            
-                            nextSection++;
-                            if (section == true)
+                            if (lineCount == 1 & sectionNoCheck.ElementAt(0) != null)
                             {
-                                if (saveSectionPara.Count > 0) {
-                                    
-                                    saveSection.Add(saveSectionPara, PageIndex);
-                                    saveSectionPara = new Dictionary<int, string>();
-                                    lastSectionPageNo = PageIndex;
+                                lastSection = sectionNoCheck[0];
+                                lastRegex = sectionNoCheck[1];
+                            }
+
+                            // save section if found
+                            if (section == true) 
+                            {
+                                if (sbSection.ToString().Trim() != "")
+                                {
+                                    var regexVal ="";
+                                    var sectionNoVal ="";
+                                    if (saveSectionNo.Count() != 0)
+                                    {
+                                        regexVal = saveSectionNoRegex.Values.Last();
+                                        sectionNoVal = saveSectionNo.Values.Last();
+                                    }
+                                    else
+                                    {
+                                        regexVal = null;
+                                        sectionNoVal = null;
+                                    }
+                                    nextSection++;
+                                    saveSectionSectionNo.Add(nextSection, sectionNoVal);
+                                    saveSectionRegex.Add(nextSection, regexVal);
+                                    saveSectionPara.Add(nextSection, sbSection.ToString());
                                 }
-                                nextSection=1;
-                                saveSectionPara.Add(nextSection, sb1.ToString());
+                                if (saveSectionPara.Count > 0)
+                                {
+                                    if (saveSection.Count() == 0)
+                                    {
+                                        sectionNameFound.Add("");
+                                        sectionNameFound.Add(pdfLine);
+                                    }
+                                    else
+                                        sectionNameFound.Add(pdfLine);
+                                    saveSection.Add(saveSectionPara, PageIndex);
+                                    saveSectionWithsectionNo.Add(saveSectionSectionNo, PageIndex);
+                                    saveSectionWithRegex.Add(saveSectionRegex, PageIndex);
+                                    saveSectionPara = new Dictionary<int, string>();
+                                    saveSectionSectionNo = new Dictionary<int, string>();
+                                    saveSectionRegex = new Dictionary<int, string>();
+                                    lastSectionPageNo = PageIndex;
+                                    nextSection = 0;
+                                    sbSection.Clear();
+                                }
                             }
                             else
                             {
-                                saveSectionPara.Add(nextSection, sb1.ToString());
+                                
+                                if (sbSection.ToString().Trim() == "")
+                                {
+                                    nextSection++;
+                                    saveSectionSectionNo.Add(nextSection,"");
+                                    saveSectionRegex.Add(nextSection,"");
+                                    saveSectionPara.Add(nextSection, pdfLine);
+                                }
+                                else if (!saveSectionPara.ContainsValue(sbSection.ToString()))
+                                {
+                                    var regexVal = "";
+                                    var sectionNoVal = "";
+                                    if (saveSectionNo.Count() != 0)
+                                    {
+                                        regexVal = saveSectionNoRegex.Values.Last();
+                                        sectionNoVal = saveSectionNo.Values.Last();
+                                    }
+                                    else
+                                    {
+                                        regexVal = null;
+                                        sectionNoVal = null;
+                                    }
+                                    nextSection++;
+                                    saveSectionSectionNo.Add(nextSection, sectionNoVal);
+                                    saveSectionRegex.Add(nextSection, regexVal);
+                                    saveSectionPara.Add(nextSection, sbSection.ToString());
+                                }
                             }
-                            i++;
                             sb1.Clear();
+                            sbSection.Clear();
+
+                            if (!pdfLine.EndsWith(" "))
+                            {
+                                sbSection.Append(pdfLine + " ");
+                                sb1.Append(pdfLine + " ");
+                            } 
+                            else
+                            {
+                                sbSection.Append(pdfLine);
+                                sb1.Append(pdfLine);
+                            }
                         }
+
+                        // if its just a line....add all lines to make a para 
+                        else
+                        {
+                            if (!pdfLine.EndsWith(" "))
+                            {
+                                sbSection.Append(pdfLine + " ");
+                                sb1.Append(pdfLine + " ");
+                            }
+                            else
+                            {
+                                sbSection.Append(pdfLine);
+                                sb1.Append(pdfLine);
+                            } 
+                        }
+
+                        // last line
                         if (ordereddGroups.Count == lineCount)
                         {
                             var getStringLength = Int32.Parse(WebConfigurationManager.AppSettings["StringLength"]);
-                            if (lineGroup.Text.Trim().Length > getStringLength)
-                                lastLine = lineGroup.Text;
+                            if (pdfLine.Length > getStringLength)
+                                lastLine = pdfLine;
+                            else
+                                lastLine = pdfLine;
                         }
                         else
-                            lastLine = lineGroup.Text.Trim();
-
-                        if (!lineGroup.Text.Trim().EndsWith(" "))
-                            sb1.Append(lineGroup.Text.Trim() + " ");
-                        else
-                            sb1.Append(lineGroup.Text.Trim());
+                            lastLine = pdfLine;
+                        
                         prevRect.String = lineGroup.Rect.String;
                         lastSectionPageNo = PageIndex;
+                        pageCount++;
                     }
                     
                     saveLines.Add(i, sb1.ToString());
-                    nextSection++;
-                    saveSectionPara.Add(nextSection, sb1.ToString());
+                    
                     // get section
                     sectionNoCheck = processing.getSectionForPara(sb1.ToString(), lastLine, nextPara); // get the section value
+
+                    if (PageIndex == doc.PageCount)
+                    {
+                        nextSection++;
+                        saveSectionPara.Add(nextSection, sb1.ToString());
+                        saveSectionSectionNo.Add(nextSection, sectionNoCheck[0]);
+                        saveSectionRegex.Add(nextSection, sectionNoCheck[1]);
+                    }
+                    
+
                     if (firstParaNoSection == false)
                     {
                         saveSectionNo.Add(i, sectionNoCheck[0]);
@@ -674,8 +800,13 @@ namespace ReboProject
                     PageIndex++;
                 }
                 if (saveSectionPara.Count > 0)
+                {
                     saveSection.Add(saveSectionPara, lastSectionPageNo);
+                    saveSectionWithsectionNo.Add(saveSectionSectionNo, lastSectionPageNo);
+                    saveSectionWithRegex.Add(saveSectionRegex, lastSectionPageNo);
+                }
             }
+           processing.createTree(saveSection, saveSectionWithsectionNo, saveSectionWithRegex, sectionNameFound, out finalJson); // get the section value
         }
 
         // check the section dictionary
@@ -688,7 +819,16 @@ namespace ReboProject
             {
                 var sectionLibVal = JObject.Parse(item)["keyword"].ToString();
                 MatchCollection matchData = null;
-                if ((para).IndexOf("\"") == 0)
+                MatchCollection matchExhibit = Regex.Matches("Exhibit", @"(?i)" + rgx.Replace(sectionLibVal, "\\$1"));
+                if (matchExhibit.Count >0)
+                {
+                    matchData = Regex.Matches(para.Trim(), @"^\b\s?(?i)" + rgx.Replace(sectionLibVal, "\\$1") + "(\\s|\\b)[\"]?(([a-zA-Z]{1,2}|\\d{1,3}|(\\W?)))?[\"]?$");
+                    if (matchData.Count == 0)
+                    { // match found then is a section
+                        matchData = Regex.Matches(para.Trim(), @"^\b\s?E(?i)xh((i|b|t|h|f|1|I|H|B|T|6|l|L)*){4,5}([a-zA-Z]{1}|\\d{1})?(\s|\b)([a-zA-Z]{1}|\d{0,3})(\W?)([a-zA-Z]{1}[\\s]?|\d{0,2}[\\s]?)$");
+                    }
+                }
+                else if ((para).IndexOf("\"") == 0)
                 {
                     var searchVal = (rgx.Replace(sectionLibVal, "\\$1")).Replace("\"", "");
                     matchData = Regex.Matches(para, "^(?i)[\"]" + searchVal + "[\"]([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}[\\s]|\\d{0,2}[\\s])$"); // find match
@@ -838,7 +978,9 @@ namespace ReboProject
         { 
             ja = new JArray();
             var readNextPara = 0;
+            var sentenceMergeCount = 0;
             //paraNumber += 1;
+            var sectionNoreadPara = "";
             var getCurrentParaScore = 0;
             var sectionPageNos = "";
             var getCurrentParaSearchFor = "";
@@ -862,8 +1004,9 @@ namespace ReboProject
                     string foundTextFinal = "";
                     var SearchWithinText = "";
                     SearchWithinText = getLineText;
+                    sectionNoreadPara = SearchWithinText;
                     foundTextFinal = getLineText;
-
+                    sentenceMergeCount++;
                     // check if withIn values are there 
                     if (getWithIn.Count() > 0)
                     {
@@ -944,6 +1087,8 @@ namespace ReboProject
                                                     //paraNumber = paraNumber+1;
                                                     //getCurrentParaScore = Int32.Parse(AllSearchFieldscore);
                                                     SearchWithinText = getNextParaToCheck;
+                                                    sectionNoreadPara = sectionNoreadPara + "|" + entry.Value[paraNumber + 1];
+                                                    sentenceMergeCount++;
                                                     sectionPageNos = pageCount.ToString();
                                                     checkNextWithIn = false;
                                                     readNextPara = 1;
@@ -987,6 +1132,8 @@ namespace ReboProject
                                                         acceptParaWithIn += (acceptParaWithIn == "") ? withInIt2 : "|" + withInIt2;
                                                         //paraNumber = 1;
                                                         SearchWithinText = getNextParaToCheck;
+                                                        sectionNoreadPara = sectionNoreadPara +"|"+ savePage[pageCount + 1][1];
+                                                        sentenceMergeCount++;
                                                         checkNextWithIn = false;
                                                         readNextPara = 1;
                                                         foundWithIn = true;
@@ -1020,6 +1167,8 @@ namespace ReboProject
                                     if (hasSectionNo == false)
                                     {
                                         SearchWithinText = SearchWithinText + savePage[pageCount + 1][1];
+                                        sectionNoreadPara = sectionNoreadPara +"|"+ savePage[pageCount + 1][1];
+                                        sentenceMergeCount++;
                                         sectionPageNos = pageCount + "|" + (pageCount + 1);
                                         readNextPara = 1;
                                     }
@@ -1040,6 +1189,8 @@ namespace ReboProject
                                                 firstSentence = firstSentence.Trim() + ". ";
                                         }
                                         SearchWithinText = firstSentence + SearchWithinText;
+                                        sectionNoreadPara = firstSentence + "|" + sectionNoreadPara;
+                                        sentenceMergeCount++;
                                         sectionPageNos = pageCount-1 + "|" + pageCount;
                                         pageCount = pageCount - 1;
                                         paraNumber =savePage[pageCount].Count();
@@ -1056,6 +1207,8 @@ namespace ReboProject
                                                 firstSentence = firstSentence.Trim() + ". ";
                                         }
                                         SearchWithinText = firstSentence + SearchWithinText;
+                                        sectionNoreadPara = firstSentence + "|" + sectionNoreadPara;
+                                        sentenceMergeCount++;
                                         sectionPageNos = pageCount-1 + "|" + pageCount;
                                         pageCount = pageCount -1;
                                         paraNumber =savePage[pageCount].Count() -1;
@@ -1067,7 +1220,7 @@ namespace ReboProject
                         if (acceptParaWithIn != "")
                         {
                             gotResult = 1;
-                            jarrayEnter(readNextPara,sectionPageNos, getCurrentParaSearchFor, getCurrentParaScore, getSectionForPara, completeSectionText, AllSearchFieldKeyword, fileName, pageCount, SearchWithinText, acceptParaWithIn, paraNumber, fullFilePath, out ja);
+                            jarrayEnter(sectionNoreadPara, sentenceMergeCount, readNextPara,sectionPageNos, getCurrentParaSearchFor, getCurrentParaScore, getSectionForPara, completeSectionText, AllSearchFieldKeyword, fileName, pageCount, SearchWithinText, acceptParaWithIn, paraNumber, fullFilePath, out ja);
                         }
                     }
 
@@ -1082,13 +1235,13 @@ namespace ReboProject
                             if (acceptFoundText == true)
                             {
                                 gotResult = 1;
-                                jarrayEnter(readNextPara, sectionPageNos, getCurrentParaSearchFor, getCurrentParaScore, getSectionForPara, completeSectionText, AllSearchFieldKeyword, fileName, pageCount, SearchWithinText, acceptParaWithIn, paraNumber, fullFilePath, out ja);
+                                jarrayEnter(sectionNoreadPara, sentenceMergeCount, readNextPara, sectionPageNos, getCurrentParaSearchFor, getCurrentParaScore, getSectionForPara, completeSectionText, AllSearchFieldKeyword, fileName, pageCount, SearchWithinText, acceptParaWithIn, paraNumber, fullFilePath, out ja);
                             }
                         }
                         else
                         {
                             gotResult = 1;
-                            jarrayEnter(readNextPara, sectionPageNos, getCurrentParaSearchFor, getCurrentParaScore, getSectionForPara, completeSectionText, AllSearchFieldKeyword, fileName.Split('.')[0], pageCount, SearchWithinText, acceptParaWithIn, paraNumber, fullFilePath, out ja);
+                            jarrayEnter(sectionNoreadPara, sentenceMergeCount, readNextPara, sectionPageNos, getCurrentParaSearchFor, getCurrentParaScore, getSectionForPara, completeSectionText, AllSearchFieldKeyword, fileName.Split('.')[0], pageCount, SearchWithinText, acceptParaWithIn, paraNumber, fullFilePath, out ja);
                         }
                     }
                 }
@@ -1245,7 +1398,9 @@ namespace ReboProject
                 }
                 JArray ja1 = new JArray();
                 string getSectionForPara = "";
-                jarrayEnter(readNextPara, sectionPageNos, getCurrentParaSearchFor, getCurrentParaScore, getSectionForPara, completeSectionText, AllSearchFieldKeywordVal, fileName, pageCount, getLineText, acceptParaWithIn, paraNumber, fullFilePath, out ja1);
+                var sentenceMergeCount = 1;
+                var sectionNoreadPara = "";
+                jarrayEnter(sectionNoreadPara, sentenceMergeCount, readNextPara, sectionPageNos, getCurrentParaSearchFor, getCurrentParaScore, getSectionForPara, completeSectionText, AllSearchFieldKeywordVal, fileName, pageCount, getLineText, acceptParaWithIn, paraNumber, fullFilePath, out ja1);
                 ja.Add(ja1[0]);
             }
         }
@@ -1297,7 +1452,7 @@ namespace ReboProject
         }
 
         // save data in jarray
-        public void jarrayEnter(int readNextPara, string sectionPageNos, string getCurrentParaSearchFor, int getCurrentParaScore, string getSectionForPara, string completeSectionText, string AllSearchFieldKeyword, string fileName, int pageCount, string getLineText, string acceptParaWithIn, int paraNumber, string fullFilePath, out JArray ja)
+        public void jarrayEnter(string sectionNoreadPara, int sentenceMergeCount, int readNextPara, string sectionPageNos, string getCurrentParaSearchFor, int getCurrentParaScore, string getSectionForPara, string completeSectionText, string AllSearchFieldKeyword, string fileName, int pageCount, string getLineText, string acceptParaWithIn, int paraNumber, string fullFilePath, out JArray ja)
         {
 
             ja = new JArray();
@@ -1315,6 +1470,8 @@ namespace ReboProject
             jo["getCurrentParaSearchFor"] = getCurrentParaSearchFor;
             jo["sectionPageNos"] = sectionPageNos;
             jo["readNextPara"] = readNextPara;
+            jo["sentenceMergeCount"] = sentenceMergeCount; 
+            jo["sectionNoreadPara"] = sectionNoreadPara; 
             ja.Add(jo);
         }
 
@@ -1426,8 +1583,11 @@ namespace ReboProject
                         var fileNameVal = getAllAcceptedText[entry.Key]["fileName"];
                         var completeFilePathVal = getAllAcceptedText[entry.Key]["completeFilePath"];
                         var withInValFound = getAllAcceptedText[entry.Key]["foundWithIn"];
-                        var readNextPara = getAllAcceptedText[entry.Key]["readNextPara"];
-                        finalScore = entry.Value;
+                        var readNextPara = getAllAcceptedText[entry.Key]["readNextPara"]; 
+                        var sentenceMergeCount = getAllAcceptedText[entry.Key]["sentenceMergeCount"];
+                        var sectionNoreadPara = getAllAcceptedText[entry.Key]["sectionNoreadPara"];
+                        
+                         finalScore = entry.Value;
 
                         var jo1 = new JObject();
                         jo1["output"] = foundText;
@@ -1445,6 +1605,9 @@ namespace ReboProject
                         jo1["dataPointName"] = datapointName;
                         jo1["readNextPara"] = readNextPara;
                         jo1["sectionPageNos"] = sectionPageNos;
+                        jo1["sentenceMergeCount"] = sentenceMergeCount;
+                        jo1["sectionNoreadPara"] = sectionNoreadPara;
+                        
                         ja1.Add(jo1);
                         onlyTopResult = false;
                     }
@@ -1626,27 +1789,50 @@ namespace ReboProject
             if (searchWithInVal == 3) {
                 foreach (var item in getSectionAndFileNameAndSearchJA)
                 {
-                    getAllTheParagraph.Add(item["Pageoutput"].ToString(), item["searchFor"].ToString());
+                    var pageOutput = item["Pageoutput"].ToString();
+                    getAllTheParagraph.Add(pageOutput, item["searchFor"].ToString());
                     paragraphSection.Add(item["sectionNo"].ToString());
                     paragraphFileName.Add(item["fileName"].ToString());
-
+                    var withInVal = item["withIn"].ToString();
+                    var singleWithIn = withInVal.Split('|')[0];
+                    var getParaAfterWithIn = "";
+                    if (singleWithIn != "")
+                    {
+                        getParaAfterWithIn = pageOutput.Substring((singleWithIn.Length + pageOutput.IndexOf(singleWithIn)), pageOutput.Length - (singleWithIn.Length + pageOutput.IndexOf(singleWithIn)));
+                    }
+                    else
+                    {
+                        getParaAfterWithIn = pageOutput.Substring(0, pageOutput.Length);
+                    }
+                    
+                    
                     var getAllBreakPoints = paraBreakCondition.Trim().Split('|');
                     Dictionary<string, int> saveSplitIndex = new Dictionary<string, int>();
-                    saveSplitIndex.Add(".", item["Pageoutput"].ToString().IndexOf(". "));
+                    //saveSplitIndex.Add(".", pageOutput.IndexOf(". "));
+                    //if(getParaAfterWithIn.IndexOf(". ") != -1)
+                    //    saveSplitIndex.Add(".", getParaAfterWithIn.IndexOf(". "));
                     foreach (var singleBreak in getAllBreakPoints)
                     {
-                        var indexVal = item["Pageoutput"].ToString().IndexOf(singleBreak+ " ");
-                        saveSplitIndex.Add(singleBreak,indexVal);
+                        string[] breakCount = item["Pageoutput"].ToString().Split(new string[] { singleBreak + " " }, StringSplitOptions.None);
+                        saveSplitIndex.Add(singleBreak, breakCount.Count());
                     }
-                    var top = saveSplitIndex.OrderBy(pair => pair.Value);
-                    var topVal = top.First().Key;
+                    
+                    var topVal = "";
+                    if (saveSplitIndex.Count() > 0)
+                    {
+                        var top = saveSplitIndex.OrderBy(pair => pair.Value);
+                        topVal = top.First().Key;
+                    }
+                    else
+                        topVal = ".";
+
 
                     string[] finalBreak = { };
 
                     //if (paraBreakCondition.Trim() == "")
                     if (topVal == "." | paraBreakCondition.Trim() == "")
                     {
-                        string[] getSentanceFullStop = item["Pageoutput"].ToString().Split(new string[] { ". " }, StringSplitOptions.None);
+                        string[] getSentanceFullStop = pageOutput.Split(new string[] { ". " }, StringSplitOptions.None);
                         if (getSentanceFullStop[getSentanceFullStop.Count() - 1] == "" | getSentanceFullStop[getSentanceFullStop.Count() - 1] == " ")
                             getSentanceFullStop = getSentanceFullStop.Take(getSentanceFullStop.Count() - 1).ToArray();
                         List<string> wrongStrings = new List<string>();
@@ -1682,7 +1868,7 @@ namespace ReboProject
                     //else if (paraBreakCondition.Trim() != "")
                     else 
                     {
-                        string[] getSentanceColon = item["Pageoutput"].ToString().Split(new string[] { "" + topVal + " " }, StringSplitOptions.None);
+                        string[] getSentanceColon = pageOutput.Split(new string[] { "" + topVal + " " }, StringSplitOptions.None);
                         List<string> finalSentences = new List<string>();
                         for (int i = 0; i < getSentanceColon.Count(); i++)
                         {
@@ -1696,17 +1882,25 @@ namespace ReboProject
                                 for (var u = 0; u < splitOnFullStop.Count(); u++)
                                 {
                                     var trimString = splitOnFullStop[u].Trim();
-                                    var nextLine = false;
-                                    Regex regex = new Regex("^[\"|'|(|\\d]");
-                                    var match = regex.Match(trimString); // check if match found
-                                    if (match.Success)
-                                    {
-                                        nextLine = true;
-                                    }
-                                    if (char.IsUpper(trimString[0]) | nextLine == true)
+                                    if (splitOnFullStop.Count() > 1 & u == 0)
                                     {
                                         finalSentences.Add(trimString);
                                     }
+                                    else
+                                    {
+                                        var nextLine = false;
+                                        Regex regex = new Regex("^[\"|'|(|\\d]");
+                                        var match = regex.Match(trimString); // check if match found
+                                        if (match.Success)
+                                        {
+                                            nextLine = true;
+                                        }
+                                        if (char.IsUpper(trimString[0]) | nextLine == true)
+                                        {
+                                            finalSentences.Add(trimString);
+                                        }
+                                    }
+                                    
                                 }
                             }
                         }
@@ -1730,6 +1924,7 @@ namespace ReboProject
                                     getAllTheSentence.Add(dupliSentenceVal, item["searchFor"].ToString());
                                     sentenceSection.Add(item["sectionNo"].ToString());
                                     sentenceFileName.Add(item["fileName"].ToString());
+                                    break;
                                 }
                             }
                         }
@@ -1944,8 +2139,18 @@ namespace ReboProject
         {
             stringOutput = new List<string>();
             searchFormat = "";
+            var sentenceFileNameCopy1 = sentenceFileName;
+            var sentenceSectionCopy1 = sentenceSection;
             foreach (var orConditionVal in andConditionOrCondition)
             {
+                var sentenceFileNameCopy = new List<string>();
+                var sentenceSectionCopy = new List<string>();
+                for (int i = 0; i < sentenceFileName.Count; i++)
+                {
+                    sentenceFileNameCopy.Add(sentenceFileName.ElementAt(i));
+                    sentenceSectionCopy.Add(sentenceSection.ElementAt(i));
+                }
+                
                 if (checkNextOrCondition == false)
                     break;
                 List<string> getKeyword = new List<string>();
@@ -1962,6 +2167,8 @@ namespace ReboProject
                 var checkNextSentence = true;
                 var next = 0;
                 Dictionary<string, string> getAllTheSentenceWithExclusion = new Dictionary<string, string>();
+                var indexValue = new List<int>();
+                var indexValueCount = 0;
                 foreach (var singleSentenceVal in getAllTheSentence)
                 {
                     if (getSearchExclusion.Count > 0)
@@ -1975,6 +2182,7 @@ namespace ReboProject
                             regexMatch(rgx, singleSentenceVal.Key, item.Value, out matchDataValue);
                             if (matchDataKey.Count > 0 && matchDataValue.Count > 0)
                             {
+                                indexValue.Add(indexValueCount);
                                 exclusionPresent = true;
                                 break;
                             }
@@ -1984,8 +2192,17 @@ namespace ReboProject
                     }
                     else
                         getAllTheSentenceWithExclusion = getAllTheSentence;
-
+                    indexValueCount++;
                 }
+
+                for (int i = 0; i < indexValue.Count(); i++)
+                {
+                    var count = indexValue.ElementAt(i);
+                    count = count - i;
+                    sentenceFileNameCopy.RemoveAt(count);
+                    sentenceSectionCopy.RemoveAt(count);
+                }
+
                 var conditionCount = 0;
                 var checkConditionCount = false;
                 foreach (var singleSentence in getAllTheSentenceWithExclusion)
@@ -2057,17 +2274,14 @@ namespace ReboProject
                             {
                                 JObject collectCorrectSentanceOutputJO = new JObject();
                                 count++;
-                                var getFileName = sentenceFileName.ElementAt(next).Split('-')[0];
-                                var fileNameVal = sentenceFileName.ElementAt(next).Replace(getFileName + "-", "").Trim();
+                                var getFileName = sentenceFileNameCopy.ElementAt(next).Split('-')[0];
+                                var fileNameVal = sentenceFileNameCopy.ElementAt(next).Replace(getFileName + "-", "").Trim();
                                 if (orConditionCondition == 1 && count == getKeyword.Count())
                                 {
                                     sentenceAsOutput = singleSentence.Key;
                                     collectCorrectSentanceOutputJO["sentence"] = singleSentence.Key;
                                     saveSentenceForDuplicate.Add(singleSentence.Key);
-                                    collectCorrectSentanceOutputJO["sectionNo"] = sentenceSection.ElementAt(next);
-                                    //if (fileNameVal.ToLower().IndexOf("lease") == 0)
-                                    //    collectCorrectSentanceOutputJO["fileName"] = "";
-                                    //else
+                                    collectCorrectSentanceOutputJO["sectionNo"] = sentenceSectionCopy.ElementAt(next);
                                         collectCorrectSentanceOutputJO["fileName"] = fileNameVal;
                                     collectCorrectSentanceOutputJO["search"] = singleSentence.Value;
                                     collectCorrectSentanceOutput.Add(collectCorrectSentanceOutputJO);
@@ -2080,10 +2294,7 @@ namespace ReboProject
                                     sentenceAsOutput = singleSentence.Key;
                                     collectCorrectSentanceOutputJO["sentence"] = singleSentence.Key;
                                     saveSentenceForDuplicate.Add(singleSentence.Key);
-                                    collectCorrectSentanceOutputJO["sectionNo"] = sentenceSection.ElementAt(next);
-                                    //if (fileNameVal.ToLower().IndexOf("lease") == 0)
-                                    //    collectCorrectSentanceOutputJO["fileName"] = "";
-                                    //else
+                                    collectCorrectSentanceOutputJO["sectionNo"] = sentenceSectionCopy.ElementAt(next);
                                         collectCorrectSentanceOutputJO["fileName"] = fileNameVal;
                                     collectCorrectSentanceOutputJO["search"] = singleSentence.Value;
                                     collectCorrectSentanceOutput.Add(collectCorrectSentanceOutputJO);
@@ -2342,7 +2553,8 @@ namespace ReboProject
                         {
                             var allSectionNameCopy = allSectionName.ElementAt(f).Trim().Split(' ');
                             allSectionNameCopy = allSectionNameCopy.Where(x => !string.IsNullOrEmpty(x)).ToArray();
-                            allSectionNameCopy = allSectionNameCopy.Skip(1).ToArray();
+                            if(allSectionNameCopy.Count() > 1)
+                                allSectionNameCopy = allSectionNameCopy.Skip(1).ToArray();
                             if (allSectionNameCopy.Count() > 0)
                             {
                                 saveSectionVal.Add(allSection.ElementAt(f), allSectionNameCopy);

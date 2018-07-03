@@ -9,12 +9,16 @@ namespace ReboProject
     class Program
     {
         // for Only section
-        public static List<Dictionary<Dictionary<string, int>, int>> getSectionVal(int startPageVal,int endPageVal, Dictionary<int, Dictionary<int, string>> savePage, Dictionary<int, Dictionary<int, string>> savePageSectionRegex)
+
+
+        //*********************************************** has to work on it**********************************************88
+
+        public static List<Dictionary<Dictionary<string, int>, int>> getSectionVal(int startPageVal, int endPageVal, Dictionary<int, Dictionary<int, string>> savePage, Dictionary<int, Dictionary<int, string>> savePageSectionRegex)
         {
             List<Dictionary<Dictionary<string, int>, int>> dataSet = new List<Dictionary<Dictionary<string, int>, int>>();
             Dictionary<Dictionary<string, int>, int> getCompleteSection = new Dictionary<Dictionary<string, int>, int>();
             Dictionary<Dictionary<string, int>, int> getCompleteSectionRegex = new Dictionary<Dictionary<string, int>, int>();
-            Dictionary<string,int> getAllParaOfSection = new Dictionary<string, int>();
+            Dictionary<string, int> getAllParaOfSection = new Dictionary<string, int>();
             Dictionary<string, int> regexSave = new Dictionary<string, int>();
             var regexDictionary = new Dictionary<int, string>();
 
@@ -45,7 +49,7 @@ namespace ReboProject
             regexDictionary.Add(23, @"^[\s]*(?i)(section)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}"); //    section XVII
             regexDictionary.Add(24, @"^[\s]*(?i)(article)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}"); //    article XVII
 
-            
+
             regexDictionary.Add(25, @"^[\s]*((?i)(section)[\s]*[a-z])");  //      section a
             regexDictionary.Add(26, @"^[\s]*((?i)(article)[\s]*[a-z])");  //      article a
             regexDictionary.Add(27, @"^[\s]*([A-Z][.])\s");  // A.
@@ -53,7 +57,7 @@ namespace ReboProject
             regexDictionary.Add(29, @"^[\s]*((?i)(ARTICLE)[\s]*[A-Z])");  // ARTICLE A  
 
 
-            List<string>  getAllSectionValue = new List<string>();
+            List<string> getAllSectionValue = new List<string>();
             var pageno = 0;
             var regexFound = false;
             var regexToFind = "";
@@ -71,7 +75,7 @@ namespace ReboProject
                 if (startPage == 0)
                     startPage = pageno;
                 var paraNoVal = 0;
-                
+
                 var nextRegex = 0;
                 var nextPageRegexVal = savePageSectionRegex[nextPageRegex];
                 foreach (var checkPage in entry.Value) // each page value
@@ -92,7 +96,7 @@ namespace ReboProject
                             {
                                 if (getAllParaOfSection.Count() > 0)
                                 {
-                                    getCompleteSection.Add( getAllParaOfSection , startPage);
+                                    getCompleteSection.Add(getAllParaOfSection, startPage);
                                     getCompleteSectionRegex.Add(regexSave, startPage);
                                     startPage = pageno;
                                     getAllParaOfSection = new Dictionary<string, int>();
@@ -103,16 +107,20 @@ namespace ReboProject
                                     regexFound = true;
                                     break;
                                 }
-                                else {
-                                    if (!getAllParaOfSection.ContainsKey(checkPage.Value)) {
+                                else
+                                {
+                                    if (!getAllParaOfSection.ContainsKey(checkPage.Value))
+                                    {
                                         regexSave.Add(regexVal, paraNoVal);
                                         getAllParaOfSection.Add(checkPage.Value, paraNoVal);
                                     }
-                                }  
+                                }
                             }
                         }
-                        if(regexFound == false){
-                            if (!getAllParaOfSection.ContainsKey(checkPage.Value)) {
+                        if (regexFound == false)
+                        {
+                            if (!getAllParaOfSection.ContainsKey(checkPage.Value))
+                            {
                                 regexSave.Add(regexVal, paraNoVal);
                                 getAllParaOfSection.Add(checkPage.Value, paraNoVal);
                             }
@@ -123,7 +131,7 @@ namespace ReboProject
                         var matchData = Regex.Matches(checkPage.Value, regexToFind); // find match
                         if (matchData.Count > 0)
                         {
-                            getCompleteSection.Add( getAllParaOfSection, startPage);
+                            getCompleteSection.Add(getAllParaOfSection, startPage);
                             getCompleteSectionRegex.Add(regexSave, startPage);
                             startPage = pageno;
                             getAllParaOfSection = new Dictionary<string, int>();
@@ -133,7 +141,8 @@ namespace ReboProject
                         }
                         else
                         {
-                            if (!getAllParaOfSection.ContainsKey(checkPage.Value)) {
+                            if (!getAllParaOfSection.ContainsKey(checkPage.Value))
+                            {
                                 regexSave.Add(regexVal, paraNoVal);
                                 getAllParaOfSection.Add(checkPage.Value, paraNoVal);
                             }
@@ -146,8 +155,7 @@ namespace ReboProject
             dataSet.Add(getCompleteSectionRegex);
             return dataSet;
         }
-        
-        // get the section page number
+
         public static List<string> completeSection(int sectionPageNo, Dictionary<int, Dictionary<int, string>> savePage, Dictionary<string, int> sectionRegex, Dictionary<string, int> entry, string getLineText, string myRegex)
         {
             List<string> sectionData = new List<string>();
@@ -308,8 +316,7 @@ namespace ReboProject
             sectionData.Add(startSectionParaNo); 
             return sectionData;
         }
-
-        // get section para
+        
         public static void getNotationType(string Sentence, int sectionPageNo, Dictionary<int, Dictionary<int, string>> savePage, out int pageNoVal, out int paraNoVal)
         {
             pageNoVal = 0;
@@ -333,6 +340,8 @@ namespace ReboProject
 
         }
 
+        //*********************************************************************************************************************
+
         // check if the para has section number or not for paragraph
         public static bool checkHasSectionNo(string sentence) {
             var hasSectionNo = false;
@@ -346,23 +355,23 @@ namespace ReboProject
             matchRegexNumeric.Add(5, @"^[\s]*((?i)(article)\s\d*)(?!\S)"); //   article 1
             matchRegexNumeric.Add(6, @"^[\s]*((?i)(article)\s\d+\.(?:\d+\.?)*)(?!\S)"); //  article 1.1 
             matchRegexNumeric.Add(7, @"^[\s]*([1-9]{1,3}[:])(?!\S)"); //   1:
-            matchRegexNumeric.Add(8, @"^[\s]*([1-9]{1,3}[)])(?!\S)"); //   1)
+            matchRegexNumeric.Add(8, @"^[\s]*([[(][\s]*[1-9]{1,3}[\s]*[)])(?!\S)"); //   (1)
             matchRegexNumeric.Add(9, @"^[\s]*([1-9]{1,3}[]])(?!\S)"); //   1]
-            matchRegexNumeric.Add(10, @"^[\s]*([[]+[1-9]+[]])(?!\S)"); //   [1]
-            matchRegexNumeric.Add(11, @"^[\s]*([[(]+[1-9]+[)])(?!\S)"); //   (1)
+            matchRegexNumeric.Add(10, @"^[\s]*([[[\s]*[1-9]{1,3}[\s]*[]])(?!\S)"); //   [1]
+            matchRegexNumeric.Add(11, @"^[\s]*([1-9]{1,3}[)])(?!\S)"); //   1)
             
-            matchRegexNumeric.Add(12, @"^[\s]*[(](?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[)](?!\S)"); //    (xvii)
+            matchRegexNumeric.Add(12, @"^[\s]*[(][\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[\s]*[)](?!\S)"); //    (xvii)
             matchRegexNumeric.Add(13, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[)](?!\S)"); //    xvii)
-            matchRegexNumeric.Add(14, @"^[\s]*[[](?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[]](?!\S)"); //    [xvii]
+            matchRegexNumeric.Add(14, @"^[\s]*[[][\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[\s]*[]](?!\S)"); //    [xvii]
             matchRegexNumeric.Add(15, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[]](?!\S)"); //    xvii]
             matchRegexNumeric.Add(16, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[:](?!\S)"); //    xvii:
             matchRegexNumeric.Add(17, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[.](?!\S)"); //    xvii.
             matchRegexNumeric.Add(18, @"^[\s]*(?i)(section)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[.]?(?!\S)"); //    section xvii
             matchRegexNumeric.Add(19, @"^[\s]*(?i)(article)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[.]?(?!\S)"); //    article xvii
             
-            matchRegexNumeric.Add(20, @"^[\s]*[(](?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[)](?!\S)"); //    (XVII)
+            matchRegexNumeric.Add(20, @"^[\s]*[(][\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[\s]*[)](?!\S)"); //    (XVII)
             matchRegexNumeric.Add(21, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[)](?!\S)"); //    XVII)
-            matchRegexNumeric.Add(22, @"^[\s]*[[](?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[]](?!\S)"); //    [XVII]
+            matchRegexNumeric.Add(22, @"^[\s]*[[][\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[\s]*[]](?!\S)"); //    [XVII]
             matchRegexNumeric.Add(23, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[]](?!\S)"); //    XVII]
             matchRegexNumeric.Add(24, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[:](?!\S)"); //    XVII:
             matchRegexNumeric.Add(25, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[.](?!\S)"); //    XVII.
@@ -371,23 +380,23 @@ namespace ReboProject
             
             matchRegexNumeric.Add(28, @"^[\s]*([a-z][.])(?!\S)");  //  a.
             matchRegexNumeric.Add(29, @"^[\s]*([a-z][:])(?!\S)");  //  a:
-            matchRegexNumeric.Add(30, @"^[\s]*([(][a-z][)])(?!\S)");  //    (a)
+            matchRegexNumeric.Add(30, @"^[\s]*([(][\s]*[a-z][\s]*[)])(?!\S)");  //    (a)
             matchRegexNumeric.Add(31, @"^[\s]*([a-z][)])(?!\S)");  // a)
-            matchRegexNumeric.Add(32, @"^[\s]*([[][a-z][]])(?!\S)");  //   a]
+            matchRegexNumeric.Add(32, @"^[\s]*([[][\s]*[a-z][\s]*[]])(?!\S)");  //   a]
             matchRegexNumeric.Add(33, @"^[\s]*([a-z][]])(?!\S)");  //     [a]
             matchRegexNumeric.Add(34, @"^[\s]*((?i)(section)[\s]*[a-z])[.]?(?!\S)");  //      section a
             matchRegexNumeric.Add(35, @"^[\s]*((?i)(article)[\s]*[a-z])[.]?(?!\S)");  //      article a
             
             matchRegexNumeric.Add(36, @"^[\s]*([A-Z][.])(?!\S)");  // A.
             matchRegexNumeric.Add(37, @"^[\s]*([A-Z][:])(?!\S)");  // A:
-            matchRegexNumeric.Add(38, @"^[\s]*([(][A-Z][)])(?!\S)");  // (A)
+            matchRegexNumeric.Add(38, @"^[\s]*([(][\s]*[A-Z][\s]*[)])(?!\S)");  // (A)
             matchRegexNumeric.Add(39, @"^[\s]*([A-Z][)])(?!\S)");  // A)
-            matchRegexNumeric.Add(40, @"^[\s]*([[][A-Z][]])(?!\S)");  // A]
+            matchRegexNumeric.Add(40, @"^[\s]*([[][\s]*[A-Z][\s]*[]])(?!\S)");  // A]
             matchRegexNumeric.Add(41, @"^[\s]*([A-Z][]])(?!\S)");  // [A]
             matchRegexNumeric.Add(42, @"^[\s]*((?i)(section)[\s]*[A-Z])[.]?(?!\S)");  // section A
             matchRegexNumeric.Add(43, @"^[\s]*((?i)(ARTICLE)[\s]*[A-Z])[.]?(?!\S)");  // ARTICLE A
 
-            foreach (var item in matchRegexNumeric)
+            foreach (var item in matchRegexNumeric) // loop through all the regex to check the section no
             {
                 Regex regex = new Regex(item.Value);
                 var match = regex.Match(sentence); // check if match found
