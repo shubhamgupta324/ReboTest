@@ -2031,11 +2031,14 @@ namespace ReboProject
             fileNmeCopy = fileNmeCopy.Distinct().ToList();
 
             List<string> finalFormatList = new List<string>();
+            List<string> commonFile = new List<string>();
+            List<string> commonSectionname = new List<string>();
             var finalFormat = "";
             for (int p = 0; p < fileNmeCopy.Count(); p++)
             {
                 Dictionary<string, string[]> saveSectionVal = new Dictionary<string, string[]>();
                 Dictionary<string, string> saveArtAndSection = new Dictionary<string, string>();
+                Dictionary<string, string> savesectionAndFile = new Dictionary<string, string>();
                 List<string> finalSections = new List<string>();
                 var singleFormat = "";
                 var fileToCheck = fileNmeCopy.ElementAt(p).Trim();
@@ -2043,63 +2046,68 @@ namespace ReboProject
                 {
                     if (fileToCheck == fileNme.ElementAt(f).Trim()) {
                         if (!saveSectionVal.ContainsKey(allSection.ElementAt(f))) {
-                            var allSectionNameCopy = allSectionName.ElementAt(f).Split(' ');
+                            var allSectionNameCopy = allSectionName.ElementAt(f).Trim().Split(' ');
+                            allSectionNameCopy = allSectionNameCopy.Where(x => !string.IsNullOrEmpty(x)).ToArray();
                             allSectionNameCopy = allSectionNameCopy.Skip(1).ToArray();
-                            saveSectionVal.Add(allSection.ElementAt(f), allSectionNameCopy);
-                            saveArtAndSection.Add(allSection.ElementAt(f), allSectionNameSplit.ElementAt(f));
+                            if (allSectionNameCopy.Count() > 0) {
+                                saveSectionVal.Add(allSection.ElementAt(f), allSectionNameCopy);
+                                saveArtAndSection.Add(allSection.ElementAt(f), allSectionNameSplit.ElementAt(f));
+                                savesectionAndFile.Add(allSection.ElementAt(f), fileNme.ElementAt(f).Trim());
+                            }
                         }
                     }
                 }
-
-                var loopup = saveSectionVal.ToLookup(x => x.Value.ElementAt(0), x => x.Key).Where(x => x.Count() > 1);
                 List<string> saveResult = new List<string>();
                 var sectionCount = 0;
                 var sectionName = "";
                 Dictionary<string, string> secondCommonSet = new Dictionary<string, string>();
-                foreach (var item in loopup)
-                {
-                    if (item.Key != "") {
-                        var commonData = item.Key;
-                        var KeyVal = item.Aggregate("", (s, v) => s + "," + v);
-                        var splitSection = KeyVal.Split(',');
-                        splitSection = splitSection.Skip(1).ToArray();
-                        for (int i = 0; i < splitSection.Count(); i++)
+                if (saveSectionVal.Values.Count() > 0) {
+                    var loopup = saveSectionVal.ToLookup(x => x.Value.ElementAt(0), x => x.Key).Where(x => x.Count() > 1);
+                    foreach (var item in loopup)
+                    {
+                        if (item.Key != "")
                         {
-                            var sectionString = splitSection[i];
-                            if (saveSectionVal[sectionString].Count() > 2)
-                                secondCommonSet.Add(sectionString, (commonData + " " + saveSectionVal[sectionString].ElementAt(1)).Trim());
-                        }
-                        var secondloopup = secondCommonSet.ToLookup(x => x.Value, x => x.Key).Where(x => x.Count() > 1);
-                        foreach (var seconditem in secondloopup)
-                        {
-                            if (seconditem.Key != "")
-                                commonData = seconditem.Key;
-                        }
-                        var sectionSaveFormat = "";
-                        sectionName = "";
-                        
-                        for (int i = 0; i < splitSection.Count(); i++)
-                        {
-                            if (splitSection.ElementAt(i) != "")
+                            var commonData = item.Key;
+                            var KeyVal = item.Aggregate("", (s, v) => s + "," + v);
+                            var splitSection = KeyVal.Split(',');
+                            splitSection = splitSection.Skip(1).ToArray();
+                            for (int i = 0; i < splitSection.Count(); i++)
                             {
-                                saveResult.Add(splitSection.ElementAt(i));
-                                sectionCount++;
-                                var sectionReplace = splitSection.ElementAt(i).Replace(commonData, "");
-                                if (sectionSaveFormat == "")
-                                    sectionSaveFormat = sectionSaveFormat + sectionReplace;
-                                else if (i != 0 && i < splitSection.Count() - 1)
-                                    sectionSaveFormat = sectionSaveFormat + ", " + sectionReplace;
-                                else
-                                    sectionSaveFormat = sectionSaveFormat + " & " + sectionReplace;
+                                var sectionString = splitSection[i];
+                                if (saveSectionVal[sectionString].Count() > 2)
+                                    secondCommonSet.Add(sectionString, (commonData + " " + saveSectionVal[sectionString].ElementAt(1)).Trim());
                             }
-                            if (i == 0)
+                            var secondloopup = secondCommonSet.ToLookup(x => x.Value, x => x.Key).Where(x => x.Count() > 1);
+                            foreach (var seconditem in secondloopup)
                             {
-                                sectionName = saveArtAndSection[splitSection.ElementAt(i)];
+                                if (seconditem.Key != "")
+                                    commonData = seconditem.Key;
                             }
+                            var sectionSaveFormat = "";
+                            sectionName = "";
+                            for (int i = 0; i < splitSection.Count(); i++)
+                            {
+                                if (splitSection.ElementAt(i) != "")
+                                {
+                                    saveResult.Add(splitSection.ElementAt(i));
+                                    sectionCount++;
+                                    var sectionReplace = splitSection.ElementAt(i).Replace(commonData, "");
+                                    if (sectionSaveFormat == "")
+                                        sectionSaveFormat = sectionSaveFormat + sectionReplace;
+                                    else if (i != 0 && i < splitSection.Count() - 1)
+                                        sectionSaveFormat = sectionSaveFormat + ", " + sectionReplace;
+                                    else
+                                        sectionSaveFormat = sectionSaveFormat + " & " + sectionReplace;
+                                }
+                                if (i == 0)
+                                {
+                                    sectionName = saveArtAndSection[splitSection.ElementAt(i)];
+                                    commonSectionname.Add(sectionName);
+                                }
+                            }
+                            finalSections.Add(sectionName + " " + commonData + " (" + sectionSaveFormat + ")");
                         }
-                        finalSections.Add(sectionName + " " + commonData + " (" + sectionSaveFormat + ")");
                     }
-                   
                 }
                 if (sectionCount == 0)
                 {
@@ -2129,8 +2137,15 @@ namespace ReboProject
                         if (!saveResult.Contains(item.Key) & item.Key !="")
                         {
                             var sectionNameVal = saveArtAndSection[item.Key];
+                            var fileNameval =savesectionAndFile[item.Key];
+                           
                             if (!finalSections.Contains(item.Key))
-                                finalSections.Add(item.Key);
+                            {
+                                if (commonSectionname.Contains(fileNameval))
+                                    finalSections.Add(item.Key);
+                                else
+                                    finalSections.Add(sectionNameVal + " " + item.Key);
+                            }
                         }
                     }
                 }
