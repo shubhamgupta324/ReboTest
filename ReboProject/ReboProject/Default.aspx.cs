@@ -448,7 +448,7 @@ namespace ReboProject
                         JArray collectCorrectSentanceOutput = new JArray();
                         collectCorrectSentance(SentenceResultOutputFormatCondition,getSectionAndFileNameAndSearchJA, withInForSentence, resultAllKeyword, resultSearch, copyResultOutputFormat, out finalOutputData, out collectCorrectSentanceOutput);
                         var format = "";
-                        buildFormat(collectCorrectSentanceOutput, finalOutputData, resultOutputFormat, out format);
+                        buildFormat(outputNotFoundMessage,collectCorrectSentanceOutput, finalOutputData, resultOutputFormat, out format);
                         ja3[0]["correctString"] = format;
                     }
 
@@ -1473,62 +1473,69 @@ namespace ReboProject
                         }
                         if (orConditionSentence == 0)
                         {
+                            if (sentenceAsOutput != "") {
                                 orConditionFormat = orConditionFormat.Replace("{{" + andConditionId + "}}", "").Trim();
                                 stringOutput.Add(orConditionFormat);
                                 searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", orConditionFormat);
+                            }
+                                
                         }
-                        if (stringOutput.Count() < andConditionId - 1) {
+                        if (stringOutput.Count() <= andConditionId - 1) {
                             stringOutput.Add(null);
                         }
                     }
                 }
                 
-                    var displayConstant = "";
-                    var formatContion = "";
-                    var gotVal = false;
-                    for (var i=0;i < formatCondition.Count();i++) {
-                        formatContion = formatCondition[i]["condition"].ToString();
-                        var id = formatCondition[i]["id"].ToString();
-                        string[] getCondition = formatContion.Split('|'); // break the contion if multiple
-                        var count = 0;
-                        for (int k = 0; k < getCondition.Count(); k++) // loop through multiple condition in one
-                        {
-                            if (searchFormatCOpy.IndexOf(getCondition[k]) != -1) { // check if that condition is ther in format string 
+                var displayConstant = "";
+                var formatContion = "";
+                var gotVal = false;
+                for (var i=0;i < formatCondition.Count();i++) {
+                    formatContion = formatCondition[i]["condition"].ToString();
+                    var id = formatCondition[i]["id"].ToString();
+                    string[] getCondition = formatContion.Split('|'); // break the contion if multiple
+                    var count = 0;
+                    for (int k = 0; k < getCondition.Count(); k++) // loop through multiple condition in one
+                    {
+                        if (searchFormatCOpy.IndexOf(getCondition[k]) != -1)
+                        { // check if that condition is ther in format string 
 
-                                if (stringOutput[Int32.Parse(getCondition[k].Replace("{","").Replace("}","").Trim())-1] != null) // to check if there and output for there
+                            if (Int32.Parse(getCondition[k].Replace("{", "").Replace("}", "").Trim()) -1 > stringOutput.Count()) {
+                                displayConstant = formatCondition[i]["value"][0]["fail"].ToString();
+                                gotVal = true;
+                                break;
+                            }
+                            else if (stringOutput[Int32.Parse(getCondition[k].Replace("{","").Replace("}","").Trim())-1] != null) // to check if there and output for there
+                            {
+                                var allCondition = formatCondition[i]["value"][0]["success"][0]["condition"];
+                                if (formatCondition[i]["value"][0]["success"][0]["condition"].HasValues)
                                 {
-                                    var allCondition = formatCondition[i]["value"][0]["success"][0]["condition"];
-                                    if (formatCondition[i]["value"][0]["success"][0]["condition"].HasValues)
+                                    for (var conditionVal = 0; conditionVal < allCondition.Count(); conditionVal++)
                                     {
-                                        for (var conditionVal = 0; conditionVal < allCondition.Count(); conditionVal++)
+                                        var getData = formatCondition[i]["value"][0]["success"][0]["condition"][conditionVal];
+                                        if (stringOutput[i] != null && stringOutput[i] == getData["value"].ToString())
                                         {
-                                            var getData = formatCondition[i]["value"][0]["success"][0]["condition"][conditionVal];
-                                            if (stringOutput[i] != null && stringOutput[i] == getData["value"].ToString())
-                                            {
-                                                displayConstant = getData["display"].ToString();
-                                                //gotVal = true;
-                                                count++;
-                                            }
+                                            displayConstant = getData["display"].ToString();
+                                            count++;
                                         }
-                                    }
-                                    else
-                                    {
-                                        displayConstant = formatCondition[i]["value"][0]["success"][0]["display"].ToString();
-                                       // gotVal = true;
-                                        count++;
                                     }
                                 }
                                 else
                                 {
-                                    displayConstant = formatCondition[i]["value"][0]["fail"].ToString();
-                                    gotVal = true;
-                                    break;
+                                    displayConstant = formatCondition[i]["value"][0]["success"][0]["display"].ToString();
+                                    count++;
                                 }
                             }
+                            else
+                            {
+                                displayConstant = formatCondition[i]["value"][0]["fail"].ToString();
+                                gotVal = true;
+                                break;
+                            }
                         }
-                        if (gotVal == true || count == getCondition.Count())
-                            searchFormat = searchFormat.Replace("##" + id + "##", displayConstant).Trim();
                     }
+                    if (gotVal == true || count == getCondition.Count())
+                        searchFormat = searchFormat.Replace("##" + id + "##", displayConstant).Trim();
+                }
                 foreach (var contion in allContionToReplace) {
                     searchFormat = searchFormat.Replace("{{" + contion + "}}", "").Trim();
                 }
@@ -1549,9 +1556,11 @@ namespace ReboProject
                         for (var j = 0; j < getCondition.Count(); j++)
                         {
                             if (copyResultOutputFormat.IndexOf(getCondition[j]) != -1)
-                            {
-                                if (searchFormat != "")
-                                    count++;
+                             {
+                                if (allFormatSave.ContainsKey(Int32.Parse(getCondition[j].Replace("{", "").Replace("}", "").Trim()))) {
+                                    if (allFormatSave[Int32.Parse(getCondition[j].Replace("{", "").Replace("}", "").Trim())] != "")
+                                        count++;
+                                }
                             }
                         }
                         if (count == getCondition.Count()) // save the output
@@ -1572,7 +1581,7 @@ namespace ReboProject
             }
         }
 
-        public void buildFormat(JArray jaCompleteData, string finalOutputData, string resultOutputFormat, out string format)
+        public void buildFormat(string outputNotFoundMessage, JArray jaCompleteData, string finalOutputData, string resultOutputFormat, out string format)
         {
             format = "";
             var DocumentName = "";
@@ -1598,6 +1607,10 @@ namespace ReboProject
                     else
                         SectionNumber = SectionNumber + "& " + jaCompleteData[i]["sectionNo"].ToString();
                 }
+                Regex regex = new Regex("(?i)(article)");
+                var match = regex.Match(SectionNumber); // check if match found
+                if (match.Success)
+                    SectionNumber = SectionNumber.Replace(match.Value ,"").Trim();
             }
             for (int i = 0; i < jaCompleteData.Count; i++)
             {
@@ -1615,7 +1628,10 @@ namespace ReboProject
                var indexVal= resultOutputFormat.IndexOf(",");
                 resultOutputFormat = resultOutputFormat.Remove(indexVal, 1);
             }
-            format = resultOutputFormat.Replace("{{DocumentName}}", DocumentName).Replace("{{searchFor}}", SearchFor).Replace("{{found text}}", FoundText).Replace("{{Paragraph Number}}", SectionNumber);
+            if (FoundText != "")
+                format = resultOutputFormat.Replace("{{DocumentName}}", DocumentName).Replace("{{searchFor}}", SearchFor).Replace("{{found text}}", FoundText).Replace("{{Paragraph Number}}", SectionNumber);
+            else
+                format = outputNotFoundMessage;
         }
         
     }
