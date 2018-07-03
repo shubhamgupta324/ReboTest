@@ -99,6 +99,7 @@ namespace ReboProject
                     var checkNextLine = singleDp["result"][0]["checkNextLine"].ToString();// set all the sentences from all output configuration
                     var SentenceResultOutputFormat = singleDp["result"][0]["SentenceoutputFormat"].ToString();// set all the sentences from all output configuration
                     var SentenceResultOutputFormatCondition = singleDp["result"][0]["FinalformatCondition"];// set all the sentences from all output configuration
+                    var andConditionCheck = singleDp["result"][0]["andConditionCheck"];// set all the sentences from all output configuration
                     var resultOutputFormat = singleDp["result"][0]["outputFormat"].ToString();// eg: final output format
                     var outputNotFoundMessage = singleDp["result"][0]["outputNotFoundMessage"].ToString();// eg: final output format
                     var resultAllKeyword = singleDp["result"][0]["allKeyword"];// list of all keywords used
@@ -208,7 +209,8 @@ namespace ReboProject
                             var mainLeaseRead = (int)configuration[myKey - 1]["MainLeaseRead"];// skip main lease read
                             var pageNoRange = configuration[myKey - 1]["PageNoRange"];// skip main lease read
                             var startPage = pageNoRange[0]["startRange"].ToString();
-                            var readDuplicate = configuration[myKey - 1]["readDuplicate"].ToString();
+                            //var readDuplicate = configuration[myKey - 1]["readDuplicate"].ToString();
+                            var readDuplicate = "";
                             var endPage = pageNoRange[0]["endRange"].ToString();
                             var startPageVal = 0;
                             var endPageVal = 0;
@@ -409,7 +411,7 @@ namespace ReboProject
                         var finalOutputData = "";
                         JArray collectCorrectSentanceOutput = new JArray();
                         // get the filename, sectionNo and data....
-                        collectCorrectSentance(paraBreakCondition, SearchWithinVal, checkNextLine, financialSelect, sentenceStart, sentenceEnd, SentenceResultOutputFormatCondition, getSectionAndFileNameAndSearchJA, withInForSentence, resultAllKeyword, resultSearch, copyResultOutputFormat, out finalOutputData, out collectCorrectSentanceOutput);
+                        collectCorrectSentance(andConditionCheck, paraBreakCondition, SearchWithinVal, checkNextLine, financialSelect, sentenceStart, sentenceEnd, SentenceResultOutputFormatCondition, getSectionAndFileNameAndSearchJA, withInForSentence, resultAllKeyword, resultSearch, copyResultOutputFormat, out finalOutputData, out collectCorrectSentanceOutput);
                         var format = "";
                         // set the complete format
                         buildFormat(outputNotFoundMessage, collectCorrectSentanceOutput, finalOutputData, resultOutputFormat, out format);
@@ -550,7 +552,6 @@ namespace ReboProject
 
                     IList<TextGroup> theGroups = op.Group(op.Select(0, theText.Length));
                     List<TextGroup> ordereddGroups = theGroups.OrderByDescending(o => o.Rect.Top).ToList();
-
                     StringBuilder sb1 = new StringBuilder();
                     XRect prevRect = new XRect("0 0 0 0");
 
@@ -566,6 +567,8 @@ namespace ReboProject
                     var firstParaNoSection = false;
                     foreach (TextGroup lineGroup in ordereddGroups)
                     {
+                        if (lineGroup.Text.Trim() == "")
+                            continue;
                         nextPara = false;
                         if ((prevRect.Bottom - lineGroup.Rect.Top) > 8.5)
                             nextPara = true;
@@ -619,6 +622,7 @@ namespace ReboProject
                                     saveSectionPara = new Dictionary<int, string>();
                                     lastSectionPageNo = PageIndex;
                                 }
+                                nextSection=1;
                                 saveSectionPara.Add(nextSection, sb1.ToString());
                             }
                             else
@@ -687,9 +691,9 @@ namespace ReboProject
                     matchData = Regex.Matches(para, "^(?i)[\"]" + searchVal + "[\"]([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}[\\s]|\\d{0,2}[\\s])$"); // find match
                 }
                 else if (para.Trim().IndexOf("\"") != -1)
-                    matchData = Regex.Matches(para.Trim(), @"^\b\s?(?i)" + rgx.Replace(sectionLibVal, "\\$1") + "(\\s|\\b)[\"]?(([a-zA-Z]{1}|\\d{0,3}|(\\W?))*)?[\"]?$");
+                    matchData = Regex.Matches(para.Trim(), @"^\b\s?(?i)" + rgx.Replace(sectionLibVal, "\\$1") + "(\\s|\\b)[\"]?(([a-zA-Z]{1,2}|\\d{1,3}|(\\W?)))?[\"]?$");
                 else
-                    matchData = Regex.Matches(para, @"^\b\s?(?i)" + rgx.Replace(sectionLibVal, "\\$1") + "([a-zA-Z]{1}|\\d{1})?(\\s|\\b)([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}[\\s]|\\d{0,2}[\\s])$");
+                    matchData = Regex.Matches(para, @"^\b\s?(?i)" + rgx.Replace(sectionLibVal, "\\$1") + "([a-zA-Z]{1}|\\d{1})?(\\s|\\b)([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}[\\s]?|\\d{0,2}[\\s]?)$");
 
                 if (matchData.Count > 0)
                 { // match found then is a section
@@ -1410,20 +1414,20 @@ namespace ReboProject
                     for (var i= 0;i < OutputMatch.Count(); i++) // check for duplicate... if the same sentance is already an output
                     {
                         var duplicateByPage = false;
-                        if (readDuplicate == "1")
-                        {
-                            if (sectionPageNos != "")
-                            {
-                                List<string> foundResultPage = new List<string>(PageNoMatch.ElementAt(i).Value.Trim().Split('|'));
-                                List<string> currentResultPage = new List<string>(sectionPageNos.Trim().Split('|'));
-                                List<string> duplicates = foundResultPage.Intersect(currentResultPage).ToList();
-                                if (duplicates.Count > 0)
-                                {
-                                    duplicateByPage = true;
-                                }
-                            }
-                        }
-                        else
+                        //if (readDuplicate == "1")
+                        //{
+                        //    if (sectionPageNos != "")
+                        //    {
+                        //        List<string> foundResultPage = new List<string>(PageNoMatch.ElementAt(i).Value.Trim().Split('|'));
+                        //        List<string> currentResultPage = new List<string>(sectionPageNos.Trim().Split('|'));
+                        //        List<string> duplicates = foundResultPage.Intersect(currentResultPage).ToList();
+                        //        if (duplicates.Count > 0)
+                        //        {
+                        //            duplicateByPage = true;
+                        //        }
+                        //    }
+                        //}
+                        //else
                             duplicateByPage = true;
                        
                             
@@ -1615,7 +1619,7 @@ namespace ReboProject
         }
 
         // get all the correct sentance from all the para 
-        public void collectCorrectSentance(string paraBreakCondition, int searchWithInVal,string checkNextLineVal, JToken financialSelect, JToken sentenceStart, JToken sentenceEnd, JToken SentenceResultOutputFormatCondition, JArray getSectionAndFileNameAndSearchJA, Dictionary<string, int> withInForSentence, JToken resultAllKeyword, JToken resultSearch, string copyResultOutputFormat, out string finalOutputData, out JArray collectCorrectSentanceOutput)
+        public void collectCorrectSentance(JToken andConditionCheck, string paraBreakCondition, int searchWithInVal,string checkNextLineVal, JToken financialSelect, JToken sentenceStart, JToken sentenceEnd, JToken SentenceResultOutputFormatCondition, JArray getSectionAndFileNameAndSearchJA, Dictionary<string, int> withInForSentence, JToken resultAllKeyword, JToken resultSearch, string copyResultOutputFormat, out string finalOutputData, out JArray collectCorrectSentanceOutput)
         {
             finalOutputData = "";
             collectCorrectSentanceOutput = new JArray();
@@ -1662,7 +1666,7 @@ namespace ReboProject
                     string[] finalBreak = { };
 
                     //if (paraBreakCondition.Trim() == "")
-                    if (topVal == ".")
+                    if (topVal == "." | paraBreakCondition.Trim() == "")
                     {
                         string[] getSentanceFullStop = item["Pageoutput"].ToString().Split(new string[] { ". " }, StringSplitOptions.None);
                         if (getSentanceFullStop[getSentanceFullStop.Count() - 1] == "" | getSentanceFullStop[getSentanceFullStop.Count() - 1] == " ")
@@ -1904,6 +1908,51 @@ namespace ReboProject
                     {
                         copyResultOutputFormat = copyResultOutputFormat.Replace("##" + (item.Key + 1) + "##", item.Value);
                     }
+
+                    for (var i = 0; i < andConditionCheck.Count(); i++)
+                    {
+                        //{"id":"3","condition":"{{1}}|{{2}}","display":".","displayCondition":"or"}
+                        var id = (int)andConditionCheck[i]["id"]; // get the id
+                        var condition = andConditionCheck[i]["condition"].ToString().Split('|'); // get the condition
+                        var display = (int)andConditionCheck[i]["display"]; // get the display
+                        var displayCondition = andConditionCheck[i]["displayCondition"].ToString(); // get the display Condition
+
+                        var containsData = 0;
+                        foreach (var item in condition)
+                        {
+                            var getId = item.Replace("{{", "").Replace("}}", "").Trim();
+                            if (allFormatSave.ContainsKey(Int32.Parse(getId)))
+                                containsData++;
+
+                        }
+                        if (displayCondition.ToLower() == "and")
+                        {
+                            if (containsData == condition.Count())
+                            {
+                                if (display == 0)
+                                    allFormatSave.Remove(id);
+                            }
+                            else if (containsData < 2)
+                            {
+                                if (display == 1)
+                                    allFormatSave.Remove(id);
+                            }
+                        }
+                        else if (displayCondition.ToLower() == "or")
+                        {
+                            if (containsData >= 1)
+                            {
+                                if(display == 0)
+                                    allFormatSave.Remove(id);
+                            }
+                            else if (containsData == 0)
+                            {
+                                if (display == 1)
+                                    allFormatSave.Remove(id);
+                            }
+                        }
+                    }
+
                     foreach (var item in allFormatSave)
                     {
                         copyResultOutputFormat = copyResultOutputFormat.Replace("{{" + item.Key + "}}", item.Value);

@@ -845,7 +845,7 @@ namespace ReboProject
                 Regex regexYear = new Regex(@"\d{4}", RegexOptions.IgnoreCase);
                 var match = regexYear.Match(datestring); // check if match found
                 if (match.Success) {
-                    if (datestring.IndexOf(match.Value) == 1) {
+                    if (datestring.Trim().IndexOf(match.Value.Trim()) == 0) {
                         objDate = match.Value.Trim();
                     }
                     else
@@ -1002,7 +1002,7 @@ namespace ReboProject
         public static List<string> extractPercentage(string html)
         {
             List<string> formattedString = new List<string>();
-            foreach (Match m in Regex.Matches(html, @"(\d{1,3})?(\.(\d(?:\d+\.?)*)?)?[\s]*(\%|\s\bpercent\b)"))
+            foreach (Match m in Regex.Matches(html, @"(\d{1,3})?(\.(\d(?:\d+\.?)*)?)?[\s]*(\%)"))
             {
                 formattedString.Add(m.Value);
             }
@@ -1273,7 +1273,7 @@ namespace ReboProject
         {
             html = Regex.Replace(html, @"[^0-9a-zA-Z]+", " ");
             List<string> formattedString = new List<string>();
-            foreach (Match m in Regex.Matches(html, @"\d{2}[\s]*years"))
+            foreach (Match m in Regex.Matches(html, @"(year[s]?)?[\s]*\d{4}[\s]*(year[s]?)?"))
             {
                 formattedString.Add(m.Value);
             }
