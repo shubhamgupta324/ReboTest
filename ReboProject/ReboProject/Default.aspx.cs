@@ -1535,25 +1535,30 @@ namespace ReboProject
                                 {
                                     if (orConditionFormat.IndexOf("{{" + andConditionId + "}}") != -1)
                                     {
-                                        if (searchFormat.IndexOf(sentenceAsOutput) == -1 && duplicateFound == false)
-                                            orConditionFormat = orConditionFormat.Replace("{{" + andConditionId + "}}", sentenceAsOutput);
-                                        else
-                                            orConditionFormat = orConditionFormat.Replace("{{" + andConditionId + "}}", "");
                                         // financial
                                         if(financialVal.Count() != 0)
                                             orConditionFormat = orConditionFormat.Replace("##" + andConditionId + "##", financialVal[0].ToString());
                                         else
                                             orConditionFormat = orConditionFormat.Replace("##" + andConditionId + "##", "");
-                                        startToEnd(sentenceStartList, sentenceEndList, orConditionFormat, out finalOutputSentence);
-                                        stringOutput.Add(finalOutputSentence);
-                                        searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", finalOutputSentence);
+
+                                        startToEnd(sentenceStartList, sentenceEndList, sentenceAsOutput, out finalOutputSentence);
+
+                                        if (searchFormat.IndexOf(sentenceAsOutput) == -1 && duplicateFound == false)
+                                            orConditionFormat = orConditionFormat.Replace("{{" + andConditionId + "}}", finalOutputSentence);
+                                        else
+                                            orConditionFormat = orConditionFormat.Replace("{{" + andConditionId + "}}", "");
+
+                                        stringOutput.Add(orConditionFormat);
+                                        searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", orConditionFormat);
                                     }
                                     else
                                     {
                                         if(searchFormat.IndexOf(sentenceAsOutput) == -1 && duplicateFound == false)
-                                            startToEnd(sentenceStartList, sentenceEndList, sentenceAsOutput + " " + orConditionFormat, out finalOutputSentence);
+                                            startToEnd(sentenceStartList, sentenceEndList, sentenceAsOutput, out finalOutputSentence);
                                         else
                                             startToEnd(sentenceStartList, sentenceEndList,orConditionFormat, out finalOutputSentence);
+
+                                        finalOutputSentence = finalOutputSentence + " " + orConditionFormat;
                                         // financial
                                         if (financialVal.Count() != 0)
                                             finalOutputSentence = finalOutputSentence.Replace("##" + andConditionId + "##", financialVal[0].ToString());
@@ -1589,9 +1594,8 @@ namespace ReboProject
                                     orConditionFormat = orConditionFormat.Replace("##" + andConditionId + "##", "");
 
                                 orConditionFormat = orConditionFormat.Replace("{{" + andConditionId + "}}", "").Trim();
-                                startToEnd(sentenceStartList, sentenceEndList, orConditionFormat, out finalOutputSentence);
-                                stringOutput.Add(finalOutputSentence);
-                                searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", finalOutputSentence);
+                                stringOutput.Add(orConditionFormat);
+                                searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", orConditionFormat);
                             }
 
                         }

@@ -592,7 +592,7 @@ namespace ReboProject
         public static List<string> getCurrencyAmount(string html)
         {
 
-            string Pattern = @"(?<SYMBOL>[$â‚¬Â£]){1}\s*(?<AMOUNT>[\d.,]+)";
+            string Pattern = @"(?<SYMBOL>[$â‚¬Â£]){1}[\s]*(?<AMOUNT>[\d{1,3}(\.(\d(?:\d+\.?)*)?)?]+)";
             List<string> formattedString = new List<string>();
             foreach (Match m in Regex.Matches(html, Pattern))
             {
@@ -723,7 +723,7 @@ namespace ReboProject
         public static List<string> extractPercentage(string html)
         {
             List<string> formattedString = new List<string>();
-            foreach (Match m in Regex.Matches(html, @"\d+(\%|\s\bpercent\b)"))
+            foreach (Match m in Regex.Matches(html, @"\d{1,3}(\.(\d(?:\d+\.?)*)?)?[\s]*(\%|\s\bpercent\b)"))
             {
                 formattedString.Add(m.Value);
             }
