@@ -5,15 +5,16 @@ using System.Web;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json.Linq;
 using System.Text;
+using System.Web.Configuration;
 
 namespace ReboProject
 {
     public class processing
     {
         // get the complete section once
-        public static string getSectionForPara(string para)
+        public static List<string> getSectionForPara(string para)
         {
-            var sectiongot = "";
+            List<string> sectiongot = new List<string>();
 
             Dictionary<int, string> regexDictionary = new Dictionary<int, string>();
 
@@ -72,12 +73,16 @@ namespace ReboProject
                 var match = regex.Match(para); // check if match found
                 if (match.Success)
                 {
-                    sectiongot = match.Value.Trim();
+                    sectiongot.Add(match.Value.Trim());
+                    sectiongot.Add(item.Value);
                     break;
                 }
             }
-            if (String.IsNullOrEmpty(sectiongot))
-                sectiongot = null; // if section not found for para then section = null
+            if (sectiongot.Count == 0)// if section not found for para then section = null
+            {
+                sectiongot.Add(null);
+                sectiongot.Add(null);
+            }
 
             return sectiongot;
         }
@@ -87,6 +92,7 @@ namespace ReboProject
             var jarrayVal = ja2;
             var pageNo = (int)ja2[0]["pageNo"]; // get the pageno of output
             var paraNo = (int)ja2[0]["paraNo"]; // 
+            var readNextPara = (int)ja2[0]["readNextPara"]; // 
             var sectionNo = ja2[0]["sectionVal"].ToString();
             var foundPara = "";
             if (outputPara == "")
@@ -104,16 +110,55 @@ namespace ReboProject
                 var sectionDictionary = saveAllSection.Keys.ElementAt(i);
                 for (int j = 0; j < sectionDictionary.Count; j++)
                 {
-                    if (sectionDictionary.Values.ElementAt(j).ToString().Trim() == foundPara.Trim())
+                    //(sectionDictionary.Values.ElementAt(j).ToString().Trim() == foundPara.Trim())
+                    if (readNextPara == 1)
                     {
-                        getFirstLine = sectionDictionary.Values.ElementAt(0).ToString().Trim();
-                        allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
-                        finalSectionOutput =SectionValParagraph(SectionNoCount, allPara, sectionDictionary.Values.ElementAt(j).ToString());
-                        checkNextSection = false;
-                        break;
+                        if (foundPara.IndexOf(sectionDictionary.Values.ElementAt(j).ToString()) != -1)
+                        {
+                            if (sectionDictionary.Count <= j)
+                            {
+                                if (sectionDictionary.Values.ElementAt(j + 1).ToString().Trim().Length >= Int32.Parse(WebConfigurationManager.AppSettings["StringLength"]))
+                                {
+                                    if ((sectionDictionary.Values.ElementAt(j).ToString() + sectionDictionary.Values.ElementAt(j + 1).ToString()).Trim() == foundPara.Trim())
+                                    {
+                                        getFirstLine = sectionDictionary.Values.ElementAt(0).ToString().Trim();
+                                        allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
+                                        allPara.Add(sectionDictionary.Values.ElementAt(j + 1).ToString());
+                                        finalSectionOutput = SectionValParagraph(SectionNoCount, allPara, sectionDictionary.Values.ElementAt(j + 1).ToString().Trim());
+                                        checkNextSection = false;
+                                        break;
+                                    }
+                                }
+                                else
+                                {
+                                    if ((sectionDictionary.Values.ElementAt(j).ToString() + sectionDictionary.Values.ElementAt(j + 2).ToString()).Trim() == foundPara.Trim())
+                                    {
+                                        getFirstLine = sectionDictionary.Values.ElementAt(0).ToString().Trim();
+                                        allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
+                                        allPara.Add(sectionDictionary.Values.ElementAt(j + 1).ToString());
+                                        allPara.Add(sectionDictionary.Values.ElementAt(j + 2).ToString());
+                                        finalSectionOutput = SectionValParagraph(SectionNoCount, allPara, sectionDictionary.Values.ElementAt(j + 2).ToString().Trim());
+                                        checkNextSection = false;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        else
+                            allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
                     }
-                    else
-                        allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
+                    else {
+                        if (sectionDictionary.Values.ElementAt(j).ToString().Trim().Contains(foundPara.Trim()) && sectionDictionary.Values.ElementAt(j).ToString().Trim().Length == foundPara.Trim().Length)
+                        {
+                            getFirstLine = sectionDictionary.Values.ElementAt(0).ToString().Trim();
+                            allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
+                            finalSectionOutput = SectionValParagraph(SectionNoCount, allPara, sectionDictionary.Values.ElementAt(j).ToString());
+                            checkNextSection = false;
+                            break;
+                        }
+                        else
+                            allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
+                    }
                 }
             }
 
@@ -556,6 +601,45 @@ namespace ReboProject
                 if (found == true)
                     break;
             }
+        }
+
+        public static string sectionValSection(string section)
+        {
+            var sectionVal = "";
+            Dictionary<int, string> regexDictionary = new Dictionary<int, string>();
+
+            regexDictionary.Add(1, @"^[\s]*((?i)(section)\s\d+\.(:\d+\.?)*)\s"); //    section 1.
+            regexDictionary.Add(2, @"^[\s]*((?i)(sectionss)\s\d+\.\d(?:\d+\.?)*)"); //    section 1.1 
+            regexDictionary.Add(3, @"^[\s]*(?i)(section)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}"); //    section xvii
+            regexDictionary.Add(4, @"^[\s]*(?i)(section)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}"); //    section XVII
+            regexDictionary.Add(5, @"^[\s]*((?i)(section)[\s]*[A-Z])\s");  // section A
+            regexDictionary.Add(6, @"^[\s]*((?i)(section)[\s]*[a-z])");  //      section a
+            regexDictionary.Add(7, @"^[\s]*((?i)(article)[\s]*[a-z])");  //      article a
+            regexDictionary.Add(8, @"^[\s]*((?i)(ARTICLE)[\s]*[A-Z])");  // ARTICLE A  
+            regexDictionary.Add(9, @"^[\s]*(?i)(article)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}"); //    article XVII
+            regexDictionary.Add(10, @"^[\s]*(?i)(article)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}"); //    article xvii
+            regexDictionary.Add(11, @"^[\s]*((?i)(article)\s\d)"); //   article 1,
+            regexDictionary.Add(12, @"^[\s]*((?i)(article)\s\d+\.(?:\d+\.?)*)"); //  article 1.1
+            regexDictionary.Add(13, @"^(\d{1,3}\.(:\d+\.?)*)\s"); //    1.
+            regexDictionary.Add(14, @"^(\d{1,3}\.\d(?:\d+\.?)*)"); //    1.1 
+            regexDictionary.Add(15, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}\s"); //    xvii
+            regexDictionary.Add(16, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[.]\s"); //    xvii.
+            regexDictionary.Add(17, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}\s"); //    XVII
+            regexDictionary.Add(18, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[.]\s"); //    XVII.
+            regexDictionary.Add(19, @"^[\s]*([A-Z][.])\s");  // A.
+
+            for (int i = 0; i < regexDictionary.Count(); i++)
+            {
+                Regex regexForNextSection = new Regex(regexDictionary[i+1]);
+                var matchForNextSection = regexForNextSection.Match(section); // check if match found
+                if (matchForNextSection.Success)
+                {
+                    sectionVal = matchForNextSection.Value;
+                    break;
+                }
+            }
+
+            return sectionVal;
         }
 
         // --------------------------------------------financial------------------------------------------------------------------
