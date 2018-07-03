@@ -1093,7 +1093,7 @@ namespace ReboProject
                     var pageContent = getAllAcceptedText[entry.Key]["foundText"].ToString();
                     foreach (var getOutputToCheck in OutputMatch) // check for duplicate... if the same sentance is already an output
                     {
-                        if (getOutputToCheck.Value == pageContent.Trim())
+                        if (getOutputToCheck.Value.Trim() == pageContent.Trim())
                             outputSame = true; // if true dont take that as output  and select the next output
                     }
                     // save the output for the file
@@ -1520,9 +1520,9 @@ namespace ReboProject
                                         if (financialKeyword == "extractPercentage")
                                             financialVal = processing.extractPercentage(sentenceAsOutput);
                                         if (financialKeyword == "getDays")
-                                            financialVal = processing.extractPercentage(sentenceAsOutput);
+                                            financialVal = processing.getDays(sentenceAsOutput);
                                         if (financialKeyword == "getYearCount")
-                                            financialVal = processing.extractPercentage(sentenceAsOutput);
+                                            financialVal = processing.getYearCount(sentenceAsOutput);
                                     }
                                 }
                             }
@@ -1556,9 +1556,10 @@ namespace ReboProject
                                             startToEnd(sentenceStartList, sentenceEndList,orConditionFormat, out finalOutputSentence);
                                         // financial
                                         if (financialVal.Count() != 0)
-                                            orConditionFormat = orConditionFormat.Replace("##" + andConditionId + "##", financialVal[0].ToString());
+                                            finalOutputSentence = finalOutputSentence.Replace("##" + andConditionId + "##", financialVal[0].ToString());
                                         else
-                                            orConditionFormat = orConditionFormat.Replace("##" + andConditionId + "##", "");
+                                            finalOutputSentence = finalOutputSentence.Replace("##" + andConditionId + "##", "");
+
                                         stringOutput.Add(finalOutputSentence);
                                         searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", finalOutputSentence);
                                     }
@@ -1586,6 +1587,7 @@ namespace ReboProject
                                     orConditionFormat = orConditionFormat.Replace("##" + andConditionId + "##", financialVal[0].ToString());
                                 else
                                     orConditionFormat = orConditionFormat.Replace("##" + andConditionId + "##", "");
+
                                 orConditionFormat = orConditionFormat.Replace("{{" + andConditionId + "}}", "").Trim();
                                 startToEnd(sentenceStartList, sentenceEndList, orConditionFormat, out finalOutputSentence);
                                 stringOutput.Add(finalOutputSentence);

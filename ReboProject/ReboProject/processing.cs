@@ -811,9 +811,9 @@ namespace ReboProject
         {
             html = Regex.Replace(html, @"[^0-9a-zA-Z]+", " ");
             List<string> formattedString = new List<string>();
-            foreach (Match m in Regex.Matches(html, @"\d{2}+[\s]*+days"))
+            foreach (Match m in Regex.Matches(html, @"\d{2}[\s]*days"))
             {
-                formattedString.Add(m.Value + " days");
+                formattedString.Add(m.Value);
             }
             if (formattedString.Count() == 0)
                 getTextualDays(html, out formattedString);
@@ -901,9 +901,9 @@ namespace ReboProject
         {
             html = Regex.Replace(html, @"[^0-9a-zA-Z]+", " ");
             formattedString = new List<string>();
-            foreach (Match m in Regex.Matches(html, @"\d{2}+[\s]*+months"))
+            foreach (Match m in Regex.Matches(html, @"\d{2}[\s]*months"))
             {
-                formattedString.Add(m.Value + " months");
+                formattedString.Add(m.Value);
             }
             if (formattedString.Count() == 0)
                 getTextualMonths(html, out formattedString);
@@ -988,9 +988,9 @@ namespace ReboProject
         {
             html = Regex.Replace(html, @"[^0-9a-zA-Z]+", " ");
             List<string> formattedString = new List<string>();
-            foreach (Match m in Regex.Matches(html, @"\d{2}+[\s]*+years"))
+            foreach (Match m in Regex.Matches(html, @"\d{2}[\s]*years"))
             {
-                formattedString.Add(m.Value + " years");
+                formattedString.Add(m.Value);
             }
             if (formattedString.Count() == 0)
                 getTextualYear(html, out formattedString);
