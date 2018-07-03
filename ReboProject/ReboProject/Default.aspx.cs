@@ -2055,21 +2055,36 @@ namespace ReboProject
                 List<string> saveResult = new List<string>();
                 var sectionCount = 0;
                 var sectionName = "";
+                Dictionary<string, string> secondCommonSet = new Dictionary<string, string>();
                 foreach (var item in loopup)
                 {
                     if (item.Key != "") {
+                        var commonData = item.Key;
                         var KeyVal = item.Aggregate("", (s, v) => s + "," + v);
                         var splitSection = KeyVal.Split(',');
                         splitSection = splitSection.Skip(1).ToArray();
+                        for (int i = 0; i < splitSection.Count(); i++)
+                        {
+                            var sectionString = splitSection[i];
+                            if (saveSectionVal[sectionString].Count() > 2)
+                                secondCommonSet.Add(sectionString, (commonData + " " + saveSectionVal[sectionString].ElementAt(1)).Trim());
+                        }
+                        var secondloopup = secondCommonSet.ToLookup(x => x.Value, x => x.Key).Where(x => x.Count() > 1);
+                        foreach (var seconditem in secondloopup)
+                        {
+                            if (seconditem.Key != "")
+                                commonData = seconditem.Key;
+                        }
                         var sectionSaveFormat = "";
                         sectionName = "";
+                        
                         for (int i = 0; i < splitSection.Count(); i++)
                         {
                             if (splitSection.ElementAt(i) != "")
                             {
                                 saveResult.Add(splitSection.ElementAt(i));
                                 sectionCount++;
-                                var sectionReplace = splitSection.ElementAt(i).Replace(item.Key, "");
+                                var sectionReplace = splitSection.ElementAt(i).Replace(commonData, "");
                                 if (sectionSaveFormat == "")
                                     sectionSaveFormat = sectionSaveFormat + sectionReplace;
                                 else if (i != 0 && i < splitSection.Count() - 1)
@@ -2082,7 +2097,7 @@ namespace ReboProject
                                 sectionName = saveArtAndSection[splitSection.ElementAt(i)];
                             }
                         }
-                        finalSections.Add(sectionName + " " + item.Key + " (" + sectionSaveFormat + ")");
+                        finalSections.Add(sectionName + " " + commonData + " (" + sectionSaveFormat + ")");
                     }
                    
                 }
