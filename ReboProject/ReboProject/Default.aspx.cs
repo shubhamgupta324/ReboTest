@@ -84,6 +84,7 @@ namespace ReboProject
                 var getSectionAndFileNameAndSearchJA = new JArray();
                 var nextVal = 0;
                 var copyResultOutputFormat = SentenceResultOutputFormat;
+                var nextDuplicateCheck = 0;
                 for (var configurationVal = 0; configurationVal < configuration.Count(); configurationVal++)
                 {
                     var getSectionAndFileNameAndSearchJO = new JObject();
@@ -247,8 +248,12 @@ namespace ReboProject
                             jaLibCheck.Add(ja3[0]);
                             gotValueForConfiguration = true;
                             saveDataToFolder(ja3, folderPath);
-                            if (!OutputMatch.ContainsKey(connectorVal))
-                                OutputMatch.Add(connectorVal, ja2[0]["Pageoutput"].ToString());
+                            if (!OutputMatch.ContainsValue(ja2[0]["Pageoutput"].ToString()))
+                            {
+                                OutputMatch.Add(nextDuplicateCheck, ja2[0]["Pageoutput"].ToString());
+                                nextDuplicateCheck++;
+                            }
+                                
                         }
 
                         else
@@ -271,8 +276,12 @@ namespace ReboProject
                                 jaLibCheck.Add(ja3[0]);
                                 gotValueForConfiguration = true;
                                 saveDataToFolder(ja3, folderPath);
-                                if (!OutputMatch.ContainsKey(connectorVal))
-                                    OutputMatch.Add(connectorVal, ja2[0]["Pageoutput"].ToString());
+                                if (!OutputMatch.ContainsValue(ja2[0]["Pageoutput"].ToString()))
+                                {
+                                    OutputMatch.Add(nextDuplicateCheck, ja2[0]["Pageoutput"].ToString());
+                                    nextDuplicateCheck++;
+                                }
+                                    
                             }
                         }
                     }
@@ -292,7 +301,8 @@ namespace ReboProject
                             if (!OutputMatch.ContainsKey(connectorVal) && outputSame == false)
                             {
 
-                                OutputMatch.Add(connectorVal, pdfLibPara[0]);
+                                OutputMatch.Add(nextDuplicateCheck, pdfLibPara[0]);
+                                nextDuplicateCheck++;
                                 var getTheSectionValue = processing.SectionValParagraph(savePageLib, pdfLibPageno[0], pdfLibParaNo[0]); // get the section value
                                 if (getTheSectionValue == "false")
                                     getTheSectionValue = "?";
