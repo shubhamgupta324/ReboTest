@@ -1312,10 +1312,18 @@ namespace ReboProject
 
                 if (getSentanceColon.Count() > getSentanceFullStop.Count())
                 {
+                    List<string> finalSentences = new List<string>();
                     for (int i = 0; i < getSentanceColon.Count(); i++)
                     {
-                        string[] splitString = getSentanceColon[i].Split('.');
+                        string[] splitString = getSentanceColon[i].Split(new string[] { ". " }, StringSplitOptions.None);
+                        List<string> splitOnFullStop = splitString.ToList<string>();
+                        List<string> wrongStringsFullStop = new List<string>();
+                        splitOnFullStop.RemoveAll(p => string.IsNullOrEmpty(p));
+                        for (var u = 0; u < splitOnFullStop.Count(); u++) {
+                            finalSentences.Add(splitOnFullStop[u]);
+                        }
                     }
+                    getSentanceColon = finalSentences.ToArray();
                 }
                 string[] getSentance = getSentanceColon.Count() > getSentanceFullStop.Count() ? getSentanceColon : getSentanceFullStop;
                 foreach (var sentenceVal in getSentance)
@@ -1502,6 +1510,8 @@ namespace ReboProject
                                 break;
                             }
                         }
+                        if (searchFormat.IndexOf(sentenceAsOutput) == -1 && duplicateFound == false)
+                            startToEnd(sentenceStartList, sentenceEndList, sentenceAsOutput, out finalOutputSentence);
                         List<string> financialVal = new List<string>();
                         if (duplicateFound == false) {
                             if (financialCheck != "0") {
@@ -1512,17 +1522,17 @@ namespace ReboProject
                                     {
                                         var financialKeyword = item["keyword"].ToString();
                                         if (financialKeyword == "getDate")
-                                            financialVal = processing.getDate(sentenceAsOutput);
+                                            financialVal = processing.getDate(finalOutputSentence);
                                         if (financialKeyword == "getCurrencyAmount")
-                                            financialVal = processing.getCurrencyAmount(sentenceAsOutput);
+                                            financialVal = processing.getCurrencyAmount(finalOutputSentence);
                                         if (financialKeyword == "getYear")
-                                            financialVal = processing.getYear(sentenceAsOutput);
+                                            financialVal = processing.getYear(finalOutputSentence);
                                         if (financialKeyword == "extractPercentage")
-                                            financialVal = processing.extractPercentage(sentenceAsOutput);
+                                            financialVal = processing.extractPercentage(finalOutputSentence);
                                         if (financialKeyword == "getDays")
-                                            financialVal = processing.getDays(sentenceAsOutput);
+                                            financialVal = processing.getDays(finalOutputSentence);
                                         if (financialKeyword == "getYearCount")
-                                            financialVal = processing.getYearCount(sentenceAsOutput);
+                                            financialVal = processing.getYearCount(finalOutputSentence);
                                     }
                                 }
                             }
@@ -1541,8 +1551,6 @@ namespace ReboProject
                                         else
                                             orConditionFormat = orConditionFormat.Replace("##" + andConditionId + "##", "");
 
-                                        startToEnd(sentenceStartList, sentenceEndList, sentenceAsOutput, out finalOutputSentence);
-
                                         if (searchFormat.IndexOf(sentenceAsOutput) == -1 && duplicateFound == false)
                                             orConditionFormat = orConditionFormat.Replace("{{" + andConditionId + "}}", finalOutputSentence);
                                         else
@@ -1553,11 +1561,6 @@ namespace ReboProject
                                     }
                                     else
                                     {
-                                        if(searchFormat.IndexOf(sentenceAsOutput) == -1 && duplicateFound == false)
-                                            startToEnd(sentenceStartList, sentenceEndList, sentenceAsOutput, out finalOutputSentence);
-                                        else
-                                            startToEnd(sentenceStartList, sentenceEndList,orConditionFormat, out finalOutputSentence);
-
                                         finalOutputSentence = finalOutputSentence + " " + orConditionFormat;
                                         // financial
                                         if (financialVal.Count() != 0)
@@ -1574,7 +1577,6 @@ namespace ReboProject
                                 {
                                     if (searchFormat.IndexOf(sentenceAsOutput) == -1 && duplicateFound == false)
                                     {
-                                        startToEnd(sentenceStartList, sentenceEndList, sentenceAsOutput, out finalOutputSentence);
                                         stringOutput.Add(finalOutputSentence);
                                         searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", finalOutputSentence);
                                     }
@@ -1769,6 +1771,7 @@ namespace ReboProject
             output = "";
             var tocheckLength = 0;
             var checkNextSentence = true;
+            var checkEndCondition = "";
             for (int i = 0; i < sentenceStartList.Count(); i++) // loop through all start words
             {
                 if (checkNextSentence == false)
@@ -1780,22 +1783,24 @@ namespace ReboProject
                     var startIndex = tocheck.IndexOf(matchStart.Value);
                     tocheck = tocheck.Remove(0, startIndex);
                     tocheckLength = tocheck.Length;
-                    for (int j = 0; j < sentenceEndList.Count(); j++) // loop through all end words
-                    {
-                        Regex regexEnd = new Regex("(?i)(" + sentenceEndList[i] + ")");
-                        var matchEnd = regexEnd.Match(tocheck); // check if match found
-                        if (matchEnd.Success)
-                        {
-                            var endLength = matchEnd.Value.Length;
-                            var endIndex = tocheck.IndexOf(matchEnd.Value);
-                            output = tocheck.Remove(endIndex + endLength, tocheckLength - (endIndex + endLength));
-                            checkNextSentence = false;
-                            break;
-                        }
-                    }
+                    checkNextSentence = true;
                 }
-                if (checkNextSentence == true)
-                    output = tocheck;
+                checkEndCondition = tocheck;
+            }
+            for (int j = 0; j < sentenceEndList.Count(); j++) // loop through all end words
+            {
+
+                Regex regexEnd = new Regex("(?i)(" + sentenceEndList[j] + ")");
+                var matchEnd = regexEnd.Match(checkEndCondition); // check if match found
+                if (matchEnd.Success)
+                {
+                    var endLength = matchEnd.Value.Length;
+                    var endIndex = checkEndCondition.IndexOf(matchEnd.Value);
+                    tocheckLength = checkEndCondition.Length;
+                    checkEndCondition = checkEndCondition.Remove(endIndex + endLength, tocheckLength - (endIndex + endLength));
+                    checkNextSentence = true;
+                }
+                output = checkEndCondition;
             }
             if (output == "")
                 output = tocheck;

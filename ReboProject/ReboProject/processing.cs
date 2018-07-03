@@ -723,7 +723,7 @@ namespace ReboProject
         public static List<string> extractPercentage(string html)
         {
             List<string> formattedString = new List<string>();
-            foreach (Match m in Regex.Matches(html, @"\d{1,3}(\.(\d(?:\d+\.?)*)?)?[\s]*(\%|\s\bpercent\b)"))
+            foreach (Match m in Regex.Matches(html, @"(\d{1,3})?(\.(\d(?:\d+\.?)*)?)?[\s]*(\%|\s\bpercent\b)"))
             {
                 formattedString.Add(m.Value);
             }
