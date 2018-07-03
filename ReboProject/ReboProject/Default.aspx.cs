@@ -25,77 +25,7 @@ namespace ReboProject
         {
             var watch = new System.Diagnostics.Stopwatch(); // get the time
             watch.Start();
-
-            //List<string> finalSections = new List<string>(); 
-            //List<string> allSection = new List<string>();
-            //var s1 = "11 (a) (i)";
-            //var s2 = "11 (a) (ii)";
-            //var s3 = "12 (a) (i)";
-            //var s4 = "13.1";
-            //var s5 = "12 (a) (iv)";
-            //allSection.Add(s1);
-            //allSection.Add(s2);
-            //allSection.Add(s3);
-            //allSection.Add(s4);
-            //allSection.Add(s5);
-
-            //Dictionary<string, string[]> saveSectionVal = new Dictionary<string, string[]>();
-            //foreach (var item in allSection)
-            //{
-            //    var splitSection = item.Split(' ');
-            //    saveSectionVal.Add(item, splitSection);
-            //}
-
-            //var loopup = saveSectionVal.ToLookup(x => x.Value.ElementAt(0), x => x.Key).Where(x => x.Count() > 1);
-            //List<string> saveResult = new List<string>();
-            //var sectionCount = 0;
-            //foreach (var item in loopup)
-            //{
-            //    var KeyVal = item.Aggregate("", (s, v) => s + "," + v);
-            //    var splitSection = KeyVal.Split(',');
-            //    splitSection = splitSection.Skip(1).ToArray();
-            //    var sectionSaveFormat = "";
-            //    for (int i = 0; i < splitSection.Count(); i++)
-            //    {
-                    
-            //        if (splitSection.ElementAt(i) != "") {
-            //            saveResult.Add(splitSection.ElementAt(i));
-            //            sectionCount++;
-            //            var sectionReplace = splitSection.ElementAt(i).Replace(item.Key,"");
-            //            if (sectionSaveFormat == "")
-            //                sectionSaveFormat = sectionSaveFormat + sectionReplace;
-            //            else
-            //                sectionSaveFormat = sectionSaveFormat + "&" + sectionReplace;
-            //        }
-            //    }
-            //    finalSections.Add(item.Key + " (" + sectionSaveFormat + ")");
-            //}
-            //if (sectionCount == 0)
-            //{
-            //    foreach (var item in allSection)
-            //    {
-            //        finalSections.Add(item);
-            //    }
-            //}
-            //if (sectionCount > 0)
-            //{
-            //    allSection.RemoveAll(v => saveResult.Contains(v));
-            //    foreach (var item in allSection)
-            //    {
-            //        finalSections.Add(item);
-            //    }
-            //}
-            //var finalFormat = "";
-            //foreach (var item in finalSections)
-            //{
-            //    if (finalFormat == "")
-            //        finalFormat = finalFormat + item;
-            //    else
-            //        finalFormat = finalFormat + "&" + item;
-            //}
-
-            //return;
-
+            
             string backEndVal = backEndData.Text; // get the value from front end
             if (backEndVal == "") // check if it has value else return
                 return;
@@ -1868,14 +1798,26 @@ namespace ReboProject
                                 checkConditionCount = true;
                             }
                             var checkNextLIne = false;
-                            if (checkDuplicate == true && saveSentenceForDuplicate.Count > 0 && CheckGetKeywordCount == getKeyword.Count())
+                            if (checkDuplicate == true && saveSentenceForDuplicate.Count > 0)
                             {
-                                foreach (var item in saveSentenceForDuplicate)
-                                {
-                                    if (singleSentence.Key.Trim() == item && checkNextLineVal == "1")
+                                if (CheckGetKeywordCount == getKeyword.Count() & orConditionCondition == 1) {
+                                    foreach (var item in saveSentenceForDuplicate)
                                     {
-                                        checkNextLIne = true;
-                                        break;
+                                        if (singleSentence.Key.Trim() == item && checkNextLineVal == "1")
+                                        {
+                                            checkNextLIne = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                                if (orConditionCondition == 0) {
+                                    foreach (var item in saveSentenceForDuplicate)
+                                    {
+                                        if (singleSentence.Key.Trim() == item && checkNextLineVal == "1")
+                                        {
+                                            checkNextLIne = true;
+                                            break;
+                                        }
                                     }
                                 }
                             }
@@ -1891,9 +1833,9 @@ namespace ReboProject
                                     collectCorrectSentanceOutputJO["sentence"] = singleSentence.Key;
                                     saveSentenceForDuplicate.Add(singleSentence.Key);
                                     collectCorrectSentanceOutputJO["sectionNo"] = sentenceSection.ElementAt(next);
-                                    if (fileNameVal.ToLower().IndexOf("lease") == 0)
-                                        collectCorrectSentanceOutputJO["fileName"] = "";
-                                    else
+                                    //if (fileNameVal.ToLower().IndexOf("lease") == 0)
+                                    //    collectCorrectSentanceOutputJO["fileName"] = "";
+                                    //else
                                         collectCorrectSentanceOutputJO["fileName"] = fileNameVal;
                                     collectCorrectSentanceOutputJO["search"] = singleSentence.Value;
                                     collectCorrectSentanceOutput.Add(collectCorrectSentanceOutputJO);
@@ -1907,9 +1849,9 @@ namespace ReboProject
                                     collectCorrectSentanceOutputJO["sentence"] = singleSentence.Key;
                                     saveSentenceForDuplicate.Add(singleSentence.Key);
                                     collectCorrectSentanceOutputJO["sectionNo"] = sentenceSection.ElementAt(next);
-                                    if (fileNameVal.ToLower().IndexOf("lease") == 0)
-                                        collectCorrectSentanceOutputJO["fileName"] = "";
-                                    else
+                                    //if (fileNameVal.ToLower().IndexOf("lease") == 0)
+                                    //    collectCorrectSentanceOutputJO["fileName"] = "";
+                                    //else
                                         collectCorrectSentanceOutputJO["fileName"] = fileNameVal;
                                     collectCorrectSentanceOutputJO["search"] = singleSentence.Value;
                                     collectCorrectSentanceOutput.Add(collectCorrectSentanceOutputJO);
@@ -2048,22 +1990,20 @@ namespace ReboProject
         {
             format = "";
             var DocumentName = "";
-            var SectionNumber = "";
             var SearchFor = "";
             var FoundText = "";
+            List<string> fileNme = new List<string>();
+            List<string> fileNmeCopy = new List<string>();
+            List<string> sectionNumberList = new List<string>();
             for (int i = 0; i < jaCompleteData.Count; i++)
             {
-                if (!DocumentName.Contains(jaCompleteData[i]["fileName"].ToString()))
-                {
-                    if (DocumentName == "")
-                        DocumentName = DocumentName + jaCompleteData[i]["fileName"].ToString();
-                    else
-                        DocumentName = DocumentName + ", " + jaCompleteData[i]["fileName"].ToString();
-                }
+                fileNme.Add(jaCompleteData[i]["fileName"].ToString());
+                fileNmeCopy.Add(jaCompleteData[i]["fileName"].ToString());
             }
             List<string> allSection = new List<string>();
-            Dictionary<string, string> allSectionName = new Dictionary<string, string>();
-            List<string> finalSections = new List<string>();
+            List<string> allSectionName = new List<string>();
+            List<string> allSectionNameSplit = new List<string>();
+            
             for (int i = 0; i < jaCompleteData.Count; i++)
             {
                 var sectionVal = jaCompleteData[i]["sectionNo"].ToString();
@@ -2076,81 +2016,140 @@ namespace ReboProject
                 if (matchSection.Success)
                     sectionVal = sectionVal.Replace(matchSection.Value, "").Trim();
                 var splitSectionVal = sectionVal.Split(' ');
-                sectionVal = sectionVal.Replace(splitSectionVal[0], "").Trim();
-                if (!allSection.Contains(sectionVal))
+                List<string> splitSectionValList = new List<string>(splitSectionVal);
+                splitSectionValList = splitSectionValList.Where(s => !string.IsNullOrWhiteSpace(s)).Distinct().ToList();
+                splitSectionVal = splitSectionValList.Select(l => l.ToString()).ToArray();
+                allSectionName.Add(sectionVal);
+                allSectionNameSplit.Add(splitSectionVal[0]);
+                sectionVal = "";
+                for (var k = 1; k < splitSectionValList.Count; k++)
                 {
-                    allSectionName.Add(sectionVal, splitSectionVal[0]);
-                    allSection.Add(sectionVal);
-                    //types.FirstOrDefault(x => x.Value == "one").Key;
+                    sectionVal = sectionVal + " " + splitSectionValList.ElementAt(k);
                 }
-                    
+                allSection.Add(sectionVal.Trim());
             }
+            fileNmeCopy = fileNmeCopy.Distinct().ToList();
 
-            Dictionary<string, string[]> saveSectionVal = new Dictionary<string, string[]>();
-            foreach (var item in allSection)
-            {
-                var splitSection = item.Split(' ');
-                saveSectionVal.Add(item, splitSection);
-            }
-
-            var loopup = saveSectionVal.ToLookup(x => x.Value.ElementAt(0), x => x.Key).Where(x => x.Count() > 1);
-            List<string> saveResult = new List<string>();
-            var sectionCount = 0;
-            var sectionName = "";
-            foreach (var item in loopup)
-            {
-                var KeyVal = item.Aggregate("", (s, v) => s + "," + v);
-                var splitSection = KeyVal.Split(',');
-                splitSection = splitSection.Skip(1).ToArray();
-                var sectionSaveFormat = "";
-                sectionName = "";
-                for (int i = 0; i < splitSection.Count(); i++)
-                {
-
-                    if (splitSection.ElementAt(i) != "")
-                    {
-                        saveResult.Add(splitSection.ElementAt(i));
-                        sectionCount++;
-                        var sectionReplace = splitSection.ElementAt(i).Replace(item.Key, "");
-                        if (sectionSaveFormat == "")
-                            sectionSaveFormat = sectionSaveFormat + sectionReplace;
-                        else if( i !=0 && i < splitSection.Count()-1)
-                            sectionSaveFormat = sectionSaveFormat + ", " + sectionReplace;
-                        else
-                            sectionSaveFormat = sectionSaveFormat + " & " + sectionReplace;
-                    }
-                    if (i == 0)
-                    {   
-                        sectionName= allSectionName[splitSection.ElementAt(i)];
-                    }
-                }
-                finalSections.Add(sectionName + " " + item.Key + " (" + sectionSaveFormat + ")");
-            }
-            if (sectionCount == 0)
-            {
-                foreach (var item in allSection)
-                {
-                    sectionName = allSectionName[item];
-                    finalSections.Add(sectionName + " " + item);
-                }
-            }
-            if (sectionCount > 0)
-            {
-                allSection.RemoveAll(v => saveResult.Contains(v));
-                foreach (var item in allSection)
-                {
-                    sectionName = allSectionName[item];
-                    finalSections.Add(sectionName +" "+ item);
-                }
-            }
+            List<string> finalFormatList = new List<string>();
             var finalFormat = "";
-            foreach (var item in finalSections)
+            for (int p = 0; p < fileNmeCopy.Count(); p++)
+            {
+                Dictionary<string, string[]> saveSectionVal = new Dictionary<string, string[]>();
+                Dictionary<string, string> saveArtAndSection = new Dictionary<string, string>();
+                List<string> finalSections = new List<string>();
+                var singleFormat = "";
+                var fileToCheck = fileNmeCopy.ElementAt(p).Trim();
+                for (int f = 0; f < fileNme.Count(); f++)
+                {
+                    if (fileToCheck == fileNme.ElementAt(f).Trim()) {
+                        if (!saveSectionVal.ContainsKey(allSection.ElementAt(f))) {
+                            var allSectionNameCopy = allSectionName.ElementAt(f).Split(' ');
+                            allSectionNameCopy = allSectionNameCopy.Skip(1).ToArray();
+                            saveSectionVal.Add(allSection.ElementAt(f), allSectionNameCopy);
+                            saveArtAndSection.Add(allSection.ElementAt(f), allSectionNameSplit.ElementAt(f));
+                        }
+                    }
+                }
+
+                var loopup = saveSectionVal.ToLookup(x => x.Value.ElementAt(0), x => x.Key).Where(x => x.Count() > 1);
+                List<string> saveResult = new List<string>();
+                var sectionCount = 0;
+                var sectionName = "";
+                foreach (var item in loopup)
+                {
+                    if (item.Key != "") {
+                        var KeyVal = item.Aggregate("", (s, v) => s + "," + v);
+                        var splitSection = KeyVal.Split(',');
+                        splitSection = splitSection.Skip(1).ToArray();
+                        var sectionSaveFormat = "";
+                        sectionName = "";
+                        for (int i = 0; i < splitSection.Count(); i++)
+                        {
+                            if (splitSection.ElementAt(i) != "")
+                            {
+                                saveResult.Add(splitSection.ElementAt(i));
+                                sectionCount++;
+                                var sectionReplace = splitSection.ElementAt(i).Replace(item.Key, "");
+                                if (sectionSaveFormat == "")
+                                    sectionSaveFormat = sectionSaveFormat + sectionReplace;
+                                else if (i != 0 && i < splitSection.Count() - 1)
+                                    sectionSaveFormat = sectionSaveFormat + ", " + sectionReplace;
+                                else
+                                    sectionSaveFormat = sectionSaveFormat + " & " + sectionReplace;
+                            }
+                            if (i == 0)
+                            {
+                                sectionName = saveArtAndSection[splitSection.ElementAt(i)];
+                            }
+                        }
+                        finalSections.Add(sectionName + " " + item.Key + " (" + sectionSaveFormat + ")");
+                    }
+                   
+                }
+                if (sectionCount == 0)
+                {
+                    List<string> leaseNameThere = new List<string>();
+                    foreach (var item in saveSectionVal)
+                    {
+                        if (item.Key != "") {
+                            var sectionNameVal = saveArtAndSection[item.Key];
+                            
+                            if (!finalSections.Contains(item.Key))
+                            {
+                                if (leaseNameThere.Contains(sectionNameVal))
+                                    finalSections.Add(item.Key);
+                                else {
+                                    finalSections.Add(sectionNameVal +" "+ item.Key);
+                                    leaseNameThere.Add(sectionNameVal);
+                                }
+                                    
+                            }
+                        }
+                    }
+                }
+                if (sectionCount > 0)
+                {
+                    foreach (var item in saveSectionVal)
+                    {
+                        if (!saveResult.Contains(item.Key) & item.Key !="")
+                        {
+                            var sectionNameVal = saveArtAndSection[item.Key];
+                            if (!finalSections.Contains(item.Key))
+                                finalSections.Add(item.Key);
+                        }
+                    }
+                }
+                
+                foreach (var item in finalSections)
+                {
+                    if (singleFormat == "")
+                        singleFormat = singleFormat + item;
+                    else
+                        singleFormat = singleFormat + " & " + item;
+                }
+
+                var fileNameToDisplay = "";
+                if (fileToCheck.ToLower().IndexOf("lease") == 0)
+                {
+                    fileNameToDisplay = "";
+                    finalFormatList.Add((fileNameToDisplay + " " + singleFormat).Trim());
+                } 
+                else
+                {
+                    fileNameToDisplay = fileToCheck;
+                    finalFormatList.Add((fileNameToDisplay + " " + singleFormat).Trim());
+                }
+            }
+            foreach (var item in finalFormatList)
             {
                 if (finalFormat == "")
                     finalFormat = finalFormat + item;
                 else
-                    finalFormat = finalFormat + " & " + item;
+                    finalFormat = finalFormat + " & " +item;
             }
+            
+
+            //-----------------------------------------------------
 
             for (int i = 0; i < jaCompleteData.Count; i++)
             {
@@ -2168,10 +2167,10 @@ namespace ReboProject
                 var indexVal = resultOutputFormat.IndexOf(",");
                 resultOutputFormat = resultOutputFormat.Remove(indexVal, 1);
             }
-            if (FoundText != "")
-                format = resultOutputFormat.Replace("{{DocumentName}}", DocumentName).Replace("{{searchFor}}", SearchFor).Replace("{{found text}}", FoundText).Replace("{{Paragraph Number}}", finalFormat);
-            else
+            if (FoundText == "" & finalFormat == "")
                 format = outputNotFoundMessage;
+            else
+                format = resultOutputFormat.Replace("{{DocumentName}}", DocumentName).Replace("{{searchFor}}", SearchFor).Replace("{{found text}}", FoundText).Replace("{{Paragraph Number}}", finalFormat);
         }
 
         public void startToEnd(List<string> sentenceStartList, List<string> sentenceEndList, string tocheck, out string output)

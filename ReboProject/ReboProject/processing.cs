@@ -115,7 +115,7 @@ namespace ReboProject
                     {
                         if (foundPara.IndexOf(sectionDictionary.Values.ElementAt(j).ToString()) != -1)
                         {
-                            if (sectionDictionary.Count <= j)
+                            if (j <= sectionDictionary.Count)
                             {
                                 if (sectionDictionary.Values.ElementAt(j + 1).ToString().Trim().Length >= Int32.Parse(WebConfigurationManager.AppSettings["StringLength"]))
                                 {
