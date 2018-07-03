@@ -81,14 +81,16 @@ namespace ReboProject
                 foreach (var singleDp in multipleDatapointJson) // loop through all the datapoints
                 {
                     var resultSearch = singleDp["result"][0]["search"];// eg: {{filename}}; {{result}}: {{pagenumber}}
+                    var sentenceStart = singleDp["result"][0]["startData"];// set all the sentences from all output configuration
+                    var sentenceEnd = singleDp["result"][0]["endData"];// set all the sentences from all output configuration
                     var SentenceResultOutputFormat = singleDp["result"][0]["SentenceoutputFormat"].ToString();// set all the sentences from all output configuration
                     var SentenceResultOutputFormatCondition = singleDp["result"][0]["FinalformatCondition"];// set all the sentences from all output configuration
                     var resultOutputFormat = singleDp["result"][0]["outputFormat"].ToString();// eg: final output format
                     var outputNotFoundMessage = singleDp["result"][0]["outputNotFoundMessage"].ToString();// eg: final output format
                     var resultAllKeyword = singleDp["result"][0]["allKeyword"];// list of all keywords used
                     var libraryVal = ""; // get all the library value
-                    if ((LibVal.Text) != "")
-                        libraryVal = LibVal.Text;
+                    if ((singleDp["library"].ToString()) != "")
+                        libraryVal = singleDp["library"].ToString();
                     string[] LibArr = libraryVal.Split('|');
                     var configuration = singleDp["Configuration"]; // get all the configuration
                     var configurationOrder = new Dictionary<int, int>();
@@ -446,7 +448,7 @@ namespace ReboProject
                     {
                         var finalOutputData = "";
                         JArray collectCorrectSentanceOutput = new JArray();
-                        collectCorrectSentance(SentenceResultOutputFormatCondition,getSectionAndFileNameAndSearchJA, withInForSentence, resultAllKeyword, resultSearch, copyResultOutputFormat, out finalOutputData, out collectCorrectSentanceOutput);
+                        collectCorrectSentance(sentenceStart, sentenceEnd,SentenceResultOutputFormatCondition, getSectionAndFileNameAndSearchJA, withInForSentence, resultAllKeyword, resultSearch, copyResultOutputFormat, out finalOutputData, out collectCorrectSentanceOutput);
                         var format = "";
                         buildFormat(outputNotFoundMessage,collectCorrectSentanceOutput, finalOutputData, resultOutputFormat, out format);
                         ja3[0]["correctString"] = format;
@@ -1266,7 +1268,7 @@ namespace ReboProject
         }
 
         // get all the correct sentance from all the para 
-        public void collectCorrectSentance(JToken SentenceResultOutputFormatCondition, JArray getSectionAndFileNameAndSearchJA, Dictionary<string,int> withInForSentence,JToken resultAllKeyword,JToken resultSearch,string copyResultOutputFormat, out string finalOutputData, out JArray collectCorrectSentanceOutput)
+        public void collectCorrectSentance(JToken sentenceStart, JToken sentenceEnd, JToken SentenceResultOutputFormatCondition, JArray getSectionAndFileNameAndSearchJA, Dictionary<string,int> withInForSentence,JToken resultAllKeyword,JToken resultSearch,string copyResultOutputFormat, out string finalOutputData, out JArray collectCorrectSentanceOutput)
         {
             finalOutputData = "";
             collectCorrectSentanceOutput = new JArray();
@@ -1307,6 +1309,17 @@ namespace ReboProject
                         }
                     }
                 }
+            }
+            //
+            List<string> sentenceStartList = new List<string>();
+            List<string> sentenceEndList = new List<string>();
+            foreach (var item in sentenceStart)
+            {
+                sentenceStartList.Add(item["keyword"].ToString());
+            }
+            foreach (var item in sentenceEnd)
+            {
+                sentenceEndList.Add(item["keyword"].ToString());
             }
 
             Dictionary<string, string> allSetKeyword = new Dictionary<string, string>();
@@ -1447,6 +1460,7 @@ namespace ReboProject
                             }
                             next++;
                         }
+                        var finalOutputSentence = "";
                         if (orConditionSentence == 1)
                         {
                             if (sentenceAsOutput != "") {
@@ -1455,19 +1469,22 @@ namespace ReboProject
                                     if (orConditionFormat.IndexOf("{{" + andConditionId + "}}") != -1)
                                     {
                                         orConditionFormat = orConditionFormat.Replace("{{" + andConditionId + "}}", sentenceAsOutput);
-                                        stringOutput.Add(orConditionFormat);
-                                        searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", orConditionFormat);
+                                        startToEnd(sentenceStartList, sentenceEndList, orConditionFormat,out finalOutputSentence);
+                                        stringOutput.Add(finalOutputSentence);
+                                        searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", finalOutputSentence);
                                     }
                                     else
                                     {
-                                        stringOutput.Add(sentenceAsOutput + " " + orConditionFormat);
-                                        searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", sentenceAsOutput + " " + orConditionFormat);
+                                        startToEnd(sentenceStartList, sentenceEndList, sentenceAsOutput + " " + orConditionFormat, out finalOutputSentence);
+                                        stringOutput.Add(finalOutputSentence);
+                                        searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", finalOutputSentence);
                                     }
 
                                 }
                                 else {
-                                    stringOutput.Add(sentenceAsOutput);
-                                    searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", sentenceAsOutput);
+                                    startToEnd(sentenceStartList, sentenceEndList, sentenceAsOutput, out finalOutputSentence);
+                                    stringOutput.Add(finalOutputSentence);
+                                    searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", finalOutputSentence);
                                 }    
                             }
                         }
@@ -1475,8 +1492,9 @@ namespace ReboProject
                         {
                             if (sentenceAsOutput != "") {
                                 orConditionFormat = orConditionFormat.Replace("{{" + andConditionId + "}}", "").Trim();
-                                stringOutput.Add(orConditionFormat);
-                                searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", orConditionFormat);
+                                startToEnd(sentenceStartList, sentenceEndList, orConditionFormat, out finalOutputSentence);
+                                stringOutput.Add(finalOutputSentence);
+                                searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", finalOutputSentence);
                             }
                                 
                         }
@@ -1633,6 +1651,38 @@ namespace ReboProject
             else
                 format = outputNotFoundMessage;
         }
-        
+
+        public void startToEnd(List<string> sentenceStartList,List<string> sentenceEndList , string tocheck, out string output)
+        {
+            output = "";
+            var tocheckLength = 0;
+            var checkNextSentence = true;
+            for (int i = 0; i < sentenceStartList.Count(); i++) // loop through all start words
+            {
+                if (checkNextSentence == false)
+                    break;
+                Regex regexStart = new Regex("(?i)("+ sentenceStartList[i]+ ")");
+                var matchStart = regexStart.Match(tocheck); // check if match found
+                if (matchStart.Success) {
+                    var startIndex = tocheck.IndexOf(matchStart.Value);
+                    tocheck = tocheck.Remove(0, startIndex);
+                    tocheckLength = tocheck.Length;
+                    for (int j = 0; j < sentenceEndList.Count(); j++) // loop through all end words
+                    {
+                        Regex regexEnd = new Regex("(?i)(" + sentenceEndList[i] + ")");
+                        var matchEnd = regexEnd.Match(tocheck); // check if match found
+                        if (matchEnd.Success) {
+                            var endLength = matchEnd.Value.Length;
+                            var endIndex = tocheck.IndexOf(matchEnd.Value);
+                            output = tocheck.Remove(endIndex+ endLength, tocheckLength-(endIndex + endLength));
+                            checkNextSentence = false;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (output == "")
+                output = tocheck;
+        }
     }
 }
