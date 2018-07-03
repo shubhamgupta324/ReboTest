@@ -18,7 +18,7 @@ namespace ReboProject
 {
     public partial class _Default : Page
     {
-        protected void Page_Load(object sender, EventArgs e)
+        protected void Page_Load(object sender, EventArgs e) 
         {
         }
         protected void TestClick(object sender, EventArgs e)
@@ -92,6 +92,7 @@ namespace ReboProject
                     var resultOutputFormat = singleDp["result"][0]["outputFormat"].ToString();// eg: final output format
                     var outputNotFoundMessage = singleDp["result"][0]["outputNotFoundMessage"].ToString();// eg: final output format
                     var resultAllKeyword = singleDp["result"][0]["allKeyword"];// list of all keywords used
+                    var financialSelect = singleDp["result"][0]["financialSelect"];// list of all keywords used
                     var libraryVal = ""; // get all the library value
                     if ((singleDp["library"].ToString()) != "")
                         libraryVal = singleDp["library"].ToString();
@@ -232,7 +233,7 @@ namespace ReboProject
                                     Dictionary<Dictionary<string, int>, int> getNode = new Dictionary<Dictionary<string, int>, int>();
                                     if (SearchWithin == 2)
                                     {
-                                        getNode = Program.SectionVal123(startPageVal, endPageVal, savePage);
+                                        getNode = Program.getSectionVal(startPageVal, endPageVal, savePage);
                                         getAllFoundText(savePageSection, startPageVal, endPageVal, getNode, exclusionCount, fullFilePath, SearchWithin, savePage, fileName, logic, out ja, out totalScoreDenominatorVal, out searchFieldScore, out withInScore); //  get the found text
                                     }
                                     else
@@ -452,7 +453,7 @@ namespace ReboProject
                     {
                         var finalOutputData = "";
                         JArray collectCorrectSentanceOutput = new JArray();
-                        collectCorrectSentance(sentenceStart, sentenceEnd, SentenceResultOutputFormatCondition, getSectionAndFileNameAndSearchJA, withInForSentence, resultAllKeyword, resultSearch, copyResultOutputFormat, out finalOutputData, out collectCorrectSentanceOutput);
+                        collectCorrectSentance(financialSelect, sentenceStart, sentenceEnd, SentenceResultOutputFormatCondition, getSectionAndFileNameAndSearchJA, withInForSentence, resultAllKeyword, resultSearch, copyResultOutputFormat, out finalOutputData, out collectCorrectSentanceOutput);
                         var format = "";
                         buildFormat(outputNotFoundMessage, collectCorrectSentanceOutput, finalOutputData, resultOutputFormat, out format);
                         ja3[0]["correctString"] = format;
@@ -1275,7 +1276,7 @@ namespace ReboProject
         }
 
         // get all the correct sentance from all the para 
-        public void collectCorrectSentance(JToken sentenceStart, JToken sentenceEnd, JToken SentenceResultOutputFormatCondition, JArray getSectionAndFileNameAndSearchJA, Dictionary<string, int> withInForSentence, JToken resultAllKeyword, JToken resultSearch, string copyResultOutputFormat, out string finalOutputData, out JArray collectCorrectSentanceOutput)
+        public void collectCorrectSentance(JToken financialSelect, JToken sentenceStart, JToken sentenceEnd, JToken SentenceResultOutputFormatCondition, JArray getSectionAndFileNameAndSearchJA, Dictionary<string, int> withInForSentence, JToken resultAllKeyword, JToken resultSearch, string copyResultOutputFormat, out string finalOutputData, out JArray collectCorrectSentanceOutput)
         {
             finalOutputData = "";
             collectCorrectSentanceOutput = new JArray();
@@ -1291,7 +1292,6 @@ namespace ReboProject
                 if (getSentanceFullStop[getSentanceFullStop.Count() - 1] == "")
                     getSentanceFullStop = getSentanceFullStop.Take(getSentanceFullStop.Count() - 1).ToArray();
                 List<string> wrongStrings = new List<string>();
-
                 List<string> y = getSentanceFullStop.ToList<string>();
                 y.RemoveAll(p => string.IsNullOrEmpty(p));
                 getSentanceFullStop = y.ToArray();
@@ -1376,6 +1376,7 @@ namespace ReboProject
                 foreach (var andConditionVal in searchAndCondition)
                 {
                     var andConditionId = (int)andConditionVal["id"];
+                    var financialCheck = andConditionVal["financialCheck"].ToString();
                     if (!allContionToReplace.Contains(andConditionId))
                         allContionToReplace.Add(andConditionId);
                     var andConditionOrCondition = andConditionVal["orCondition"];
@@ -1496,9 +1497,34 @@ namespace ReboProject
                         foreach (var item in allFormatSave)
                         {
                             var outputStringVal = item.Value;
-                            if (outputStringVal.IndexOf(sentenceAsOutput.Trim()) != -1 && sentenceAsOutput !="") {
+                            if (outputStringVal.IndexOf(sentenceAsOutput.Trim()) != -1 && sentenceAsOutput != "") {
                                 duplicateFound = true;
                                 break;
+                            }
+                        }
+                        List<string> financialVal = new List<string>();
+                        if (duplicateFound == false) {
+                            if (financialCheck != "0") {
+                                foreach (var item in financialSelect)
+                                {
+                                    var financialId = item["id"].ToString();
+                                    if (financialId == financialCheck)
+                                    {
+                                        var financialKeyword = item["keyword"].ToString();
+                                        if (financialKeyword == "getDate")
+                                            financialVal = processing.getDate(sentenceAsOutput);
+                                        if (financialKeyword == "getCurrencyAmount")
+                                            financialVal = processing.getCurrencyAmount(sentenceAsOutput);
+                                        if (financialKeyword == "getYear")
+                                            financialVal = processing.getYear(sentenceAsOutput);
+                                        if (financialKeyword == "extractPercentage")
+                                            financialVal = processing.extractPercentage(sentenceAsOutput);
+                                        if (financialKeyword == "getDays")
+                                            financialVal = processing.extractPercentage(sentenceAsOutput);
+                                        if (financialKeyword == "getYearCount")
+                                            financialVal = processing.extractPercentage(sentenceAsOutput);
+                                    }
+                                }
                             }
                         }
                         if (orConditionSentence == 1)
@@ -1513,6 +1539,11 @@ namespace ReboProject
                                             orConditionFormat = orConditionFormat.Replace("{{" + andConditionId + "}}", sentenceAsOutput);
                                         else
                                             orConditionFormat = orConditionFormat.Replace("{{" + andConditionId + "}}", "");
+                                        // financial
+                                        if(financialVal.Count() != 0)
+                                            orConditionFormat = orConditionFormat.Replace("##" + andConditionId + "##", financialVal[0].ToString());
+                                        else
+                                            orConditionFormat = orConditionFormat.Replace("##" + andConditionId + "##", "");
                                         startToEnd(sentenceStartList, sentenceEndList, orConditionFormat, out finalOutputSentence);
                                         stringOutput.Add(finalOutputSentence);
                                         searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", finalOutputSentence);
@@ -1523,6 +1554,11 @@ namespace ReboProject
                                             startToEnd(sentenceStartList, sentenceEndList, sentenceAsOutput + " " + orConditionFormat, out finalOutputSentence);
                                         else
                                             startToEnd(sentenceStartList, sentenceEndList,orConditionFormat, out finalOutputSentence);
+                                        // financial
+                                        if (financialVal.Count() != 0)
+                                            orConditionFormat = orConditionFormat.Replace("##" + andConditionId + "##", financialVal[0].ToString());
+                                        else
+                                            orConditionFormat = orConditionFormat.Replace("##" + andConditionId + "##", "");
                                         stringOutput.Add(finalOutputSentence);
                                         searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", finalOutputSentence);
                                     }
@@ -1545,6 +1581,11 @@ namespace ReboProject
                         {
                             if (sentenceAsOutput != "")
                             {
+                                // financial
+                                if (financialVal.Count() != 0)
+                                    orConditionFormat = orConditionFormat.Replace("##" + andConditionId + "##", financialVal[0].ToString());
+                                else
+                                    orConditionFormat = orConditionFormat.Replace("##" + andConditionId + "##", "");
                                 orConditionFormat = orConditionFormat.Replace("{{" + andConditionId + "}}", "").Trim();
                                 startToEnd(sentenceStartList, sentenceEndList, orConditionFormat, out finalOutputSentence);
                                 stringOutput.Add(finalOutputSentence);
@@ -1623,6 +1664,7 @@ namespace ReboProject
                 stringOutput = new List<string>();
 
                 allFormatSave.Add(searchValCount, searchFormat);
+                
                 if (allFormatSave.Count() == resultSearch.Count())
                 {
                     var searchFormatJoin = new Dictionary<int, string>();

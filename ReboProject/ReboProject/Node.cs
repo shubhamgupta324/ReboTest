@@ -8,7 +8,7 @@ namespace ReboProject
 {
     class Program
     {
-        public static Dictionary<Dictionary<string, int>, int> SectionVal123(int startPageVal,int endPageVal, Dictionary<int, Dictionary<int, string>> savePage)
+        public static Dictionary<Dictionary<string, int>, int> getSectionVal(int startPageVal,int endPageVal, Dictionary<int, Dictionary<int, string>> savePage)
         {
             Dictionary<Dictionary<string, int>, int> getCompleteSection = new Dictionary<Dictionary<string, int>, int>();
             Dictionary<string,int> getAllParaOfSection = new Dictionary<string, int>();

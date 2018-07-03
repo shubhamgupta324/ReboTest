@@ -4,6 +4,7 @@ using System.Linq;
 using System.Web;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json.Linq;
+using System.Text;
 
 namespace ReboProject
 {
@@ -491,6 +492,582 @@ namespace ReboProject
                     break;
             }
         }
+
+        // --------------------------------------------financial------------------------------------------------------------------
+
+        //-------------------------------------------------------------------------------------------
+        // get complete date
+        public static List<string> getDate(string html)
+        {
+            var objDate = "";
+            Regex regex = new Regex(@"(?:\d+[a-z]*\s*(?:of\s+)?)?(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s*,?\s*(?:(?:\d+[a-z]*\s*)?\s*,?\s*)?\d{4}\b", RegexOptions.IgnoreCase);
+            
+            List<string> formattedString = new List<string>();
+            foreach (Match m in regex.Matches(html))
+            {
+                string datestring = m.Value;
+
+
+                if (!string.IsNullOrEmpty(datestring))
+                {
+                    int indexOfFirstLetter = Regex.Match(datestring, "(?<=[0-9])(?:st|nd|rd|th)", RegexOptions.IgnoreCase).Index;
+                    if (indexOfFirstLetter != 0)
+                    {
+                        datestring = datestring.Remove(indexOfFirstLetter, 2);
+                    }
+                }
+                else
+                {
+                    return null;
+                }
+
+                DateTime value;
+                if (DateTime.TryParse(datestring, out value))
+                {
+                    objDate = value.ToString("MM/dd/yyyy");
+                }
+                if (objDate == "")
+                {
+                    return null;
+                }
+                else
+
+                    formattedString.Add(objDate);
+            }
+            return formattedString;
+        }
+
+        //get moth year or year
+        public static List<string> getYear(string html)
+        {
+            var objDate = "";
+            Regex regex = new Regex(@"((?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s*)?,?\s*(?:(?:\d+[a-z]*\s*)?\s*,?\s*)?\d{4}\b", RegexOptions.IgnoreCase);
+
+            List<string> formattedString = new List<string>();
+            foreach (Match m in regex.Matches(html))
+            {
+                string datestring = m.Value;
+
+
+                if (!string.IsNullOrEmpty(datestring))
+                {
+                    int indexOfFirstLetter = Regex.Match(datestring, "(?<=[0-9])(?:st|nd|rd|th)", RegexOptions.IgnoreCase).Index;
+                    if (indexOfFirstLetter != 0)
+                    {
+                        datestring = datestring.Remove(indexOfFirstLetter, 2);
+                    }
+                }
+                else
+                {
+                    return null;
+                }
+
+                DateTime value;
+                Regex regexYear = new Regex(@"\d{4}", RegexOptions.IgnoreCase);
+                var match = regexYear.Match(datestring); // check if match found
+                if (match.Success) {
+                    if (datestring.IndexOf(match.Value) == 1) {
+                        objDate = match.Value.Trim();
+                    }
+                    else
+                    {
+                        DateTime.TryParse(datestring, out value);
+                        objDate = value.ToString("MM/yyyy");
+                    }
+                }
+                if (objDate == "")
+                {
+                    return null;
+                }
+                else
+
+                    formattedString.Add(objDate);
+            }
+            return formattedString;
+        }
+        //-------------------------------------------------------------------------------------------
+
+        //-------------------------------------------------------------------------------------------
+        // get amount
+        public static List<string> getCurrencyAmount(string html)
+        {
+
+            string Pattern = @"(?<SYMBOL>[$â‚¬Â£]){1}\s*(?<AMOUNT>[\d.,]+)";
+            List<string> formattedString = new List<string>();
+            foreach (Match m in Regex.Matches(html, Pattern))
+            {
+                formattedString.Add(m.Value);
+            }
+            if (formattedString.Count() == 0)
+                getMultipleTextualDollar(html, out formattedString);
+            return formattedString;
+
+        }
+
+        // word amount
+        public static void getMultipleTextualDollar(string numberString, out List<string> formattedString)
+        {
+            Dictionary<string, long> numberTable = new Dictionary<string, long>
+        { {"zero",0},{"one",1},{"two",2},{"three",3},{"four",4},
+        {"five",5},{"six",6},{"seven",7},{"eight",8},{"nine",9},
+        {"ten",10},{"eleven",11},{"twelve",12},{"thirteen",13},
+        {"fourteen",14},{"fifteen",15},{"sixteen",16},
+        {"seventeen",17},{"eighteen",18},{"nineteen",19},{"twenty",20},
+        {"thirty",30},{"forty",40},{"fifty",50},{"sixty",60},
+        {"seventy",70},{"eighty",80},{"ninety",90},{"hundred",100},
+        {"thousand",1000},{"million",1000000},{"billion",1000000000},
+        {"trillion",1000000000000},{"quadrillion",1000000000000000},
+        {"quintillion",1000000000000000000}};
+            formattedString = new List<string>();
+            var numbers = Regex.Matches(numberString, @"\w+").Cast<Match>()
+                        .Select(m => m.Value.ToLowerInvariant())
+                        .Where(v => numberTable.ContainsKey(v))
+                        .Select(v => numberTable[v]);
+
+            List<int> dollarIndex = new List<int>();
+            var startdollar = 0;
+            string[] outputData = numberString.Split(new[] { "dollar" }, StringSplitOptions.None);
+            var dollarCount = outputData.Length - 1;
+            for (int k = 0; k < dollarCount; k++)
+            {
+                var indexVal = numberString.Replace(" ", "").ToLower().IndexOf("dollar" , startdollar);
+                startdollar = indexVal + 6;
+                dollarIndex.Add(indexVal);
+            }
+
+            List<string> numberVal = new List<string>();
+            List<long> sample = new List<long>();
+            var dollar = "dollar";
+            long acc = 0, total = 0L;
+            int prevIndex = 0, currIndex = 0;
+            string currKey = "", prevKey = "";
+            int i = 0;
+            var startFromVal = 0;
+            if (numberString.ToLower().IndexOf("dollar") != -1)
+            {
+                foreach (var n in numbers)
+                {
+                    numberString = numberString.Replace(" ", "");
+                    currKey = numberTable.FirstOrDefault(x => x.Value.ToString().ToLower() == n.ToString().ToLower()).Key;
+                    currIndex = numberString.ToLower().IndexOf(currKey.ToLower(), startFromVal);
+                    startFromVal = currIndex + currKey.Length -1;
+                    if (!(prevIndex == 0 || currIndex - (prevIndex + prevKey.Length - 1) == 1))
+                    {
+                        var getAllWord = "";
+                        foreach (var item in numberVal)
+                        {
+                            getAllWord = getAllWord + item;
+                        }
+                        var indexOfNumber = numberString.IndexOf(getAllWord);
+
+                        foreach (var item in dollarIndex)
+                        {
+                            if (indexOfNumber - dollar.Length == item) {
+                                sample.Add(acc);
+                                break;
+                            }    
+                        }
+                        numberVal = new List<string>();
+                        i++;
+                        prevIndex = 0;
+                        currIndex = 0;
+                        prevKey = "";
+                        acc = 0;
+                        total = 0L;
+                        
+                    }
+                    numberVal.Add(currKey);
+                    if (n >= 1000)
+                    {
+                        total += (acc * n);
+                        acc = 0;
+                    }
+                    else if (n >= 100)
+                    {
+                        acc *= n;
+                    }
+                    else acc += n;
+
+                    prevIndex = currIndex;
+                    prevKey = currKey;
+                }
+                if (acc != 0) {
+                    var getAllWord = "";
+                    foreach (var item in numberVal)
+                    {
+                        getAllWord = getAllWord + item;
+                    }
+                    var indexOfNumber = numberString.IndexOf(getAllWord);
+
+                    foreach (var item in dollarIndex)
+                    {
+                        if (indexOfNumber - dollar.Length == item)
+                        {
+                            sample.Add(acc);
+                            break;
+                        }
+                    }
+                }
+                    
+
+                foreach (var ss in sample)
+                {
+                    formattedString.Add(ss + "%");
+                }
+            }
+        }
+        //-------------------------------------------------------------------------------------------
+
+        //-------------------------------------------------------------------------------------------
+        // get percent
+        public static List<string> extractPercentage(string html)
+        {
+            List<string> formattedString = new List<string>();
+            foreach (Match m in Regex.Matches(html, @"\d+(\%|\s\bpercent\b)"))
+            {
+                formattedString.Add(m.Value);
+            }
+            if (formattedString.Count() == 0)
+                getMultipleTextualPercent(html, out formattedString);
+            return formattedString;
+        }
         
+        // word percent 
+        public static void getMultipleTextualPercent(string numberString, out List<string> formattedString)
+
+        {
+            Dictionary<string, long> numberTable = new Dictionary<string, long>
+        { {"zero",0},{"one",1},{"two",2},{"three",3},{"four",4},
+        {"five",5},{"six",6},{"seven",7},{"eight",8},{"nine",9},
+        {"ten",10},{"eleven",11},{"twelve",12},{"thirteen",13},
+        {"fourteen",14},{"fifteen",15},{"sixteen",16},
+        {"seventeen",17},{"eighteen",18},{"nineteen",19},{"twenty",20},
+        {"thirty",30},{"forty",40},{"fifty",50},{"sixty",60},
+        {"seventy",70},{"eighty",80},{"ninety",90},{"hundred",100},
+        {"thousand",1000},{"million",1000000},{"billion",1000000000},
+        {"trillion",1000000000000},{"quadrillion",1000000000000000},
+        {"quintillion",1000000000000000000}};
+        formattedString = new List<string>();
+        var numbers = Regex.Matches(numberString, @"\w+").Cast<Match>()
+                    .Select(m => m.Value.ToLowerInvariant())
+                    .Where(v => numberTable.ContainsKey(v))
+                    .Select(v => numberTable[v]);
+            
+        List<long> sample = new List<long>();
+        long acc = 0, total = 0L;
+        int prevIndex = 0, currIndex = 0;
+        string currKey = "", prevKey = "";
+        int i = 0;
+        var startFromVal = 0;
+        if (numberString.ToLower().IndexOf("percent") != -1)
+        {
+            foreach (var n in numbers)
+            {
+                numberString = numberString.Replace(" ", "");
+                currKey = numberTable.FirstOrDefault(x => x.Value.ToString().ToLower() == n.ToString().ToLower()).Key;
+                currIndex = numberString.ToLower().IndexOf(currKey.ToLower(), startFromVal);
+                startFromVal = startFromVal + currKey.Length;
+                if (!(prevIndex == 0 || currIndex - (prevIndex + prevKey.Length - 1) == 1))
+                {
+                    if(numberString.ToLower().IndexOf("percent") == prevIndex + prevKey.Length)
+                        sample.Add(acc);
+                    i++;
+                    prevIndex = 0;
+                    currIndex = 0;
+                    prevKey = "";
+                    currKey = "";
+                    acc = 0;
+                    total = 0L;
+                }
+
+                if (n >= 1000)
+                {
+                    total += (acc * n);
+                    acc = 0;
+                }
+                else if (n >= 100)
+                {
+                    acc *= n;
+                }
+                else acc += n;
+
+                prevIndex = currIndex;
+                prevKey = currKey;
+            }
+            if (acc != 0)
+                sample.Add(acc);
+
+            foreach (var ss in sample)
+            {
+                formattedString.Add(ss.ToString() + "%");
+            }
+        }
+        }
+        //-------------------------------------------------------------------------------------------
+
+        //-------------------------------------------------------------------------------------------
+        // only days
+        public static List<string> getDays(string html)
+        {
+            html = Regex.Replace(html, @"[^0-9a-zA-Z]+", " ");
+            List<string> formattedString = new List<string>();
+            foreach (Match m in Regex.Matches(html, @"\d{2}+[\s]*+days"))
+            {
+                formattedString.Add(m.Value + " days");
+            }
+            if (formattedString.Count() == 0)
+                getTextualDays(html, out formattedString);
+            if(formattedString.Count() == 0)
+                getMonths(html, out formattedString);
+            return formattedString;
+        }
+
+        //only days word
+        public static void getTextualDays(string numberString, out List<string> formattedString)
+        {
+            numberString = Regex.Replace(numberString, @"[\d-]", " ");
+            Dictionary<string, long> numberTable = new Dictionary<string, long>
+            { {"zero",0},{"one",1},{"two",2},{"three",3},{"four",4},
+            {"five",5},{"six",6},{"seven",7},{"eight",8},{"nine",9},
+            {"ten",10},{"eleven",11},{"twelve",12},{"thirteen",13},
+            {"fourteen",14},{"fifteen",15},{"sixteen",16},
+            {"seventeen",17},{"eighteen",18},{"nineteen",19},{"twenty",20},
+            {"thirty",30},{"forty",40},{"fifty",50},{"sixty",60},
+            {"seventy",70},{"eighty",80},{"ninety",90},{"hundred",100},
+            {"thousand",1000},{"million",1000000},{"billion",1000000000},
+            {"trillion",1000000000000},{"quadrillion",1000000000000000},
+            {"quintillion",1000000000000000000}};
+            formattedString = new List<string>();
+            var numbers = Regex.Matches(numberString, @"\w+").Cast<Match>()
+                        .Select(m => m.Value.ToLowerInvariant())
+                        .Where(v => numberTable.ContainsKey(v))
+                        .Select(v => numberTable[v]);
+
+            List<long> sample = new List<long>();
+            long acc = 0, total = 0L;
+            int prevIndex = 0, currIndex = 0;
+            string currKey = "", prevKey = "";
+            int i = 0;
+            var startFromVal = 0;
+            if (numberString.ToLower().IndexOf("days") != -1)
+            {
+                foreach (var n in numbers)
+                {
+                    numberString = numberString.Replace(" ", "");
+                    currKey = numberTable.FirstOrDefault(x => x.Value.ToString().ToLower() == n.ToString().ToLower()).Key;
+                    currIndex = numberString.ToLower().IndexOf(currKey.ToLower(), startFromVal);
+                    startFromVal = startFromVal + currKey.Length;
+                    if (!(prevIndex == 0 || currIndex - (prevIndex + prevKey.Length - 1) == 1))
+                    {
+                        if (numberString.ToLower().IndexOf("days") == prevIndex + prevKey.Length)
+                            sample.Add(acc);
+                        i++;
+                        prevIndex = 0;
+                        currIndex = 0;
+                        prevKey = "";
+                        currKey = "";
+                        acc = 0;
+                        total = 0L;
+                    }
+
+                    if (n >= 1000)
+                    {
+                        total += (acc * n);
+                        acc = 0;
+                    }
+                    else if (n >= 100)
+                    {
+                        acc *= n;
+                    }
+                    else acc += n;
+
+                    prevIndex = currIndex;
+                    prevKey = currKey;
+                }
+                if (acc != 0)
+                    sample.Add(acc);
+
+                foreach (var ss in sample)
+                {
+                    formattedString.Add(ss.ToString() + " days");
+                }
+            }
+        }
+        //-------------------------------------------------------------------------------------------
+
+        //-------------------------------------------------------------------------------------------
+        // only months
+        public static void getMonths(string html, out List<string> formattedString)
+        {
+            html = Regex.Replace(html, @"[^0-9a-zA-Z]+", " ");
+            formattedString = new List<string>();
+            foreach (Match m in Regex.Matches(html, @"\d{2}+[\s]*+months"))
+            {
+                formattedString.Add(m.Value + " months");
+            }
+            if (formattedString.Count() == 0)
+                getTextualMonths(html, out formattedString);
+        }
+
+        // only month words
+        public static void getTextualMonths(string numberString, out List<string> formattedString)
+        {
+            numberString = Regex.Replace(numberString, @"[\d-]", " ");
+            Dictionary<string, long> numberTable = new Dictionary<string, long>
+            { {"zero",0},{"one",1},{"two",2},{"three",3},{"four",4},
+            {"five",5},{"six",6},{"seven",7},{"eight",8},{"nine",9},
+            {"ten",10},{"eleven",11},{"twelve",12},{"thirteen",13},
+            {"fourteen",14},{"fifteen",15},{"sixteen",16},
+            {"seventeen",17},{"eighteen",18},{"nineteen",19},{"twenty",20},
+            {"thirty",30},{"forty",40},{"fifty",50},{"sixty",60},
+            {"seventy",70},{"eighty",80},{"ninety",90},{"hundred",100},
+            {"thousand",1000},{"million",1000000},{"billion",1000000000},
+            {"trillion",1000000000000},{"quadrillion",1000000000000000},
+            {"quintillion",1000000000000000000}};
+            formattedString = new List<string>();
+            var numbers = Regex.Matches(numberString, @"\w+").Cast<Match>()
+                        .Select(m => m.Value.ToLowerInvariant())
+                        .Where(v => numberTable.ContainsKey(v))
+                        .Select(v => numberTable[v]);
+
+            List<long> sample = new List<long>();
+            long acc = 0, total = 0L;
+            int prevIndex = 0, currIndex = 0;
+            string currKey = "", prevKey = "";
+            int i = 0;
+            var startFromVal = 0;
+            if (numberString.ToLower().IndexOf("months") != -1)
+            {
+                foreach (var n in numbers)
+                {
+                    numberString = numberString.Replace(" ", "");
+                    currKey = numberTable.FirstOrDefault(x => x.Value.ToString().ToLower() == n.ToString().ToLower()).Key;
+                    currIndex = numberString.ToLower().IndexOf(currKey.ToLower(), startFromVal);
+                    startFromVal = startFromVal + currKey.Length;
+                    if (!(prevIndex == 0 || currIndex - (prevIndex + prevKey.Length - 1) == 1))
+                    {
+                        if (numberString.ToLower().IndexOf("months") == prevIndex + prevKey.Length)
+                            sample.Add(acc);
+                        i++;
+                        prevIndex = 0;
+                        currIndex = 0;
+                        prevKey = "";
+                        currKey = "";
+                        acc = 0;
+                        total = 0L;
+                    }
+
+                    if (n >= 1000)
+                    {
+                        total += (acc * n);
+                        acc = 0;
+                    }
+                    else if (n >= 100)
+                    {
+                        acc *= n;
+                    }
+                    else acc += n;
+
+                    prevIndex = currIndex;
+                    prevKey = currKey;
+                }
+                if (acc != 0)
+                    sample.Add(acc);
+
+                foreach (var ss in sample)
+                {
+                    formattedString.Add(ss.ToString() + " months");
+                }
+            }
+        }
+        //-------------------------------------------------------------------------------------------
+
+        //-------------------------------------------------------------------------------------------
+        // only year count
+        public static List<string> getYearCount(string html)
+        {
+            html = Regex.Replace(html, @"[^0-9a-zA-Z]+", " ");
+            List<string> formattedString = new List<string>();
+            foreach (Match m in Regex.Matches(html, @"\d{2}+[\s]*+years"))
+            {
+                formattedString.Add(m.Value + " years");
+            }
+            if (formattedString.Count() == 0)
+                getTextualYear(html, out formattedString);
+            return formattedString;
+        }
+
+        //only days word
+        public static void getTextualYear(string numberString, out List<string> formattedString)
+
+        {
+            Dictionary<string, long> numberTable = new Dictionary<string, long>
+        { {"zero",0},{"one",1},{"two",2},{"three",3},{"four",4},
+        {"five",5},{"six",6},{"seven",7},{"eight",8},{"nine",9},
+        {"ten",10},{"eleven",11},{"twelve",12},{"thirteen",13},
+        {"fourteen",14},{"fifteen",15},{"sixteen",16},
+        {"seventeen",17},{"eighteen",18},{"nineteen",19},{"twenty",20},
+        {"thirty",30},{"forty",40},{"fifty",50},{"sixty",60},
+        {"seventy",70},{"eighty",80},{"ninety",90},{"hundred",100},
+        {"thousand",1000},{"million",1000000},{"billion",1000000000},
+        {"trillion",1000000000000},{"quadrillion",1000000000000000},
+        {"quintillion",1000000000000000000}};
+            formattedString = new List<string>();
+            var numbers = Regex.Matches(numberString, @"\w+").Cast<Match>()
+                        .Select(m => m.Value.ToLowerInvariant())
+                        .Where(v => numberTable.ContainsKey(v))
+                        .Select(v => numberTable[v]);
+
+            List<long> sample = new List<long>();
+            long acc = 0, total = 0L;
+            int prevIndex = 0, currIndex = 0;
+            string currKey = "", prevKey = "";
+            int i = 0;
+            var startFromVal = 0;
+            if (numberString.ToLower().IndexOf("years") != -1)
+            {
+                foreach (var n in numbers)
+                {
+                    numberString = numberString.Replace(" ", "");
+                    currKey = numberTable.FirstOrDefault(x => x.Value.ToString().ToLower() == n.ToString().ToLower()).Key;
+                    currIndex = numberString.ToLower().IndexOf(currKey.ToLower(), startFromVal);
+                    startFromVal = startFromVal + currKey.Length;
+                    if (!(prevIndex == 0 || currIndex - (prevIndex + prevKey.Length - 1) == 1))
+                    {
+                        if (numberString.ToLower().IndexOf("years") == prevIndex + prevKey.Length)
+                            sample.Add(acc);
+                        i++;
+                        prevIndex = 0;
+                        currIndex = 0;
+                        prevKey = "";
+                        currKey = "";
+                        acc = 0;
+                        total = 0L;
+                    }
+
+                    if (n >= 1000)
+                    {
+                        total += (acc * n);
+                        acc = 0;
+                    }
+                    else if (n >= 100)
+                    {
+                        acc *= n;
+                    }
+                    else acc += n;
+
+                    prevIndex = currIndex;
+                    prevKey = currKey;
+                }
+                if (acc != 0)
+                    sample.Add(acc);
+
+                foreach (var ss in sample)
+                {
+                    formattedString.Add(ss.ToString()+" years");
+                }
+            }
+        }
+        //-------------------------------------------------------------------------------------------
     }
 }
