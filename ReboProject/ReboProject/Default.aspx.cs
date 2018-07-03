@@ -2412,12 +2412,7 @@ namespace ReboProject
             finalFormat = "";
             foreach (var item in AbbreviationData)
             {
-                Regex regex = new Regex("(?i)" + item.Key);
-                var match = regex.Match(format); // check if match found
-                if (match.Success)
-                {
-                    format = format.Replace(match.Value, item.Value);
-                }
+                format = Regex.Replace(format, "(?i)" + item.Key + "(?!\\S)", item.Value, RegexOptions.IgnoreCase);
             }
             finalFormat = format;
         }
