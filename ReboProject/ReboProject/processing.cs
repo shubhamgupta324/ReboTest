@@ -94,7 +94,7 @@ namespace ReboProject
                                 {
                                     foreach (var item in checkWordBefore) // ckeck words before section nuber
                                     {
-                                        if (lastLine.EndsWith(item.Value))
+                                        if (lastLine.ToLower().Trim().EndsWith(item.Value))
                                         {
                                             sectiongot = new List<string>();
                                             sectiongot.Add(null);
