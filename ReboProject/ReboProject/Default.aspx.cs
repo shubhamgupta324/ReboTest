@@ -82,6 +82,7 @@ namespace ReboProject
                 {
                     var resultSearch = singleDp["result"][0]["search"];// eg: {{filename}}; {{result}}: {{pagenumber}}
                     var SentenceResultOutputFormat = singleDp["result"][0]["SentenceoutputFormat"].ToString();// set all the sentences from all output configuration
+                    var SentenceResultOutputFormatCondition = singleDp["result"][0]["FinalformatCondition"];// set all the sentences from all output configuration
                     var resultOutputFormat = singleDp["result"][0]["outputFormat"].ToString();// eg: final output format
                     var outputNotFoundMessage = singleDp["result"][0]["outputNotFoundMessage"].ToString();// eg: final output format
                     var resultAllKeyword = singleDp["result"][0]["allKeyword"];// list of all keywords used
@@ -445,7 +446,7 @@ namespace ReboProject
                     {
                         var finalOutputData = "";
                         JArray collectCorrectSentanceOutput = new JArray();
-                        collectCorrectSentance(getSectionAndFileNameAndSearchJA, withInForSentence, resultAllKeyword, resultSearch, copyResultOutputFormat, out finalOutputData, out collectCorrectSentanceOutput);
+                        collectCorrectSentance(SentenceResultOutputFormatCondition,getSectionAndFileNameAndSearchJA, withInForSentence, resultAllKeyword, resultSearch, copyResultOutputFormat, out finalOutputData, out collectCorrectSentanceOutput);
                         var format = "";
                         buildFormat(collectCorrectSentanceOutput, finalOutputData, resultOutputFormat, out format);
                         ja3[0]["correctString"] = format;
@@ -1265,7 +1266,7 @@ namespace ReboProject
         }
 
         // get all the correct sentance from all the para 
-        public void collectCorrectSentance(JArray getSectionAndFileNameAndSearchJA, Dictionary<string,int> withInForSentence,JToken resultAllKeyword,JToken resultSearch,string copyResultOutputFormat, out string finalOutputData, out JArray collectCorrectSentanceOutput)
+        public void collectCorrectSentance(JToken SentenceResultOutputFormatCondition, JArray getSectionAndFileNameAndSearchJA, Dictionary<string,int> withInForSentence,JToken resultAllKeyword,JToken resultSearch,string copyResultOutputFormat, out string finalOutputData, out JArray collectCorrectSentanceOutput)
         {
             finalOutputData = "";
             collectCorrectSentanceOutput = new JArray();
@@ -1313,11 +1314,16 @@ namespace ReboProject
             {
                 allSetKeyword.Add(item["id"].ToString(), item["keyword"].ToString());
             }
+            var searchValCount = 0;
+            Dictionary<int, string> allFormatSave = new Dictionary<int, string>();
             foreach (var searchVal in resultSearch)
             {
+                searchValCount++;
                 var searchId = (int)searchVal["id"];
                 var searchAndCondition = searchVal["andCondition"];
+                var formatCondition = searchVal["formatCondition"];
                 var searchFormat = searchVal["format"].ToString();
+                var searchFormatCOpy = searchFormat;
                 var searchExclusion = searchVal["exclusion"];
                 Dictionary<string, string> getSearchExclusion = new Dictionary<string, string>();
                 foreach (var item in searchExclusion)
@@ -1325,6 +1331,7 @@ namespace ReboProject
                     getSearchExclusion.Add(item["keyword"].ToString(), item["Check"].ToString());
                 }
                 List<int> allContionToReplace = new List<int>();
+                List<string> stringOutput = new List<string>();
                 foreach (var andConditionVal in searchAndCondition)
                 {
                     var andConditionId = (int)andConditionVal["id"];
@@ -1443,41 +1450,125 @@ namespace ReboProject
                         if (orConditionSentence == 1)
                         {
                             if (sentenceAsOutput != "") {
-                                bool endsInPeriod = searchFormat.EndsWith(".");
-                                if (endsInPeriod == false && searchFormat != "")
-                                    searchFormat = searchFormat + ".";
                                 if (orConditionFormat != "")
                                 {
-                                    if (orConditionFormat.IndexOf("{{" + andConditionId + "}}") != -1) {
+                                    if (orConditionFormat.IndexOf("{{" + andConditionId + "}}") != -1)
+                                    {
                                         orConditionFormat = orConditionFormat.Replace("{{" + andConditionId + "}}", sentenceAsOutput);
+                                        stringOutput.Add(orConditionFormat);
                                         searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", orConditionFormat);
                                     }
                                     else
+                                    {
+                                        stringOutput.Add(sentenceAsOutput + " " + orConditionFormat);
                                         searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", sentenceAsOutput + " " + orConditionFormat);
+                                    }
+
                                 }
-                                    
-                                else
+                                else {
+                                    stringOutput.Add(sentenceAsOutput);
                                     searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", sentenceAsOutput);
+                                }    
                             }
                         }
                         if (orConditionSentence == 0)
                         {
-                            if (sentenceAsOutput != ""){
-                                bool endsInPeriod = searchFormat.EndsWith(".");
-                                if (endsInPeriod == false && searchFormat != "")
-                                    searchFormat = searchFormat + ".";
                                 orConditionFormat = orConditionFormat.Replace("{{" + andConditionId + "}}", "").Trim();
+                                stringOutput.Add(orConditionFormat);
                                 searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", orConditionFormat);
-                            }
-                                
+                        }
+                        if (stringOutput.Count() < andConditionId - 1) {
+                            stringOutput.Add(null);
                         }
                     }
                 }
-                foreach(var contion in allContionToReplace) {
+                
+                    var displayConstant = "";
+                    var formatContion = "";
+                    var gotVal = false;
+                    for (var i=0;i < formatCondition.Count();i++) {
+                        formatContion = formatCondition[i]["condition"].ToString();
+                        var id = formatCondition[i]["id"].ToString();
+                        string[] getCondition = formatContion.Split('|'); // break the contion if multiple
+                        var count = 0;
+                        for (int k = 0; k < getCondition.Count(); k++) // loop through multiple condition in one
+                        {
+                            if (searchFormatCOpy.IndexOf(getCondition[k]) != -1) { // check if that condition is ther in format string 
+
+                                if (stringOutput[Int32.Parse(getCondition[k].Replace("{","").Replace("}","").Trim())-1] != null) // to check if there and output for there
+                                {
+                                    var allCondition = formatCondition[i]["value"][0]["success"][0]["condition"];
+                                    if (formatCondition[i]["value"][0]["success"][0]["condition"].HasValues)
+                                    {
+                                        for (var conditionVal = 0; conditionVal < allCondition.Count(); conditionVal++)
+                                        {
+                                            var getData = formatCondition[i]["value"][0]["success"][0]["condition"][conditionVal];
+                                            if (stringOutput[i] != null && stringOutput[i] == getData["value"].ToString())
+                                            {
+                                                displayConstant = getData["display"].ToString();
+                                                //gotVal = true;
+                                                count++;
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        displayConstant = formatCondition[i]["value"][0]["success"][0]["display"].ToString();
+                                       // gotVal = true;
+                                        count++;
+                                    }
+                                }
+                                else
+                                {
+                                    displayConstant = formatCondition[i]["value"][0]["fail"].ToString();
+                                    gotVal = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (gotVal == true || count == getCondition.Count())
+                            searchFormat = searchFormat.Replace("##" + id + "##", displayConstant).Trim();
+                    }
+                foreach (var contion in allContionToReplace) {
                     searchFormat = searchFormat.Replace("{{" + contion + "}}", "").Trim();
                 }
-                copyResultOutputFormat = copyResultOutputFormat.Replace("{{" + searchId + "}}", searchFormat);
-                finalOutputData = copyResultOutputFormat;
+
+                stringOutput = new List<string>();
+
+                allFormatSave.Add(searchValCount, searchFormat);
+                if (allFormatSave.Count() == resultSearch.Count()) {
+                    var searchFormatJoin = new Dictionary<int, string>();
+                    for (var i = 0; i < SentenceResultOutputFormatCondition.Count(); i++) // get all the cobdition 
+                    {
+                        var id = SentenceResultOutputFormatCondition[i]["id"].ToString(); // get the id
+                        var condition = SentenceResultOutputFormatCondition[i]["condition"].ToString(); // get the set on which condition is dependent
+                        var success = SentenceResultOutputFormatCondition[i]["success"].ToString(); // success output
+                        var fail = SentenceResultOutputFormatCondition[i]["fail"].ToString(); // fail output
+                        string[] getCondition = condition.Split('|'); // break the contion if multiple
+                        var count = 0;
+                        for (var j = 0; j < getCondition.Count(); j++)
+                        {
+                            if (copyResultOutputFormat.IndexOf(getCondition[j]) != -1)
+                            {
+                                if (searchFormat != "")
+                                    count++;
+                            }
+                        }
+                        if (count == getCondition.Count()) // save the output
+                            searchFormatJoin.Add(i, success);
+                        else
+                            searchFormatJoin.Add(i, fail);
+                    }
+                    foreach (var item in searchFormatJoin) // loop throucg all the output
+                    {
+                        copyResultOutputFormat = copyResultOutputFormat.Replace("##" + (item.Key + 1) + "##", item.Value);
+                    }
+                    foreach (var item in allFormatSave)
+                    {
+                        copyResultOutputFormat = copyResultOutputFormat.Replace("{{" + item.Key + "}}", item.Value);
+                        finalOutputData = copyResultOutputFormat;
+                    }
+                }
             }
         }
 
@@ -1519,7 +1610,11 @@ namespace ReboProject
                 }
             }
             FoundText = finalOutputData;
-
+            if (DocumentName == "")
+            {
+               var indexVal= resultOutputFormat.IndexOf(",");
+                resultOutputFormat = resultOutputFormat.Remove(indexVal, 1);
+            }
             format = resultOutputFormat.Replace("{{DocumentName}}", DocumentName).Replace("{{searchFor}}", SearchFor).Replace("{{found text}}", FoundText).Replace("{{Paragraph Number}}", SectionNumber);
         }
         
