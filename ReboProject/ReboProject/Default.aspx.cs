@@ -601,7 +601,7 @@ namespace ReboProject
                         bool section = false;
                         var headingLength = Int32.Parse(WebConfigurationManager.AppSettings["headingLength"]);
                         if(pdfLine.Length <= headingLength)
-                            checkSection(collectSectionLib, pdfLine, out section);
+                            checkSection(lastLine, lineCount, collectSectionLib, pdfLine, out section);
 
                         if (section == true)
                         {
@@ -810,40 +810,68 @@ namespace ReboProject
         }
 
         // check the section dictionary
-        public void checkSection(string collectSectionLib, string para, out bool section)
+        public void checkSection(string lastLine, int lineCount, string collectSectionLib, string para, out bool section)
         {
+            List<string> lastLineCheck = new List<string>();
+            lastLineCheck.Add("this");
             section = false;
-            Regex rgx = new Regex("(['^$.|?*+()\\\\])");
-            string[] getSingleLib = collectSectionLib.Split('|'); // split the lib
-            foreach (var item in getSingleLib) // loop through all library
+            var checkForSection = true;
+            if (lastLine != "" | lastLine != null)
             {
-                var sectionLibVal = JObject.Parse(item)["keyword"].ToString();
-                MatchCollection matchData = null;
-                MatchCollection matchExhibit = Regex.Matches("Exhibit", @"(?i)" + rgx.Replace(sectionLibVal, "\\$1"));
-                if (matchExhibit.Count >0)
+                foreach (var item in lastLineCheck)
                 {
-                    matchData = Regex.Matches(para.Trim(), @"^\b\s?(?i)" + rgx.Replace(sectionLibVal, "\\$1") + "(\\s|\\b)[\"]?(([a-zA-Z]{1,2}|\\d{1,3}|(\\W?)))?[\"]?$");
-                    if (matchData.Count == 0)
-                    { // match found then is a section
-                        matchData = Regex.Matches(para.Trim(), @"^\b\s?E(?i)xh((i|b|t|h|f|1|I|H|B|T|6|l|L)*){4,5}([a-zA-Z]{1}|\\d{1})?(\s|\b)([a-zA-Z]{1}|\d{0,3})(\W?)([a-zA-Z]{1}[\\s]?|\d{0,2}[\\s]?)$");
-                    }
-                }
-                else if ((para).IndexOf("\"") == 0)
-                {
-                    var searchVal = (rgx.Replace(sectionLibVal, "\\$1")).Replace("\"", "");
-                    matchData = Regex.Matches(para, "^(?i)[\"]" + searchVal + "[\"]([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}[\\s]|\\d{0,2}[\\s])$"); // find match
-                }
-                else if (para.Trim().IndexOf("\"") != -1)
-                    matchData = Regex.Matches(para.Trim(), @"^\b\s?(?i)" + rgx.Replace(sectionLibVal, "\\$1") + "(\\s|\\b)[\"]?(([a-zA-Z]{1,2}|\\d{1,3}|(\\W?)))?[\"]?$");
-                else
-                    matchData = Regex.Matches(para, @"^\b\s?(?i)" + rgx.Replace(sectionLibVal, "\\$1") + "([a-zA-Z]{1}|\\d{1})?(\\s|\\b)([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}[\\s]?|\\d{0,2}[\\s]?)$");
-
-                if (matchData.Count > 0)
-                { // match found then is a section
-                    section = true;
-                    break;
+                    if (lastLine.Trim().EndsWith(item))
+                        checkForSection = false;
                 }
             }
+            if (checkForSection == true)
+            {
+                Regex rgx = new Regex("(['^$.|?*+()\\\\])");
+                string[] getSingleLib = collectSectionLib.Split('|'); // split the lib
+                foreach (var item in getSingleLib) // loop through all library
+                {
+                    var sectionLibVal = JObject.Parse(item)["keyword"].ToString();
+                    MatchCollection matchData = null;
+                    MatchCollection matchExhibit = Regex.Matches("Exhibit", @"(?i)" + rgx.Replace(sectionLibVal, "\\$1"));
+                    var matchCount = 0;
+                    if (matchExhibit.Count > 0)
+                    {
+                        if (lineCount < 4)
+                        {
+                            matchData = Regex.Matches(para.Trim(), @"^\b\s?(?i)" + rgx.Replace(sectionLibVal, "\\$1") + "(\\s|\\b)[\"]?(([a-zA-Z]{1,2}|\\d{1,3}|(\\W?)))?[\"]?$");
+                            if (matchData.Count == 0)
+                            { // match found then is a section
+                                matchData = Regex.Matches(para.Trim(), @"^\b\s?E(?i)xh((i|b|t|h|f|1|I|H|B|T|6|l|L)*){4,5}([a-zA-Z]{1}|\\d{1})?(\s|\b)([a-zA-Z]{1}|\d{0,3})(\W?)([a-zA-Z]{1}[\\s]?|\d{0,2}[\\s]?)$");
+                            }
+                            matchCount = matchData.Count;
+                        }
+                        else
+                            matchCount = 0;
+                    }
+                    else if ((para).IndexOf("\"") == 0)
+                    {
+                        var searchVal = (rgx.Replace(sectionLibVal, "\\$1")).Replace("\"", "");
+                        matchData = Regex.Matches(para, "^(?i)[\"]" + searchVal + "[\"]([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}[\\s]|\\d{0,2}[\\s])$"); // find match
+                        matchCount = matchData.Count;
+                    }
+                    else if (para.Trim().IndexOf("\"") != -1)
+                    {
+                        matchData = Regex.Matches(para.Trim(), @"^\b\s?(?i)" + rgx.Replace(sectionLibVal, "\\$1") + "(\\s|\\b)[\"]?(([a-zA-Z]{1,2}|\\d{1,3}|(\\W?)))?[\"]?$");
+                        matchCount = matchData.Count;
+                    }
+                    else
+                    {
+                        matchData = Regex.Matches(para, @"^\b\s?(?i)" + rgx.Replace(sectionLibVal, "\\$1") + "([a-zA-Z]{1}|\\d{1})?(\\s|\\b)([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}[\\s]?|\\d{0,2}[\\s]?)$");
+                        matchCount = matchData.Count;
+                    }
+                    if (matchCount > 0)
+                    { // match found then is a section
+                        section = true;
+                        break;
+                    }
+                }
+            }
+
         }
 
         // check library step2
