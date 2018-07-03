@@ -99,7 +99,7 @@ namespace ReboProject
                         var outputFound = false;
                         if (connectorVal == 2)
                         { // check if the last output contain the library value
-                            if (LibArr[0] != "")
+                            if (LibArr[0] != "" && jaLibCheck.Count != 0)
                             {
                                 checklibrary(jaLibCheck, LibArr, out outputFound); // check if output of first logic has library value
                                 if (outputFound == false)
