@@ -26,6 +26,76 @@ namespace ReboProject
             var watch = new System.Diagnostics.Stopwatch(); // get the time
             watch.Start();
 
+            //List<string> finalSections = new List<string>(); 
+            //List<string> allSection = new List<string>();
+            //var s1 = "11 (a) (i)";
+            //var s2 = "11 (a) (ii)";
+            //var s3 = "12 (a) (i)";
+            //var s4 = "13.1";
+            //var s5 = "12 (a) (iv)";
+            //allSection.Add(s1);
+            //allSection.Add(s2);
+            //allSection.Add(s3);
+            //allSection.Add(s4);
+            //allSection.Add(s5);
+
+            //Dictionary<string, string[]> saveSectionVal = new Dictionary<string, string[]>();
+            //foreach (var item in allSection)
+            //{
+            //    var splitSection = item.Split(' ');
+            //    saveSectionVal.Add(item, splitSection);
+            //}
+
+            //var loopup = saveSectionVal.ToLookup(x => x.Value.ElementAt(0), x => x.Key).Where(x => x.Count() > 1);
+            //List<string> saveResult = new List<string>();
+            //var sectionCount = 0;
+            //foreach (var item in loopup)
+            //{
+            //    var KeyVal = item.Aggregate("", (s, v) => s + "," + v);
+            //    var splitSection = KeyVal.Split(',');
+            //    splitSection = splitSection.Skip(1).ToArray();
+            //    var sectionSaveFormat = "";
+            //    for (int i = 0; i < splitSection.Count(); i++)
+            //    {
+                    
+            //        if (splitSection.ElementAt(i) != "") {
+            //            saveResult.Add(splitSection.ElementAt(i));
+            //            sectionCount++;
+            //            var sectionReplace = splitSection.ElementAt(i).Replace(item.Key,"");
+            //            if (sectionSaveFormat == "")
+            //                sectionSaveFormat = sectionSaveFormat + sectionReplace;
+            //            else
+            //                sectionSaveFormat = sectionSaveFormat + "&" + sectionReplace;
+            //        }
+            //    }
+            //    finalSections.Add(item.Key + " (" + sectionSaveFormat + ")");
+            //}
+            //if (sectionCount == 0)
+            //{
+            //    foreach (var item in allSection)
+            //    {
+            //        finalSections.Add(item);
+            //    }
+            //}
+            //if (sectionCount > 0)
+            //{
+            //    allSection.RemoveAll(v => saveResult.Contains(v));
+            //    foreach (var item in allSection)
+            //    {
+            //        finalSections.Add(item);
+            //    }
+            //}
+            //var finalFormat = "";
+            //foreach (var item in finalSections)
+            //{
+            //    if (finalFormat == "")
+            //        finalFormat = finalFormat + item;
+            //    else
+            //        finalFormat = finalFormat + "&" + item;
+            //}
+
+            //return;
+
             string backEndVal = backEndData.Text; // get the value from front end
             if (backEndVal == "") // check if it has value else return
                 return;
@@ -1588,18 +1658,19 @@ namespace ReboProject
                 foreach (var andConditionVal in searchAndCondition)
                 {
                     var andConditionId = (int)andConditionVal["id"];
+                    var defaultFormat = andConditionVal["defaultFormat"].ToString();
                     var financialCheck = andConditionVal["financialCheck"].ToString();
                     if (!allContionToReplace.Contains(andConditionId))
                         allContionToReplace.Add(andConditionId);
                     var andConditionOrCondition = andConditionVal["orCondition"];
-                    //var outputGet = andConditionVal["outputGet"].ToString();
-                    var outputGet = "1";
+                    var outputGet = andConditionVal["outputGet"].ToString();
+                    //var outputGet = "1";
                     var checkNextOrCondition = true;
                     var searchFormatCopy = searchFormat;
                     if(outputGet == "1")
-                        readSentenceOrParagraph(searchFormatCopy, sentenceEndList, financialCheck, financialSelect, sentenceStartList, collectCorrectSentanceOutput, andConditionId, allFormatSave, sentenceSection, sentenceFileName, checkNextLineVal, saveSentenceForDuplicate, rgx, getSearchExclusion, getAllTheSentence, allSetKeyword, checkNextOrCondition, andConditionOrCondition, out stringOutput, out searchFormat);
+                        readSentenceOrParagraph(defaultFormat, searchFormatCopy, sentenceEndList, financialCheck, financialSelect, sentenceStartList, collectCorrectSentanceOutput, andConditionId, allFormatSave, sentenceSection, sentenceFileName, checkNextLineVal, saveSentenceForDuplicate, rgx, getSearchExclusion, getAllTheSentence, allSetKeyword, checkNextOrCondition, andConditionOrCondition, out stringOutput, out searchFormat);
                     if (outputGet == "2")
-                        readSentenceOrParagraph(searchFormatCopy, sentenceEndList, financialCheck, financialSelect, sentenceStartList, collectCorrectSentanceOutput, andConditionId, allFormatSave, paragraphSection, paragraphFileName, checkNextLineVal, saveSentenceForDuplicate, rgx, getSearchExclusion, getAllTheParagraph, allSetKeyword, checkNextOrCondition, andConditionOrCondition, out stringOutput, out searchFormat);
+                        readSentenceOrParagraph(defaultFormat,searchFormatCopy, sentenceEndList, financialCheck, financialSelect, sentenceStartList, collectCorrectSentanceOutput, andConditionId, allFormatSave, paragraphSection, paragraphFileName, checkNextLineVal, saveSentenceForDuplicate, rgx, getSearchExclusion, getAllTheParagraph, allSetKeyword, checkNextOrCondition, andConditionOrCondition, out stringOutput, out searchFormat);
                 }
 
                 var displayConstant = "";
@@ -1707,7 +1778,7 @@ namespace ReboProject
             }
         }
 
-        public void readSentenceOrParagraph(string searchFormatCopy, List<string> sentenceEndList,string financialCheck, JToken financialSelect,List<string> sentenceStartList,JArray collectCorrectSentanceOutput, int andConditionId,Dictionary<int,string> allFormatSave,List<string> sentenceSection, List<string> sentenceFileName,string checkNextLineVal, List<string> saveSentenceForDuplicate,Regex rgx,Dictionary<string,string> getSearchExclusion, Dictionary<string, string> getAllTheSentence, Dictionary<string, string> allSetKeyword, bool checkNextOrCondition,JToken andConditionOrCondition, out List<string> stringOutput ,out string searchFormat)
+        public void readSentenceOrParagraph(string defaultFormat, string searchFormatCopy, List<string> sentenceEndList,string financialCheck, JToken financialSelect,List<string> sentenceStartList,JArray collectCorrectSentanceOutput, int andConditionId,Dictionary<int,string> allFormatSave,List<string> sentenceSection, List<string> sentenceFileName,string checkNextLineVal, List<string> saveSentenceForDuplicate,Regex rgx,Dictionary<string,string> getSearchExclusion, Dictionary<string, string> getAllTheSentence, Dictionary<string, string> allSetKeyword, bool checkNextOrCondition,JToken andConditionOrCondition, out List<string> stringOutput ,out string searchFormat)
         {
             stringOutput = new List<string>();
             searchFormat = "";
@@ -1753,6 +1824,8 @@ namespace ReboProject
                         getAllTheSentenceWithExclusion = getAllTheSentence;
 
                 }
+                var conditionCount = 0;
+                var checkConditionCount = false;
                 foreach (var singleSentence in getAllTheSentenceWithExclusion)
                 {
                     if (checkNextSentence == false)
@@ -1789,6 +1862,11 @@ namespace ReboProject
                         var checkDuplicate = true;
                         if (match.Success)
                         {
+                            if (orConditionFormat.IndexOf("##" + andConditionId + "##") != -1)
+                            {
+                                conditionCount++;
+                                checkConditionCount = true;
+                            }
                             var checkNextLIne = false;
                             if (checkDuplicate == true && saveSentenceForDuplicate.Count > 0 && CheckGetKeywordCount == getKeyword.Count())
                             {
@@ -1884,6 +1962,15 @@ namespace ReboProject
                         }
                     }
                 }
+                if (orConditionCondition == 1 && conditionCount == getKeyword.Count() && checkConditionCount == true && financialVal.Count() == 0)
+                {
+                    orConditionFormat = defaultFormat;
+                }
+                else if (orConditionCondition == 0 && checkConditionCount == true && financialVal.Count() == 0)
+                {
+                    orConditionFormat = defaultFormat;
+                }
+
                 if (orConditionSentence == 1)
                 {
                     if (sentenceAsOutput != "")
@@ -1974,6 +2061,9 @@ namespace ReboProject
                         DocumentName = DocumentName + ", " + jaCompleteData[i]["fileName"].ToString();
                 }
             }
+            List<string> allSection = new List<string>();
+            Dictionary<string, string> allSectionName = new Dictionary<string, string>();
+            List<string> finalSections = new List<string>();
             for (int i = 0; i < jaCompleteData.Count; i++)
             {
                 var sectionVal = jaCompleteData[i]["sectionNo"].ToString();
@@ -1985,14 +2075,83 @@ namespace ReboProject
                 var matchSection = regexSection.Match(sectionVal); // check if match found
                 if (matchSection.Success)
                     sectionVal = sectionVal.Replace(matchSection.Value, "").Trim();
-                if (SectionNumber.IndexOf(sectionVal) == -1)
+                var splitSectionVal = sectionVal.Split(' ');
+                sectionVal = sectionVal.Replace(splitSectionVal[0], "").Trim();
+                if (!allSection.Contains(sectionVal))
                 {
-                    if (SectionNumber == "")
-                        SectionNumber = SectionNumber + sectionVal;
-                    else
-                        SectionNumber = SectionNumber + "& " + sectionVal;
+                    allSectionName.Add(sectionVal, splitSectionVal[0]);
+                    allSection.Add(sectionVal);
+                    //types.FirstOrDefault(x => x.Value == "one").Key;
+                }
+                    
+            }
+
+            Dictionary<string, string[]> saveSectionVal = new Dictionary<string, string[]>();
+            foreach (var item in allSection)
+            {
+                var splitSection = item.Split(' ');
+                saveSectionVal.Add(item, splitSection);
+            }
+
+            var loopup = saveSectionVal.ToLookup(x => x.Value.ElementAt(0), x => x.Key).Where(x => x.Count() > 1);
+            List<string> saveResult = new List<string>();
+            var sectionCount = 0;
+            var sectionName = "";
+            foreach (var item in loopup)
+            {
+                var KeyVal = item.Aggregate("", (s, v) => s + "," + v);
+                var splitSection = KeyVal.Split(',');
+                splitSection = splitSection.Skip(1).ToArray();
+                var sectionSaveFormat = "";
+                sectionName = "";
+                for (int i = 0; i < splitSection.Count(); i++)
+                {
+
+                    if (splitSection.ElementAt(i) != "")
+                    {
+                        saveResult.Add(splitSection.ElementAt(i));
+                        sectionCount++;
+                        var sectionReplace = splitSection.ElementAt(i).Replace(item.Key, "");
+                        if (sectionSaveFormat == "")
+                            sectionSaveFormat = sectionSaveFormat + sectionReplace;
+                        else if( i !=0 && i < splitSection.Count()-1)
+                            sectionSaveFormat = sectionSaveFormat + ", " + sectionReplace;
+                        else
+                            sectionSaveFormat = sectionSaveFormat + " & " + sectionReplace;
+                    }
+                    if (i == 0)
+                    {   
+                        sectionName= allSectionName[splitSection.ElementAt(i)];
+                    }
+                }
+                finalSections.Add(sectionName + " " + item.Key + " (" + sectionSaveFormat + ")");
+            }
+            if (sectionCount == 0)
+            {
+                foreach (var item in allSection)
+                {
+                    sectionName = allSectionName[item];
+                    finalSections.Add(sectionName + " " + item);
                 }
             }
+            if (sectionCount > 0)
+            {
+                allSection.RemoveAll(v => saveResult.Contains(v));
+                foreach (var item in allSection)
+                {
+                    sectionName = allSectionName[item];
+                    finalSections.Add(sectionName +" "+ item);
+                }
+            }
+            var finalFormat = "";
+            foreach (var item in finalSections)
+            {
+                if (finalFormat == "")
+                    finalFormat = finalFormat + item;
+                else
+                    finalFormat = finalFormat + " & " + item;
+            }
+
             for (int i = 0; i < jaCompleteData.Count; i++)
             {
                 if (!SearchFor.Contains(jaCompleteData[i]["search"].ToString()))
@@ -2010,7 +2169,7 @@ namespace ReboProject
                 resultOutputFormat = resultOutputFormat.Remove(indexVal, 1);
             }
             if (FoundText != "")
-                format = resultOutputFormat.Replace("{{DocumentName}}", DocumentName).Replace("{{searchFor}}", SearchFor).Replace("{{found text}}", FoundText).Replace("{{Paragraph Number}}", SectionNumber);
+                format = resultOutputFormat.Replace("{{DocumentName}}", DocumentName).Replace("{{searchFor}}", SearchFor).Replace("{{found text}}", FoundText).Replace("{{Paragraph Number}}", finalFormat);
             else
                 format = outputNotFoundMessage;
         }
@@ -2147,5 +2306,8 @@ namespace ReboProject
             }
             return text;
         }
+
+       
+
     }
 }
