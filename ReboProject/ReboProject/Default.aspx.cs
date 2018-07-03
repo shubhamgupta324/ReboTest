@@ -27,9 +27,11 @@ namespace ReboProject
             watch.Start();
             
             string backEndVal = backEndData.Text; // get the value from front end
+            string abbreviationVal = LibVal.Text.ToString(); // get the value from front end
             if (backEndVal == "") // check if it has value else return
                 return;
             var backendObject = JObject.Parse(backEndVal.ToString()); // complete  json
+            var abbreviationObject = JObject.Parse(abbreviationVal);
             var multipleDatapointJson = backendObject["Datapoint"]; // get json for all datapoints
             var sectionLib = backendObject["sectionLib"]; // section library
             var collectSectionLib = "";
@@ -39,6 +41,12 @@ namespace ReboProject
                     collectSectionLib = collectSectionLib + item;
                 else
                     collectSectionLib = collectSectionLib + "|" + item;
+            }
+            Dictionary<string, string> AbbreviationData = new Dictionary<string, string>();
+            for (var i=0; i< abbreviationObject["Abbreviation"].Count(); i++)
+            {
+                if (!AbbreviationData.ContainsKey(abbreviationObject["Abbreviation"][i]["keyword"].ToString()))
+                    AbbreviationData.Add(abbreviationObject["Abbreviation"][i]["keyword"].ToString(), abbreviationObject["Abbreviation"][i]["replace"].ToString());
             }
             //---------------------------------- read all files----------------------------------
             var folder = backendObject["folder"].ToString();// folder path
@@ -402,7 +410,9 @@ namespace ReboProject
                         // set the complete format
                         buildFormat(outputNotFoundMessage, collectCorrectSentanceOutput, finalOutputData, resultOutputFormat, out format);
                         // save the format in json
-                        ja3[0]["correctString"] = format;
+                        string finalFormat = "";
+                        abbreviationReplace(AbbreviationData, format, out finalFormat);
+                        ja3[0]["correctString"] = finalFormat;
                     }
 
                     if (ja3.Count == 0) // if no output Found... display "Lease is silent"
@@ -543,12 +553,13 @@ namespace ReboProject
                     Dictionary<int, string> saveLines = new Dictionary<int, string>();
                     Dictionary<int, string> saveSectionNo = new Dictionary<int, string>();
                     Dictionary<int, string> saveSectionNoRegex = new Dictionary<int, string>();
-
                     var i = 1;
                     
                     List<string> sectionNoCheck = new List<string>();
                     var lineCount = 0;
+                    var searchFound = 0;
                     var nextPara = false;
+                    var firstParaNoSection = false;
                     foreach (TextGroup lineGroup in ordereddGroups)
                     {
                         nextPara = false;
@@ -567,15 +578,34 @@ namespace ReboProject
                         }
                         if (nextPara == true || sectionNoCheck.ElementAt(0) != null || section == true)
                         { // current line is > 9 points lower than previous
-                            if(lastLine == "")
+                            searchFound++;
+                            if (lastLine == "")
                                 saveLines.Add(i, lineGroup.Text);
                             else
                                 saveLines.Add(i, sb1.ToString());
                             // get section
-                            //sectionNo = processing.getSectionForPara(sb1.ToString()); // get the section value
-                            saveSectionNo.Add(i, sectionNoCheck[0]);
-                            saveSectionNoRegex.Add(i, sectionNoCheck[1]);
-                            //checkSection(collectSectionLib, sb1.ToString(), out section);
+                            if (searchFound == 1 & lineCount > 1)
+                            {
+                                saveSectionNo.Add(i, null);
+                                saveSectionNoRegex.Add(i, null);
+                                saveSectionNo.Add(i+1, sectionNoCheck[0]);
+                                saveSectionNoRegex.Add(i+1, sectionNoCheck[1]);
+                                firstParaNoSection = true;
+                            }
+                            else
+                            {
+                                if (firstParaNoSection == false)
+                                {
+                                    saveSectionNo.Add(i, sectionNoCheck[0]);
+                                    saveSectionNoRegex.Add(i, sectionNoCheck[1]);
+                                }
+                                else
+                                {
+                                    saveSectionNo.Add(i+1, sectionNoCheck[0]);
+                                    saveSectionNoRegex.Add(i+1, sectionNoCheck[1]);
+                                }
+                            }
+                            
                             nextSection++;
                             if (section == true)
                             {
@@ -610,14 +640,23 @@ namespace ReboProject
                         prevRect.String = lineGroup.Rect.String;
                         lastSectionPageNo = PageIndex;
                     }
+                    
                     saveLines.Add(i, sb1.ToString());
                     nextSection++;
                     saveSectionPara.Add(nextSection, sb1.ToString());
                     // get section
                     sectionNoCheck = processing.getSectionForPara(sb1.ToString(), lastLine, nextPara); // get the section value
-                    saveSectionNo.Add(i, sectionNoCheck[0]);
-                    saveSectionNoRegex.Add(i, sectionNoCheck[1]);
-
+                    if (firstParaNoSection == false)
+                    {
+                        saveSectionNo.Add(i, sectionNoCheck[0]);
+                        saveSectionNoRegex.Add(i, sectionNoCheck[1]);
+                    }
+                    else
+                    {
+                        saveSectionNo.Add(i + 1, sectionNoCheck[0]);
+                        saveSectionNoRegex.Add(i + 1, sectionNoCheck[1]);
+                    }
+                    firstParaNoSection = false;
                     savePage.Add(PageIndex, saveLines);
                     savePageSection.Add(PageIndex, saveSectionNo);
                     savePageSectionRegex.Add(PageIndex, saveSectionNoRegex);
@@ -2368,7 +2407,20 @@ namespace ReboProject
             return text;
         }
 
-       
+        public void abbreviationReplace(Dictionary<string,string> AbbreviationData,string format, out string finalFormat)
+        {
+            finalFormat = "";
+            foreach (var item in AbbreviationData)
+            {
+                Regex regex = new Regex("(?i)" + item.Key);
+                var match = regex.Match(format); // check if match found
+                if (match.Success)
+                {
+                    format = format.Replace(match.Value, item.Value);
+                }
+            }
+            finalFormat = format;
+        }
 
     }
 }
