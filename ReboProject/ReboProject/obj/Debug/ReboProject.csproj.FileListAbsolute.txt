@@ -146,7 +146,6 @@ D:\Projects\ReboDemo\ReboTest\ReboProject\ReboProject\bin\DotNetOpenAuth.OpenId.
 D:\Projects\ReboDemo\ReboTest\ReboProject\ReboProject\bin\DotNetOpenAuth.AspNet.xml
 D:\Projects\ReboDemo\ReboTest\ReboProject\ReboProject\bin\Microsoft.AspNet.Membership.OpenAuth.xml
 D:\Projects\ReboDemo\ReboTest\ReboProject\ReboProject\bin\Microsoft.AspNet.FriendlyUrls.xml
-D:\Projects\ReboDemo\ReboTest\ReboProject\ReboProject\obj\Debug\ReboProject.csprojAssemblyReference.cache
 D:\Projects\ReboDemo\ReboTest\ReboProject\ReboProject\obj\Debug\ReboProject.csproj.CoreCompileInputs.cache
 D:\Projects\ReboDemo\ReboTest\ReboProject\ReboProject\obj\Debug\ReboProject.csproj.CopyComplete
 D:\Projects\ReboDemo\ReboTest\ReboProject\ReboProject\obj\Debug\ReboProject.dll

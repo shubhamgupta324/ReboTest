@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,336 +12,169 @@ namespace ReboProject
         // for Only section
 
 
-        //*********************************************** has to work on it**********************************************88
-
-        public static List<Dictionary<Dictionary<string, int>, int>> getSectionVal(int startPageVal, int endPageVal, Dictionary<int, Dictionary<int, string>> savePage, Dictionary<int, Dictionary<int, string>> savePageSectionRegex)
+        public static void checkPara(Dictionary<string, string> sectionList, string sectionNoreadAllParaData, JToken subChild, out List<string> sectionListCopy, out bool foundSection, out bool readSection)
         {
-            List<Dictionary<Dictionary<string, int>, int>> dataSet = new List<Dictionary<Dictionary<string, int>, int>>();
-            Dictionary<Dictionary<string, int>, int> getCompleteSection = new Dictionary<Dictionary<string, int>, int>();
-            Dictionary<Dictionary<string, int>, int> getCompleteSectionRegex = new Dictionary<Dictionary<string, int>, int>();
-            Dictionary<string, int> getAllParaOfSection = new Dictionary<string, int>();
-            Dictionary<string, int> regexSave = new Dictionary<string, int>();
-            var regexDictionary = new Dictionary<int, string>();
-
-            regexDictionary.Add(1, @"^(\d{1,3}\.(:\d+\.?)*)\s"); //    1.
-            regexDictionary.Add(2, @"^(\d{1,3}\.\d(?:\d+\.?)*)"); //    1.1 
-            regexDictionary.Add(3, @"^[\s]*((?i)(section)\s\d+\.(:\d+\.?)*)\s"); //    section 1.
-            regexDictionary.Add(4, @"^[\s]*((?i)(sectionss)\s\d+\.\d(?:\d+\.?)*)"); //    section 1.1 
-            regexDictionary.Add(5, @"^[\s]*((?i)(article)\s\d)"); //   article 1,
-            regexDictionary.Add(6, @"^[\s]*((?i)(article)\s\d+\.(?:\d+\.?)*)"); //  article 1.1 
-
-            regexDictionary.Add(7, @"^[\s]*[(](?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[)]\s"); //    (xvii)
-            regexDictionary.Add(8, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}\s"); //    xvii
-            regexDictionary.Add(9, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[)]\s"); //    xvii)
-            regexDictionary.Add(10, @"^[\s]*[[](?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[]]\s"); //    [xvii]
-            regexDictionary.Add(11, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[]]\s"); //    xvii]
-            regexDictionary.Add(12, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[:]\s"); //    xvii:
-            regexDictionary.Add(13, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[.]\s"); //    xvii.
-            regexDictionary.Add(14, @"^[\s]*(?i)(section)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}"); //    section xvii
-            regexDictionary.Add(15, @"^[\s]*(?i)(article)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}"); //    article xvii
-
-            regexDictionary.Add(16, @"^[\s]*[(](?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[)]\s"); //    (XVII)
-            regexDictionary.Add(17, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}\s"); //    XVII
-            regexDictionary.Add(18, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[)]\s"); //    XVII)
-            regexDictionary.Add(19, @"^[\s]*[[](?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[]]\s"); //    [XVII]
-            regexDictionary.Add(20, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[]]\s"); //    XVII]
-            regexDictionary.Add(21, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[:]\s"); //    XVII:
-            regexDictionary.Add(22, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[.]\s"); //    XVII.
-            regexDictionary.Add(23, @"^[\s]*(?i)(section)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}"); //    section XVII
-            regexDictionary.Add(24, @"^[\s]*(?i)(article)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}"); //    article XVII
-
-
-            regexDictionary.Add(25, @"^[\s]*((?i)(section)[\s]*[a-z])");  //      section a
-            regexDictionary.Add(26, @"^[\s]*((?i)(article)[\s]*[a-z])");  //      article a
-            regexDictionary.Add(27, @"^[\s]*([A-Z][.])\s");  // A.
-            regexDictionary.Add(28, @"^[\s]*((?i)(section)[\s]*[A-Z])\s");  // section A
-            regexDictionary.Add(29, @"^[\s]*((?i)(ARTICLE)[\s]*[A-Z])");  // ARTICLE A  
-
-
-            List<string> getAllSectionValue = new List<string>();
-            var pageno = 0;
-            var regexFound = false;
-            var regexToFind = "";
-            int startPage = 0;
-            var nextPageRegex = 0;
-            var regexCount = 0;
-            foreach (KeyValuePair<int, Dictionary<int, string>> entry in savePage) // get the page
+            foundSection = false;
+            readSection = true;
+            sectionListCopy = new List<string>();
+            foreach (var item in subChild)
             {
-                nextPageRegex++;
-                pageno++;
-                if (pageno < startPageVal)
-                    continue;
-                if (pageno > endPageVal)
-                    break;
-                if (startPage == 0)
-                    startPage = pageno;
-                var paraNoVal = 0;
+                sectionListCopy = new List<string>();
+                var child = item["children"];
+                var sectioNo = item["section"].ToString();
+                var paraData = item["para"];
+                var parentCheck = (int)item["parentCheck"];
 
-                var nextRegex = 0;
-                var nextPageRegexVal = savePageSectionRegex[nextPageRegex];
-                foreach (var checkPage in entry.Value) // each page value
+                for (int j = 0; j < paraData.Count(); j++)
                 {
-                    nextRegex++;
-                    var regexVal = nextPageRegexVal[nextRegex];
-                    if (regexVal == null)
-                        regexVal = regexCount + "-";
-                    else
-                        regexVal = regexCount + "-" + regexVal;
-                    paraNoVal++;
-                    if (regexFound == false)
+                    var paraVal = paraData[j].ToString().Trim();
+                    if ((paraVal.IndexOf(sectionNoreadAllParaData.Trim()) != -1 | sectionNoreadAllParaData.Trim().IndexOf(paraVal) != -1) & paraVal.Length > 10)
                     {
-                        foreach (var item in regexDictionary)
+                        if (!sectionListCopy.Contains(sectioNo) & !sectionList.ContainsKey(sectioNo))
                         {
-                            var matchData = Regex.Matches(checkPage.Value, item.Value); // find match
-                            if (matchData.Count > 0)
+                            sectionList.Add(sectioNo, "sectionNo");
+                            foundSection = true;
+                            if (parentCheck == 1)
                             {
-                                if (getAllParaOfSection.Count() > 0)
-                                {
-                                    getCompleteSection.Add(getAllParaOfSection, startPage);
-                                    getCompleteSectionRegex.Add(regexSave, startPage);
-                                    startPage = pageno;
-                                    getAllParaOfSection = new Dictionary<string, int>();
-                                    regexSave = new Dictionary<string, int>();
-                                    getAllParaOfSection.Add(checkPage.Value, paraNoVal);
-                                    regexSave.Add(regexVal, paraNoVal);
-                                    regexToFind = item.Value;
-                                    regexFound = true;
-                                    break;
-                                }
-                                else
-                                {
-                                    if (!getAllParaOfSection.ContainsKey(checkPage.Value))
-                                    {
-                                        regexSave.Add(regexVal, paraNoVal);
-                                        getAllParaOfSection.Add(checkPage.Value, paraNoVal);
-                                    }
-                                }
-                            }
-                        }
-                        if (regexFound == false)
-                        {
-                            if (!getAllParaOfSection.ContainsKey(checkPage.Value))
-                            {
-                                regexSave.Add(regexVal, paraNoVal);
-                                getAllParaOfSection.Add(checkPage.Value, paraNoVal);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        var matchData = Regex.Matches(checkPage.Value, regexToFind); // find match
-                        if (matchData.Count > 0)
-                        {
-                            getCompleteSection.Add(getAllParaOfSection, startPage);
-                            getCompleteSectionRegex.Add(regexSave, startPage);
-                            startPage = pageno;
-                            getAllParaOfSection = new Dictionary<string, int>();
-                            regexSave = new Dictionary<string, int>();
-                            getAllParaOfSection.Add(checkPage.Value, paraNoVal);
-                            regexSave.Add(regexVal, paraNoVal);
-                        }
-                        else
-                        {
-                            if (!getAllParaOfSection.ContainsKey(checkPage.Value))
-                            {
-                                regexSave.Add(regexVal, paraNoVal);
-                                getAllParaOfSection.Add(checkPage.Value, paraNoVal);
-                            }
-                        }
-                    }
-                    regexCount++;
-                }
-            }
-            dataSet.Add(getCompleteSection);
-            dataSet.Add(getCompleteSectionRegex);
-            return dataSet;
-        }
-
-        public static List<string> completeSection(int sectionPageNo, Dictionary<int, Dictionary<int, string>> savePage, Dictionary<string, int> sectionRegex, Dictionary<string, int> entry, string getLineText, string myRegex)
-        {
-            List<string> sectionData = new List<string>();
-            var completeSection = "";
-            List<int> pageNos = new List<int>();
-            var SectionPageNo = "";
-            var startSectionParaNo = "";
-            Dictionary<int, string> regexDictionary = new Dictionary<int, string>();
-
-            regexDictionary.Add(1, @"^[\s]*((?i)(section)\s\d+\.(:\d+\.?)*)\s"); //    section 1.
-            regexDictionary.Add(2, @"^[\s]*((?i)(sectionss)\s\d+\.\d(?:\d+\.?)*)"); //    section 1.1 
-            regexDictionary.Add(3, @"^[\s]*(?i)(section)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}"); //    section xvii
-            regexDictionary.Add(4, @"^[\s]*(?i)(section)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}"); //    section XVII
-            regexDictionary.Add(5, @"^[\s]*((?i)(section)[\s]*[A-Z])\s");  // section A
-            regexDictionary.Add(6, @"^[\s]*((?i)(section)[\s]*[a-z])");  //      section a
-            regexDictionary.Add(7, @"^[\s]*((?i)(article)[\s]*[a-z])");  //      article a
-            regexDictionary.Add(8, @"^[\s]*((?i)(ARTICLE)[\s]*[A-Z])");  // ARTICLE A  
-            regexDictionary.Add(9, @"^[\s]*(?i)(article)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}"); //    article XVII
-            regexDictionary.Add(10, @"^[\s]*(?i)(article)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}"); //    article xvii
-            regexDictionary.Add(11, @"^[\s]*((?i)(article)\s\d)"); //   article 1,
-            regexDictionary.Add(12, @"^[\s]*((?i)(article)\s\d+\.(?:\d+\.?)*)"); //  article 1.1
-            regexDictionary.Add(13, @"^(\d{1,3}\.(:\d+\.?)*)\s"); //    1.
-            regexDictionary.Add(14, @"^(\d{1,3}\.\d(?:\d+\.?)*)"); //    1.1 
-            regexDictionary.Add(15, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}\s"); //    xvii
-            regexDictionary.Add(16, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[.]\s"); //    xvii.
-            regexDictionary.Add(17, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}\s"); //    XVII
-            regexDictionary.Add(18, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[.]\s"); //    XVII.
-            regexDictionary.Add(19, @"^[\s]*([A-Z][.])\s");  // A.
-
-            int index = entry.Keys.ToList().IndexOf(getLineText);
-            var sectionRegexVal = sectionRegex.ElementAt(index).Key;
-            var indexVal = sectionRegexVal.IndexOf('-');
-            var finalRegex = sectionRegexVal.Substring(indexVal + 1, sectionRegexVal.Length - (indexVal + 1));
-            var firstRegex = "";
-            if (finalRegex == "")
-            {
-                for (int i = index - 1; i > 0; i--)
-                {
-                    var sectionRegexVal1 = sectionRegex.ElementAt(i).Key;
-                    var indexVal1 = sectionRegexVal1.IndexOf('-');
-                    var finalRegex1 = sectionRegexVal1.Substring(indexVal1 + 1, sectionRegexVal1.Length - (indexVal1 + 1));
-                    if (finalRegex1 != "")
-                    {
-                        getLineText = entry.ElementAt(i).Key;
-                        index = entry.Keys.ToList().IndexOf(getLineText);
-                        firstRegex = finalRegex1;
-                        break;
-                    }
-                }
-            }
-            else
-                firstRegex = finalRegex;
-
-            var checkParent = true;
-            for (int i = 0; i < regexDictionary.Count(); i++)
-            {
-                if (firstRegex == regexDictionary[i + 1].ToString())
-                {
-                    checkParent = false;
-                    break;
-                }
-            }
-            var pageNoVal = 0;
-            int paraNoVal = 0;
-            if (checkParent == true)
-            {
-               
-                var parentSentence = "";
-                var parentRegex = "";
-                var parentIndex = 0;
-                var parentFound = false;
-                for (int i = index - 1; i >= 0; i--)
-                {
-                    parentSentence = entry.ElementAt(i).Key;
-                    parentRegex = sectionRegex.ElementAt(i).Key;
-                    parentIndex = entry.Keys.ToList().IndexOf(parentSentence);
-                    var indexVal1 = parentRegex.IndexOf('-');
-                    parentRegex = parentRegex.Substring(indexVal1 + 1, parentRegex.Length - (indexVal1 + 1));
-                    if (parentRegex != firstRegex)
-                    {
-                        for (int j = 0; j < regexDictionary.Count(); j++)
-                        {
-                            if (parentRegex == regexDictionary[j + 1].ToString())
-                            {
-                                parentFound = true;
+                                readSection = false;
                                 break;
                             }
                         }
-
-                        if (parentFound == true)
-                            break;
                     }
                 }
-                getNotationType(parentSentence, sectionPageNo, savePage, out pageNoVal,out paraNoVal);
-                if (!pageNos.Contains(pageNoVal)) {
-                    pageNos.Add(pageNoVal);
-                    startSectionParaNo = paraNoVal.ToString();
-                }
-                completeSection = completeSection + parentSentence;
-                if (parentFound == true)
+                if (child.Count() > 0 & foundSection == false)
                 {
-                    for (int i = parentIndex + 1; i < entry.Count() - 1; i++)
+                    checkPara(sectionList, sectionNoreadAllParaData, child, out sectionListCopy, out foundSection, out readSection);
+                    if (sectionListCopy.Count > 0 & foundSection == true)
                     {
-                        var nextRegex = sectionRegex.ElementAt(i).Key;
-                        var nextSentence = entry.ElementAt(i).Key;
-                        var indexVal1 = nextRegex.IndexOf('-');
-                        nextRegex = nextRegex.Substring(indexVal1 + 1, nextRegex.Length - (indexVal1 + 1));
-                        if (nextRegex == parentRegex)
+                        List<string> sectionListCopyList = new List<string>();
+                        foreach (var sectionData in sectionListCopy)
                         {
-                            break;
+                            sectionListCopyList.Add(sectionData);
                         }
-                        else
-                        {
-                            getNotationType(nextSentence, sectionPageNo, savePage, out pageNoVal, out paraNoVal);
-                            if (!pageNos.Contains(pageNoVal))
-                                pageNos.Add(pageNoVal);
-                            completeSection = completeSection + "|||" +nextSentence;
-                        }
-                    }
-                }
-            }
-            else {
-                getNotationType(getLineText, sectionPageNo, savePage, out pageNoVal, out paraNoVal);
-                if (!pageNos.Contains(pageNoVal))
-                {
-                    pageNos.Add(pageNoVal);
-                    startSectionParaNo = paraNoVal.ToString();
-                }
-                completeSection = completeSection + getLineText;
-                for (int i = index + 1; i < entry.Count() - 1; i++)
-                {
-                    var nextRegex = sectionRegex.ElementAt(i).Key;
-                    var nextSentence = entry.ElementAt(i).Key;
-                    var indexVal1 = nextRegex.IndexOf('-');
-                    nextRegex = nextRegex.Substring(indexVal1 + 1, nextRegex.Length - (indexVal1 + 1));
-                    if (nextRegex == firstRegex)
-                    {
+                        if (readSection == true)
+                            sectionListCopyList.Add(sectioNo);
+                        sectionListCopy = new List<string>();
+                        sectionListCopy = sectionListCopyList;
+                        foundSection = true;
                         break;
                     }
-                    else
-                    {
-                        getNotationType(nextSentence, sectionPageNo, savePage, out pageNoVal, out paraNoVal);
-                        if (!pageNos.Contains(pageNoVal))
-                            pageNos.Add(pageNoVal);
-                        completeSection = completeSection + "|||" + nextSentence;
-                    }
                 }
+                else if (foundSection == true)
+                {
+                    sectionListCopy.Add(sectioNo);
+                }
+                if (foundSection == true)
+                    break;
             }
-            for (int i = 0; i < pageNos.Count(); i++)
-            {
-                if (SectionPageNo == "")
-                    SectionPageNo = SectionPageNo + pageNos[i];
-                else
-                    SectionPageNo = SectionPageNo + "|" + pageNos[i];
-            }
-            sectionData.Add(completeSection);
-            sectionData.Add(SectionPageNo); 
-            sectionData.Add(startSectionParaNo); 
-            return sectionData;
         }
-        
-        public static void getNotationType(string Sentence, int sectionPageNo, Dictionary<int, Dictionary<int, string>> savePage, out int pageNoVal, out int paraNoVal)
+
+        // get the complete section 
+        public static string completeSectionPara(string singleFileSectionTree, string sectionNoreadPara)
         {
-            pageNoVal = 0;
-            paraNoVal = 0;
-            var pageNoFound = false;
-            for (int i = sectionPageNo; i < savePage.Count(); i++)
+
+            var finalSectionOutput = "";
+
+            var sectionNoreadAllPara = sectionNoreadPara.Split('|');
+
+            var sectionNoreadAllParaData = "";
+            var list = new List<string>(sectionNoreadAllPara);
+            if (sectionNoreadAllPara.Count() > 1)
+                sectionNoreadAllParaData = list.ElementAt(1);
+            else
+                sectionNoreadAllParaData = list.ElementAt(0);
+
+            var completeTree = JObject.Parse(singleFileSectionTree)["children"];
+            //----------get section data---------------
+
+            Dictionary<string, string> sectionList = new Dictionary<string, string>();
+            List<string> sectionListCopy = new List<string>();
+
+            var CheckNextChild = true;
+            for (int i = 0; i < completeTree.Count(); i++) // loop through complete tree
             {
-                var pageContent = savePage[i];
-                for (int j = 0; j < pageContent.Count(); j++)
+                var child = completeTree[i]["children"]; // get the children
+                var childSection = completeTree[i]["section"].ToString(); // get the section no
+                var SectionNameData = "";
+                if (completeTree[i]["SectionName"].ToString() != "")
+                    SectionNameData = completeTree[i]["SectionName"].ToString(); // get the section name
+                else
+                    SectionNameData = null;
+                var childCount = child.Count();
+
+                CheckNextChild = true;
+
+                foreach (var item in child) // loop through all the children of the section
                 {
-                    var pagePara = pageContent[j+1];
-                    if(pagePara == Sentence) {
-                        pageNoVal = i;
-                        paraNoVal = j + 1;
+                    var subChild = item["children"];
+                    var sectioNo = item["section"].ToString();
+                    var subChildCount = subChild.Count();
+                    var paraData = item["para"];
+                    var parentCheck = (int)item["parentCheck"];
+                    var readSection = true;
+
+                    for (int j = 0; j < paraData.Count(); j++)
+                    {
+                        var paraVal = paraData[j].ToString().Trim();
+                        if ((paraVal.IndexOf(sectionNoreadAllParaData.Trim()) != -1 | sectionNoreadAllParaData.Trim().IndexOf(paraVal) != -1) & paraVal.Length > 20)
+                        {
+                            if (!sectionListCopy.Contains(sectioNo) & readSection == true & !sectionList.ContainsKey(sectioNo))
+                            {
+                                sectionList.Add(sectioNo, "sectionNo");
+                                if (parentCheck == 1)
+                                {
+                                    CheckNextChild = false;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (subChildCount > 0 & CheckNextChild == true)
+                    {
+                        var sectionNoReturn = new List<string>();
+                        var foundSection = false;
+                        checkPara(sectionList, sectionNoreadAllParaData, subChild, out sectionListCopy, out foundSection, out readSection);
+                        if (sectionListCopy.Count > 0 & foundSection == true)
+                        {
+                            List<string> sectionListCopyList = new List<string>();
+                            foreach (var sectionData in sectionListCopy)
+                            {
+                                sectionListCopyList.Add(sectionData);
+                            }
+                            if (readSection == true)
+                                sectionListCopyList.Add(sectioNo);
+                            sectionListCopy = new List<string>();
+                            sectionListCopy = sectionListCopyList;
+                            foundSection = true;
+                            CheckNextChild = false;
+                        }
+                    }
+                    if (sectionListCopy.Count() > 0 & CheckNextChild == false)
+                    {
+                        sectionList = new Dictionary<string, string>();
+                        foreach (var sectionData in sectionListCopy)
+                        {
+                            sectionList.Add(sectionData, "SectionNo");
+                        }
+                        if (SectionNameData != null)
+                            sectionList.Add(SectionNameData, "sectionParent");
+                        break;
+                    }
+                    else if (CheckNextChild == false & sectionList.Count() > 0)
+                    {
+                        if (SectionNameData != null)
+                            sectionList.Add(SectionNameData, "sectionParent");
                         break;
                     }
                 }
-                if (pageNoFound == true)
+                if (CheckNextChild == false)
                     break;
             }
 
+
+            return finalSectionOutput;
         }
 
-        //*********************************************************************************************************************
 
         // check if the para has section number or not for paragraph
         public static bool checkHasSectionNo(string sentence) {
@@ -354,11 +188,11 @@ namespace ReboProject
             matchRegexNumeric.Add(4, @"^[\s]*((?i)(section)\s\d+\.(?:\d+\.?)*)(?!\S)"); //    section 1.1 
             matchRegexNumeric.Add(5, @"^[\s]*((?i)(article)\s\d*)(?!\S)"); //   article 1
             matchRegexNumeric.Add(6, @"^[\s]*((?i)(article)\s\d+\.(?:\d+\.?)*)(?!\S)"); //  article 1.1 
-            matchRegexNumeric.Add(7, @"^[\s]*([1-9]{1,3}[:])(?!\S)"); //   1:
-            matchRegexNumeric.Add(8, @"^[\s]*([[(][\s]*[1-9]{1,3}[\s]*[)])(?!\S)"); //   (1)
-            matchRegexNumeric.Add(9, @"^[\s]*([1-9]{1,3}[]])(?!\S)"); //   1]
-            matchRegexNumeric.Add(10, @"^[\s]*([[[\s]*[1-9]{1,3}[\s]*[]])(?!\S)"); //   [1]
-            matchRegexNumeric.Add(11, @"^[\s]*([1-9]{1,3}[)])(?!\S)"); //   1)
+            matchRegexNumeric.Add(7, @"^[\s]*([1-9]{1,2}[:])(?!\S)"); //   1:
+            matchRegexNumeric.Add(8, @"^[\s]*([[(][\s]*[1-9]{1,2}[\s]*[)])(?!\S)"); //   (1)
+            matchRegexNumeric.Add(9, @"^[\s]*([1-9]{1,2}[]])(?!\S)"); //   1]
+            matchRegexNumeric.Add(10, @"^[\s]*([[[\s]*[1-9]{1,2}[\s]*[]])(?!\S)"); //   [1]
+            matchRegexNumeric.Add(11, @"^[\s]*([1-9]{1,2}[)])(?!\S)"); //   1)
             
             matchRegexNumeric.Add(12, @"^[\s]*[(][\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[\s]*[)](?!\S)"); //    (xvii)
             matchRegexNumeric.Add(13, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[)](?!\S)"); //    xvii)
