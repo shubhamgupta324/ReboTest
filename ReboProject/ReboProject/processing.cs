@@ -104,7 +104,7 @@ namespace ReboProject
                 var sectionDictionary = saveAllSection.Keys.ElementAt(i);
                 for (int j = 0; j < sectionDictionary.Count; j++)
                 {
-                    if (sectionDictionary.Values.ElementAt(j).ToString() == foundPara)
+                    if (sectionDictionary.Values.ElementAt(j).ToString().Trim() == foundPara.Trim())
                     {
                         allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
                         finalSectionOutput =SectionValParagraph(allPara, sectionDictionary.Values.ElementAt(j).ToString());
@@ -139,7 +139,7 @@ namespace ReboProject
             notations.Add(8, "article");
 
             Dictionary<int, string> matchRegexNumericSection = new Dictionary<int, string>();
-            matchRegexNumericSection.Add(4, @"^[\s]*((?i)(sectionss)\s\d+\.\d(?:\d+\.?)*)"); //    section 1.1 
+            matchRegexNumericSection.Add(4, @"^[\s]*((?i)(section)\s\d+\.\d(?:\d+\.?)*)"); //    section 1.1 
             matchRegexNumericSection.Add(2, @"^(\d{1,3}\.\d(?:\d+\.?)*)"); //    1.1 
             matchRegexNumericSection.Add(3, @"^[\s]*((?i)(section)\s\d+\.(:\d+\.?)*)\s"); //    section 1.
             matchRegexNumericSection.Add(5, @"^[\s]*((?i)(article)\s\d)"); //   article 1,
@@ -150,8 +150,8 @@ namespace ReboProject
             matchRegexNumeric.Add(1, @"^(\d{1,3}\.(:\d+\.?)*)\s"); //    1.
             matchRegexNumeric.Add(2, @"^(\d{1,3}\.\d(?:\d+\.?)*)"); //    1.1 
             matchRegexNumeric.Add(3, @"^[\s]*((?i)(section)\s\d+\.(:\d+\.?)*)\s"); //    section 1.
-            matchRegexNumeric.Add(4, @"^[\s]*((?i)(sectionss)\s\d+\.\d(?:\d+\.?)*)"); //    section 1.1 
-            matchRegexNumeric.Add(5, @"^[\s]*((?i)(article)\s\d)"); //   article 1,
+            matchRegexNumeric.Add(4, @"^[\s]*((?i)(section)\s\d+\.\d(?:\d+\.?)*)"); //    section 1.1 
+            matchRegexNumeric.Add(5, @"^[\s]*((?i)(article)\s\d{0,3})"); //   article 1,
             matchRegexNumeric.Add(6, @"^[\s]*((?i)(article)\s\d+\.(?:\d+\.?)*)"); //  article 1.1 
             matchRegexNumeric.Add(7, @"^[\s]*(\d{1,3}[:])\s"); //   1:
             matchRegexNumeric.Add(8, @"^[\s]*(\d{1,3}[)])\s"); //   1)
@@ -170,7 +170,7 @@ namespace ReboProject
             matchRegexNumeric.Add(20, @"^[\s]*((?i)(article))[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}"); //    article xvii
             
             matchRegexNumeric.Add(21, @"^[\s]*[(](?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[)]\s"); //    (XVII)
-            matchRegexNumeric.Add(22, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}\s"); //    XVII
+            matchRegexNumeric.Add(22, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[.]\s"); // XVII.
             matchRegexNumeric.Add(23, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[)]\s"); //    XVII)
             matchRegexNumeric.Add(24, @"^[\s]*[[](?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[]]\s"); //    [XVII]
             matchRegexNumeric.Add(25, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[]]\s"); //    XVII]
@@ -440,7 +440,10 @@ namespace ReboProject
             var finalSectionOutput = "";
             for (int i = sectionList.Count-1; i >= 0; i--)
             {
-                finalSectionOutput = finalSectionOutput + " " + sectionList[i];
+                if(finalSectionOutput != "")
+                    finalSectionOutput = finalSectionOutput + "," + sectionList[i];
+                else
+                    finalSectionOutput = sectionList[i];
             }
             return finalSectionOutput;
         }
