@@ -515,14 +515,12 @@ namespace ReboProject
                         var nextPageVal = 0;
                         foreach (KeyValuePair<int, Dictionary<int, string>> entry in savePage) // get the page
                         {
-                            nextPageVal++;
-                            if (nextPageVal < startPageVal)
+                            pageCount += 1;
+                            if (pageCount < startPageVal)
                                 continue;
-                            if (nextPageVal > endPageVal)
+                            if (pageCount > endPageVal)
                                 break;
                             
-
-                            pageCount += 1;
                             var searchFieldFound = new List<int>();
                             // saves the lineText
                             StringBuilder sb3 = new StringBuilder();
