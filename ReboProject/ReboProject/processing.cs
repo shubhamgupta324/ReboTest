@@ -117,19 +117,24 @@ namespace ReboProject
                         {
                             if (sectionDictionary.Values.ElementAt(j+1).ToString().Trim().Length >= Int32.Parse(WebConfigurationManager.AppSettings["StringLength"]))
                             {
-                                if ((sectionDictionary.Values.ElementAt(j).ToString() + sectionDictionary.Values.ElementAt(j+1).ToString()).Trim() == foundPara.Trim()) {
+                                if ((sectionDictionary.Values.ElementAt(j).ToString() + sectionDictionary.Values.ElementAt(j+1).ToString()).Trim() == foundPara.Trim())
+                                {
                                     getFirstLine = sectionDictionary.Values.ElementAt(0).ToString().Trim();
                                     allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
-                                    finalSectionOutput = SectionValParagraph(SectionNoCount, allPara, sectionDictionary.Values.ElementAt(j).ToString());
+                                    allPara.Add(sectionDictionary.Values.ElementAt(j+1).ToString());
+                                    finalSectionOutput = SectionValParagraph(SectionNoCount, allPara, sectionDictionary.Values.ElementAt(j+1).ToString().Trim());
                                     checkNextSection = false;
                                     break;
                                 }
                             }
                             else {
-                                if ((sectionDictionary.Values.ElementAt(j).ToString() + sectionDictionary.Values.ElementAt(j + 2).ToString()).Trim() == foundPara.Trim()) {
+                                if ((sectionDictionary.Values.ElementAt(j).ToString() + sectionDictionary.Values.ElementAt(j + 2).ToString()).Trim() == foundPara.Trim())
+                                {
                                     getFirstLine = sectionDictionary.Values.ElementAt(0).ToString().Trim();
                                     allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
-                                    finalSectionOutput = SectionValParagraph(SectionNoCount, allPara, sectionDictionary.Values.ElementAt(j).ToString());
+                                    allPara.Add(sectionDictionary.Values.ElementAt(j + 1).ToString());
+                                    allPara.Add(sectionDictionary.Values.ElementAt(j + 2).ToString());
+                                    finalSectionOutput = SectionValParagraph(SectionNoCount, allPara, sectionDictionary.Values.ElementAt(j+2).ToString().Trim());
                                     checkNextSection = false;
                                     break;
                                 }
@@ -139,7 +144,7 @@ namespace ReboProject
                             allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
                     }
                     else {
-                        if (sectionDictionary.Values.ElementAt(j).ToString().Trim().Contains(foundPara.Trim()))
+                        if (sectionDictionary.Values.ElementAt(j).ToString().Trim().Contains(foundPara.Trim()) && sectionDictionary.Values.ElementAt(j).ToString().Trim().Length == foundPara.Trim().Length)
                         {
                             getFirstLine = sectionDictionary.Values.ElementAt(0).ToString().Trim();
                             allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());

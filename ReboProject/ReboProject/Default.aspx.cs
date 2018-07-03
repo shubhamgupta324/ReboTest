@@ -852,7 +852,8 @@ namespace ReboProject
                             else if (g + 1 == getWithIn.Count() && getInSamePara == false)
                             {
                                 var getStringLength = Int32.Parse(WebConfigurationManager.AppSettings["StringLength"]); // get the access to d ;
-                                if (entry.Value.Count > paraNumber && entry.Value[paraNumber + 1].Length > getStringLength)
+                                var headingLength = Int32.Parse(WebConfigurationManager.AppSettings["headingLength"]);
+                                if (entry.Value.Count > paraNumber && entry.Value[paraNumber + 1].Length > getStringLength && SearchWithinText.Length <= headingLength)
                                 {
                                     var getNextParaToCheck = SearchWithinText + entry.Value[paraNumber + 1];
                                     //var getNextParaToCheck = SearchWithinText + entry.Value[paraNumber + 1];
@@ -893,46 +894,51 @@ namespace ReboProject
                                     }
                                 }
                                 else if(entry.Value.Count == paraNumber+1 && savePage.Count() > pageCount && getInSamePara == false) {
-                                    var getNextParaToCheck = SearchWithinText + savePage[pageCount+1][1];
-                                   // var getNextParaToCheck = savePage[pageCount + 1][1];
-                                    for (var h = 0; h < getWithIn.Count(); h++)
-                                    {
-                                        bool checkAfterSubCaseWithIn2 = true;
-                                        bool checkAfterSubCaseWithInExclusion2 = true;
-                                        var withInIt2 = (getWithIn[h]["keyword"]).ToString();
-                                        var withInCaseCheck2 = (getWithIn[h]["caseCheck"]).ToString().ToLower();
-                                        // match function
-                                        regexMatch(rgx, getNextParaToCheck, withInIt2, out matchDataWithInIt);
-                                        var foundWithIn = false;
-                                        if (matchDataWithInIt.Count > 0) // if match there
+                                    var hasSectionNo = Program.checkHasSectionNo(savePage[pageCount + 1][1]);
+                                    if (hasSectionNo == false) {
+                                        var getNextParaToCheck = SearchWithinText + savePage[pageCount + 1][1];
+                                        // var getNextParaToCheck = savePage[pageCount + 1][1];
+                                        for (var h = 0; h < getWithIn.Count(); h++)
                                         {
-                                            if (withInCaseCheck2 == "yes")// check for cases
-                                                subCaseSearch(getNextParaToCheck, withInIt2, getSubCase, out checkAfterSubCaseWithIn2);
-                                            if (checkAfterSubCaseWithIn2 == true)
+                                            bool checkAfterSubCaseWithIn2 = true;
+                                            bool checkAfterSubCaseWithInExclusion2 = true;
+                                            var withInIt2 = (getWithIn[h]["keyword"]).ToString();
+                                            var withInCaseCheck2 = (getWithIn[h]["caseCheck"]).ToString().ToLower();
+                                            // match function
+                                            regexMatch(rgx, getNextParaToCheck, withInIt2, out matchDataWithInIt);
+                                            var foundWithIn = false;
+                                            if (matchDataWithInIt.Count > 0) // if match there
                                             {
-                                                if (getExclusion.Count() > 0 && checkExclusion == true)
-                                                    exclusionProcess(exclusionCount, getExclusion, getNextParaToCheck, out checkAfterSubCaseWithInExclusion2);
-
-                                                checkExclusion = false;
-                                                if (checkAfterSubCaseWithInExclusion2 == true)
+                                                if (withInCaseCheck2 == "yes")// check for cases
+                                                    subCaseSearch(getNextParaToCheck, withInIt2, getSubCase, out checkAfterSubCaseWithIn2);
+                                                if (checkAfterSubCaseWithIn2 == true)
                                                 {
-                                                    countWithInInAPara += 1;
-                                                    acceptParaWithIn += (acceptParaWithIn == "") ? withInIt2 : "|" + withInIt2;
-                                                    //paraNumber = 1;
-                                                    SearchWithinText = getNextParaToCheck;
-                                                    checkNextWithIn = false;
-                                                    readNextPara = 1;
-                                                    // getCurrentParaSearchFor = AllSearchFieldKeyword;
+                                                    if (getExclusion.Count() > 0 && checkExclusion == true)
+                                                        exclusionProcess(exclusionCount, getExclusion, getNextParaToCheck, out checkAfterSubCaseWithInExclusion2);
+
+                                                    checkExclusion = false;
+                                                    if (checkAfterSubCaseWithInExclusion2 == true)
+                                                    {
+                                                        countWithInInAPara += 1;
+                                                        acceptParaWithIn += (acceptParaWithIn == "") ? withInIt2 : "|" + withInIt2;
+                                                        //paraNumber = 1;
+                                                        SearchWithinText = getNextParaToCheck;
+                                                        checkNextWithIn = false;
+                                                        readNextPara = 1;
+                                                        // getCurrentParaSearchFor = AllSearchFieldKeyword;
+                                                    }
+                                                    else
+                                                        break;
                                                 }
-                                                else
-                                                    break;
+                                            }
+                                            if (foundWithIn == true)
+                                            {
+                                                pageCount = pageCount + 1;
+                                                //getCurrentParaScore = Int32.Parse(AllSearchFieldscore);
                                             }
                                         }
-                                        if (foundWithIn == true) {
-                                            pageCount = pageCount + 1;
-                                            //getCurrentParaScore = Int32.Parse(AllSearchFieldscore);
-                                        }
                                     }
+                                    
                                 }
                             }
                         }
@@ -1452,6 +1458,9 @@ namespace ReboProject
             finalOutputData = "";
             collectCorrectSentanceOutput = new JArray();
             Dictionary<string, string> getAllTheSentence = new Dictionary<string, string>();
+            Dictionary<string, string> getAllTheParagraph = new Dictionary<string, string>();
+            List<string> paragraphSection = new List<string>();
+            List<string> paragraphFileName = new List<string>();
             List<string> sentenceSection = new List<string>();
             List<string> sentenceFileName = new List<string>();
             Regex rgx = new Regex("(['^$.|?*+()\\\\])");
@@ -1473,6 +1482,9 @@ namespace ReboProject
             if (searchWithInVal == 3) {
                 foreach (var item in getSectionAndFileNameAndSearchJA)
                 {
+                    getAllTheParagraph.Add(item["Pageoutput"].ToString(), item["searchFor"].ToString());
+                    paragraphSection.Add(item["sectionNo"].ToString());
+                    paragraphFileName.Add(item["fileName"].ToString());
 
                     string[] getSentanceColon = item["Pageoutput"].ToString().Split(new string[] { "; " }, StringSplitOptions.None);
                     string[] getSentanceFullStop = item["Pageoutput"].ToString().Split(new string[] { ". " }, StringSplitOptions.None);
@@ -1579,242 +1591,14 @@ namespace ReboProject
                     if (!allContionToReplace.Contains(andConditionId))
                         allContionToReplace.Add(andConditionId);
                     var andConditionOrCondition = andConditionVal["orCondition"];
+                    //var outputGet = andConditionVal["outputGet"].ToString();
+                    var outputGet = "1";
                     var checkNextOrCondition = true;
-                    foreach (var orConditionVal in andConditionOrCondition)
-                    {
-                        if (checkNextOrCondition == false)
-                            break;
-                        List<string> getKeyword = new List<string>();
-                        var orConditionKeyword = orConditionVal["keyword"].ToString();
-                        var orConditionCondition = (int)orConditionVal["condition"];
-                        var orConditionSentence = (int)orConditionVal["sentence"];
-                        var sentenceAsOutput = "";
-                        var orConditionFormat = orConditionVal["format"].ToString();
-                        string[] splitkeywordId = orConditionKeyword.Split('|');
-                        foreach (var item in splitkeywordId)
-                        {
-                            getKeyword.Add(allSetKeyword[item]);
-                        }
-                        var checkNextSentence = true;
-                        var next = 0;
-                        Dictionary<string, string> getAllTheSentenceWithExclusion = new Dictionary<string, string>();
-                        foreach (var singleSentenceVal in getAllTheSentence)
-                        {
-                            if (getSearchExclusion.Count > 0)
-                            {
-                                foreach (var item in getSearchExclusion)
-                                {
-                                    MatchCollection matchDataKey;
-                                    regexMatch(rgx, singleSentenceVal.Key, item.Key, out matchDataKey);
-                                    MatchCollection matchDataValue;
-                                    regexMatch(rgx, singleSentenceVal.Key, item.Value, out matchDataValue);
-                                    if (matchDataKey.Count > 0 && matchDataValue.Count > 0)
-                                    {
-                                        continue;
-                                    }
-                                    else
-                                        getAllTheSentenceWithExclusion.Add(singleSentenceVal.Key, singleSentenceVal.Value);
-                                }
-                            }
-                            else
-                                getAllTheSentenceWithExclusion = getAllTheSentence;
-
-                        }
-                        foreach (var singleSentence in getAllTheSentenceWithExclusion)
-                        {
-                            if (checkNextSentence == false)
-                                break;
-                            var count = 0;
-                            var CheckGetKeywordCount = 0;
-                            foreach (var toFIndVal in getKeyword)
-                            {
-                                CheckGetKeywordCount++;
-                                var regexToFInd = "";
-                                var resultKeywordCopy = toFIndVal;
-                                if (toFIndVal.Contains("##d##"))
-                                {
-                                    var getFromString = resultKeywordCopy.Replace("##d##", "").Trim();
-                                    if (toFIndVal.IndexOf("##d##") == 0)
-                                        regexToFInd = @"([0-9\.]+[\s]*[" + getFromString + "])";
-                                    else
-                                        regexToFInd = @"([" + getFromString + "][\\s]*[0-9\\.]+)";
-                                }
-                                else if (toFIndVal == "%")
-                                {
-                                    regexToFInd = @"(%)";
-                                }
-                                else if (toFIndVal == "$")
-                                {
-                                    regexToFInd = @"([$]+)";
-                                }
-                                else
-                                {
-                                    regexToFInd = @"\b\s?" + rgx.Replace(toFIndVal, "\\$1") + "(\\s|\\b)";
-                                }
-                                Regex regex = new Regex(regexToFInd);
-                                var match = regex.Match(singleSentence.Key); // check if match found
-                                var checkDuplicate = true;
-                                if (match.Success)
-                                {
-                                    var checkNextLIne = false;
-                                    if (checkDuplicate == true && saveSentenceForDuplicate.Count >0 && CheckGetKeywordCount == getKeyword.Count()) {
-                                        foreach (var item in saveSentenceForDuplicate)
-                                        {
-                                            if (singleSentence.Key.Trim() == item && checkNextLineVal == "1") {
-                                                checkNextLIne = true;
-                                                break;
-                                            }
-                                        }
-                                    }
-                                    if (checkNextLIne == false)
-                                    {
-                                        JObject collectCorrectSentanceOutputJO = new JObject();
-                                        count++;
-                                        var getFileName = sentenceFileName.ElementAt(next).Split('-')[0];
-                                        var fileNameVal = sentenceFileName.ElementAt(next).Replace(getFileName + "-", "").Trim();
-                                        if (orConditionCondition == 1 && count == getKeyword.Count())
-                                        {
-                                            sentenceAsOutput = singleSentence.Key;
-                                            collectCorrectSentanceOutputJO["sentence"] = singleSentence.Key;
-                                            saveSentenceForDuplicate.Add(singleSentence.Key);
-                                            collectCorrectSentanceOutputJO["sectionNo"] = sentenceSection.ElementAt(next);
-                                            if (fileNameVal.ToLower().IndexOf("lease") == 0)
-                                                collectCorrectSentanceOutputJO["fileName"] = "";
-                                            else
-                                                collectCorrectSentanceOutputJO["fileName"] = fileNameVal;
-                                            collectCorrectSentanceOutputJO["search"] = singleSentence.Value;
-                                            collectCorrectSentanceOutput.Add(collectCorrectSentanceOutputJO);
-                                            checkNextOrCondition = false;
-                                            checkNextSentence = false;
-                                            break;
-                                        }
-                                        if (orConditionCondition == 0)
-                                        {
-                                            sentenceAsOutput = singleSentence.Key;
-                                            collectCorrectSentanceOutputJO["sentence"] = singleSentence.Key;
-                                            saveSentenceForDuplicate.Add(singleSentence.Key);
-                                            collectCorrectSentanceOutputJO["sectionNo"] = sentenceSection.ElementAt(next);
-                                            if (fileNameVal.ToLower().IndexOf("lease") == 0)
-                                                collectCorrectSentanceOutputJO["fileName"] = "";
-                                            else
-                                                collectCorrectSentanceOutputJO["fileName"] = fileNameVal;
-                                            collectCorrectSentanceOutputJO["search"] = singleSentence.Value;
-                                            collectCorrectSentanceOutput.Add(collectCorrectSentanceOutputJO);
-                                            checkNextOrCondition = false;
-                                            checkNextSentence = false;
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                            next++;
-                        }
-                        var finalOutputSentence = "";
-                        var duplicateFound = false;
-                        foreach (var item in allFormatSave)
-                        {
-                            var outputStringVal = item.Value;
-                            if (outputStringVal.IndexOf(sentenceAsOutput.Trim()) != -1 && sentenceAsOutput != "") {
-                                duplicateFound = true;
-                                break;
-                            }
-                        }
-                        if (searchFormat.IndexOf(sentenceAsOutput) == -1 && duplicateFound == false)
-                            startToEnd(sentenceStartList, sentenceEndList, sentenceAsOutput, out finalOutputSentence);
-                        List<string> financialVal = new List<string>();
-                        if (duplicateFound == false) {
-                            if (financialCheck != "0") {
-                                foreach (var item in financialSelect)
-                                {
-                                    var financialId = item["id"].ToString();
-                                    if (financialId == financialCheck)
-                                    {
-                                        var financialKeyword = item["keyword"].ToString();
-                                        if (financialKeyword == "getDate")
-                                            financialVal = processing.getDate(finalOutputSentence);
-                                        if (financialKeyword == "getCurrencyAmount")
-                                            financialVal = processing.getCurrencyAmount(finalOutputSentence);
-                                        if (financialKeyword == "getYear")
-                                            financialVal = processing.getYear(finalOutputSentence);
-                                        if (financialKeyword == "extractPercentage")
-                                            financialVal = processing.extractPercentage(finalOutputSentence);
-                                        if (financialKeyword == "getDays")
-                                            financialVal = processing.getDays(finalOutputSentence);
-                                        if (financialKeyword == "getYearCount")
-                                            financialVal = processing.getYearCount(finalOutputSentence);
-                                    }
-                                }
-                            }
-                        }
-                        if (orConditionSentence == 1)
-                        {
-                            if (sentenceAsOutput != "")
-                            {
-                                if (orConditionFormat != "")
-                                {
-                                    if (orConditionFormat.IndexOf("{{" + andConditionId + "}}") != -1)
-                                    {
-                                        // financial
-                                        if(financialVal.Count() != 0)
-                                            orConditionFormat = orConditionFormat.Replace("##" + andConditionId + "##", financialVal[0].ToString());
-                                        else
-                                            orConditionFormat = orConditionFormat.Replace("##" + andConditionId + "##", "");
-
-                                        if (searchFormat.IndexOf(sentenceAsOutput) == -1 && duplicateFound == false)
-                                            orConditionFormat = orConditionFormat.Replace("{{" + andConditionId + "}}", finalOutputSentence);
-                                        else
-                                            orConditionFormat = orConditionFormat.Replace("{{" + andConditionId + "}}", "");
-
-                                        stringOutput.Add(orConditionFormat);
-                                        searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", orConditionFormat);
-                                    }
-                                    else
-                                    {
-                                        finalOutputSentence = finalOutputSentence + " " + orConditionFormat;
-                                        // financial
-                                        if (financialVal.Count() != 0)
-                                            finalOutputSentence = finalOutputSentence.Replace("##" + andConditionId + "##", financialVal[0].ToString());
-                                        else
-                                            finalOutputSentence = finalOutputSentence.Replace("##" + andConditionId + "##", "");
-
-                                        stringOutput.Add(finalOutputSentence);
-                                        searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", finalOutputSentence);
-                                    }
-
-                                }
-                                else
-                                {
-                                    if (searchFormat.IndexOf(finalOutputSentence) == -1 && duplicateFound == false)
-                                    {
-                                        stringOutput.Add(finalOutputSentence);
-                                        searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", finalOutputSentence);
-                                    }
-                                    else
-                                        searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", "");
-                                }
-                            }
-                        }
-                        if (orConditionSentence == 0)
-                        {
-                            if (sentenceAsOutput != "")
-                            {
-                                // financial
-                                if (financialVal.Count() != 0)
-                                    orConditionFormat = orConditionFormat.Replace("##" + andConditionId + "##", financialVal[0].ToString());
-                                else
-                                    orConditionFormat = orConditionFormat.Replace("##" + andConditionId + "##", "");
-
-                                orConditionFormat = orConditionFormat.Replace("{{" + andConditionId + "}}", "").Trim();
-                                stringOutput.Add(orConditionFormat);
-                                searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", orConditionFormat);
-                            }
-
-                        }
-                        if (stringOutput.Count() <= andConditionId - 1)
-                        {
-                            stringOutput.Add(null);
-                        }
-                    }
+                    var searchFormatCopy = searchFormat;
+                    if(outputGet == "1")
+                        readSentenceOrParagraph(searchFormatCopy, sentenceEndList, financialCheck, financialSelect, sentenceStartList, collectCorrectSentanceOutput, andConditionId, allFormatSave, sentenceSection, sentenceFileName, checkNextLineVal, saveSentenceForDuplicate, rgx, getSearchExclusion, getAllTheSentence, allSetKeyword, checkNextOrCondition, andConditionOrCondition, out stringOutput, out searchFormat);
+                    if (outputGet == "2")
+                        readSentenceOrParagraph(searchFormatCopy, sentenceEndList, financialCheck, financialSelect, sentenceStartList, collectCorrectSentanceOutput, andConditionId, allFormatSave, paragraphSection, paragraphFileName, checkNextLineVal, saveSentenceForDuplicate, rgx, getSearchExclusion, getAllTheParagraph, allSetKeyword, checkNextOrCondition, andConditionOrCondition, out stringOutput, out searchFormat);
                 }
 
                 var displayConstant = "";
@@ -1922,6 +1706,256 @@ namespace ReboProject
             }
         }
 
+        public void readSentenceOrParagraph(string searchFormatCopy, List<string> sentenceEndList,string financialCheck, JToken financialSelect,List<string> sentenceStartList,JArray collectCorrectSentanceOutput, int andConditionId,Dictionary<int,string> allFormatSave,List<string> sentenceSection, List<string> sentenceFileName,string checkNextLineVal, List<string> saveSentenceForDuplicate,Regex rgx,Dictionary<string,string> getSearchExclusion, Dictionary<string, string> getAllTheSentence, Dictionary<string, string> allSetKeyword, bool checkNextOrCondition,JToken andConditionOrCondition, out List<string> stringOutput ,out string searchFormat)
+        {
+            stringOutput = new List<string>();
+            searchFormat = "";
+            foreach (var orConditionVal in andConditionOrCondition)
+            {
+                if (checkNextOrCondition == false)
+                    break;
+                List<string> getKeyword = new List<string>();
+                var orConditionKeyword = orConditionVal["keyword"].ToString();
+                var orConditionCondition = (int)orConditionVal["condition"];
+                var orConditionSentence = (int)orConditionVal["sentence"];
+                var sentenceAsOutput = "";
+                var orConditionFormat = orConditionVal["format"].ToString();
+                string[] splitkeywordId = orConditionKeyword.Split('|');
+                foreach (var item in splitkeywordId)
+                {
+                    getKeyword.Add(allSetKeyword[item]);
+                }
+                var checkNextSentence = true;
+                var next = 0;
+                Dictionary<string, string> getAllTheSentenceWithExclusion = new Dictionary<string, string>();
+                foreach (var singleSentenceVal in getAllTheSentence)
+                {
+                    if (getSearchExclusion.Count > 0)
+                    {
+                        var exclusionPresent = false;
+                        foreach (var item in getSearchExclusion)
+                        {
+                            MatchCollection matchDataKey;
+                            regexMatch(rgx, singleSentenceVal.Key, item.Key, out matchDataKey);
+                            MatchCollection matchDataValue;
+                            regexMatch(rgx, singleSentenceVal.Key, item.Value, out matchDataValue);
+                            if (matchDataKey.Count > 0 && matchDataValue.Count > 0)
+                            {
+                                exclusionPresent = true;
+                                break;
+                            }
+                        }
+                        if(exclusionPresent == false)
+                            getAllTheSentenceWithExclusion.Add(singleSentenceVal.Key, singleSentenceVal.Value);
+                    }
+                    else
+                        getAllTheSentenceWithExclusion = getAllTheSentence;
+
+                }
+                foreach (var singleSentence in getAllTheSentenceWithExclusion)
+                {
+                    if (checkNextSentence == false)
+                        break;
+                    var count = 0;
+                    var CheckGetKeywordCount = 0;
+                    foreach (var toFIndVal in getKeyword)
+                    {
+                        CheckGetKeywordCount++;
+                        var regexToFInd = "";
+                        var resultKeywordCopy = toFIndVal;
+                        if (toFIndVal.Contains("##d##"))
+                        {
+                            var getFromString = resultKeywordCopy.Replace("##d##", "").Trim();
+                            if (toFIndVal.IndexOf("##d##") == 0)
+                                regexToFInd = @"([0-9\.]+[\s]*[" + getFromString + "])";
+                            else
+                                regexToFInd = @"([" + getFromString + "][\\s]*[0-9\\.]+)";
+                        }
+                        else if (toFIndVal == "%")
+                        {
+                            regexToFInd = @"(%)";
+                        }
+                        else if (toFIndVal == "$")
+                        {
+                            regexToFInd = @"([$]+)";
+                        }
+                        else
+                        {
+                            regexToFInd = @"\b\s?" + rgx.Replace(toFIndVal, "\\$1") + "(\\s|\\b)";
+                        }
+                        Regex regex = new Regex(regexToFInd);
+                        var match = regex.Match(singleSentence.Key); // check if match found
+                        var checkDuplicate = true;
+                        if (match.Success)
+                        {
+                            var checkNextLIne = false;
+                            if (checkDuplicate == true && saveSentenceForDuplicate.Count > 0 && CheckGetKeywordCount == getKeyword.Count())
+                            {
+                                foreach (var item in saveSentenceForDuplicate)
+                                {
+                                    if (singleSentence.Key.Trim() == item && checkNextLineVal == "1")
+                                    {
+                                        checkNextLIne = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (checkNextLIne == false)
+                            {
+                                JObject collectCorrectSentanceOutputJO = new JObject();
+                                count++;
+                                var getFileName = sentenceFileName.ElementAt(next).Split('-')[0];
+                                var fileNameVal = sentenceFileName.ElementAt(next).Replace(getFileName + "-", "").Trim();
+                                if (orConditionCondition == 1 && count == getKeyword.Count())
+                                {
+                                    sentenceAsOutput = singleSentence.Key;
+                                    collectCorrectSentanceOutputJO["sentence"] = singleSentence.Key;
+                                    saveSentenceForDuplicate.Add(singleSentence.Key);
+                                    collectCorrectSentanceOutputJO["sectionNo"] = sentenceSection.ElementAt(next);
+                                    if (fileNameVal.ToLower().IndexOf("lease") == 0)
+                                        collectCorrectSentanceOutputJO["fileName"] = "";
+                                    else
+                                        collectCorrectSentanceOutputJO["fileName"] = fileNameVal;
+                                    collectCorrectSentanceOutputJO["search"] = singleSentence.Value;
+                                    collectCorrectSentanceOutput.Add(collectCorrectSentanceOutputJO);
+                                    checkNextOrCondition = false;
+                                    checkNextSentence = false;
+                                    break;
+                                }
+                                if (orConditionCondition == 0)
+                                {
+                                    sentenceAsOutput = singleSentence.Key;
+                                    collectCorrectSentanceOutputJO["sentence"] = singleSentence.Key;
+                                    saveSentenceForDuplicate.Add(singleSentence.Key);
+                                    collectCorrectSentanceOutputJO["sectionNo"] = sentenceSection.ElementAt(next);
+                                    if (fileNameVal.ToLower().IndexOf("lease") == 0)
+                                        collectCorrectSentanceOutputJO["fileName"] = "";
+                                    else
+                                        collectCorrectSentanceOutputJO["fileName"] = fileNameVal;
+                                    collectCorrectSentanceOutputJO["search"] = singleSentence.Value;
+                                    collectCorrectSentanceOutput.Add(collectCorrectSentanceOutputJO);
+                                    checkNextOrCondition = false;
+                                    checkNextSentence = false;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    next++;
+                }
+                var finalOutputSentence = "";
+                var duplicateFound = false;
+                foreach (var item in allFormatSave)
+                {
+                    var outputStringVal = item.Value;
+                    if (outputStringVal.IndexOf(sentenceAsOutput.Trim()) != -1 && sentenceAsOutput != "")
+                    {
+                        duplicateFound = true;
+                        break;
+                    }
+                }
+                if (searchFormatCopy.IndexOf(sentenceAsOutput) == -1 && duplicateFound == false)
+                    startToEnd(sentenceStartList, sentenceEndList, sentenceAsOutput, out finalOutputSentence);
+                List<string> financialVal = new List<string>();
+                if (duplicateFound == false)
+                {
+                    if (financialCheck != "0")
+                    {
+                        foreach (var item in financialSelect)
+                        {
+                            var financialId = item["id"].ToString();
+                            if (financialId == financialCheck)
+                            {
+                                var financialKeyword = item["keyword"].ToString();
+                                if (financialKeyword == "getDate")
+                                    financialVal = processing.getDate(finalOutputSentence);
+                                if (financialKeyword == "getCurrencyAmount")
+                                    financialVal = processing.getCurrencyAmount(finalOutputSentence);
+                                if (financialKeyword == "getYear")
+                                    financialVal = processing.getYear(finalOutputSentence);
+                                if (financialKeyword == "extractPercentage")
+                                    financialVal = processing.extractPercentage(finalOutputSentence);
+                                if (financialKeyword == "getDays")
+                                    financialVal = processing.getDays(finalOutputSentence);
+                                if (financialKeyword == "getYearCount")
+                                    financialVal = processing.getYearCount(finalOutputSentence);
+                            }
+                        }
+                    }
+                }
+                if (orConditionSentence == 1)
+                {
+                    if (sentenceAsOutput != "")
+                    {
+                        if (orConditionFormat != "")
+                        {
+                            if (orConditionFormat.IndexOf("{{" + andConditionId + "}}") != -1)
+                            {
+                                // financial
+                                if (financialVal.Count() != 0)
+                                    orConditionFormat = orConditionFormat.Replace("##" + andConditionId + "##", financialVal[0].ToString());
+                                else
+                                    orConditionFormat = orConditionFormat.Replace("##" + andConditionId + "##", "");
+
+                                if (searchFormatCopy.IndexOf(sentenceAsOutput) == -1 && duplicateFound == false)
+                                    orConditionFormat = orConditionFormat.Replace("{{" + andConditionId + "}}", finalOutputSentence);
+                                else
+                                    orConditionFormat = orConditionFormat.Replace("{{" + andConditionId + "}}", "");
+
+                                stringOutput.Add(orConditionFormat);
+                                searchFormatCopy = searchFormatCopy.Replace("{{" + andConditionId + "}}", orConditionFormat);
+                            }
+                            else
+                            {
+                                finalOutputSentence = finalOutputSentence + " " + orConditionFormat;
+                                // financial
+                                if (financialVal.Count() != 0)
+                                    finalOutputSentence = finalOutputSentence.Replace("##" + andConditionId + "##", financialVal[0].ToString());
+                                else
+                                    finalOutputSentence = finalOutputSentence.Replace("##" + andConditionId + "##", "");
+
+                                stringOutput.Add(finalOutputSentence);
+                                searchFormatCopy = searchFormatCopy.Replace("{{" + andConditionId + "}}", finalOutputSentence);
+                            }
+
+                        }
+                        else
+                        {
+                            if (searchFormatCopy.IndexOf(finalOutputSentence) == -1 && duplicateFound == false)
+                            {
+                                stringOutput.Add(finalOutputSentence);
+                                searchFormatCopy = searchFormatCopy.Replace("{{" + andConditionId + "}}", finalOutputSentence);
+                            }
+                            else
+                                searchFormatCopy = searchFormatCopy.Replace("{{" + andConditionId + "}}", "");
+                        }
+                    }
+                }
+                if (orConditionSentence == 0)
+                {
+                    if (sentenceAsOutput != "")
+                    {
+                        // financial
+                        if (financialVal.Count() != 0)
+                            orConditionFormat = orConditionFormat.Replace("##" + andConditionId + "##", financialVal[0].ToString());
+                        else
+                            orConditionFormat = orConditionFormat.Replace("##" + andConditionId + "##", "");
+
+                        orConditionFormat = orConditionFormat.Replace("{{" + andConditionId + "}}", "").Trim();
+                        stringOutput.Add(orConditionFormat);
+                        searchFormatCopy = searchFormatCopy.Replace("{{" + andConditionId + "}}", orConditionFormat);
+                    }
+
+                }
+                if (stringOutput.Count() <= andConditionId - 1)
+                {
+                    stringOutput.Add(null);
+                }
+                searchFormat = searchFormatCopy;
+            }
+
+        }
+        
         public void buildFormat(string outputNotFoundMessage, JArray jaCompleteData, string finalOutputData, string resultOutputFormat, out string format)
         {
             format = "";
