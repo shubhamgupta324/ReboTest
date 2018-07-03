@@ -139,12 +139,12 @@ namespace ReboProject
             List<string> sectiongot = new List<string>();
             Dictionary<int, string> regexDictionary = new Dictionary<int, string>(); // check the regex 
 
-            regexDictionary.Add(1, @"^(\d{1,3}\.(:\d+\.?)*)[\s]?([(|\[]?([a-zA-Z]{1}|\d{0,3}|(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4})[\]|)|:|.])?(?!\S)"); //    1./ 1. a)
-            regexDictionary.Add(2, @"^(\d{1,3}\.\d(?:\d+\.?)*)[\s]?([(|\[]?([a-zA-Z]{1}|\d{0,3}|(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4})[]|)|:|.])?(?!\S)"); //    1.1  / 1.1 a)
+            regexDictionary.Add(1, @"^(\d{1,3}\.\d[(?:\d+\.?)]*)[\s]?([(|\[]?([a-zA-Z]{1}|\d{0,3}|(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4})[]|)|:|.])?(?!\S)"); //    1.1  / 1.1 a)
+            regexDictionary.Add(2, @"^(\d{1,3}\.)[\s]?([(|\[]?([a-zA-Z]{1}|\d{0,3}|(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4})[\]|)|:|.])?(?!\S)"); //    1./ 1. a)
             regexDictionary.Add(3, @"^[\s]*((?i)(section)\s\d*)(?!\S)"); //    section 1
             regexDictionary.Add(4, @"^[\s]*((?i)(section)\s\d+\.(?:\d+\.?)*)(?!\S)"); //    section 1.1 
-            regexDictionary.Add(5, @"^[\s]*((?i)(article)\s\d*)(?!\S)"); //   article 1
-            regexDictionary.Add(6, @"^[\s]*((?i)(article)\s\d+\.(?:\d+\.?)*)(?!\S)"); //  article 1.1 
+            regexDictionary.Add(5, @"^[\s]*((?i)(article|art1c1e|art1cle|artic1e)\s\d*)(?!\S)"); //   article 1
+            regexDictionary.Add(6, @"^[\s]*((?i)(article|art1c1e|art1cle|artic1e)\s\d+\.(?:\d+\.?)*)(?!\S)"); //  article 1.1 
             regexDictionary.Add(7, @"^[\s]*([1-9]{1,3}[:])(?!\S)"); //   1:
             regexDictionary.Add(8, @"^[\s]*([[(][\s]*[1-9]{1,3}[\s]*[)])(?!\S)"); //   (1)
             regexDictionary.Add(9, @"^[\s]*([1-9]{1,3}[]])(?!\S)"); //   1]
@@ -158,8 +158,8 @@ namespace ReboProject
             regexDictionary.Add(16, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[:](?!\S)"); //    xvii:
             regexDictionary.Add(17, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[.](?!\S)"); //    xvii.
             regexDictionary.Add(18, @"^[\s]*(?i)(section)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[.]?(?!\S)"); //    section xvii
-            regexDictionary.Add(19, @"^[\s]*(?i)(article)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[.]?(?!\S)"); //    article xvii
-                                      
+            regexDictionary.Add(19, @"^[\s]*(?i)(article|art1c1e|art1cle|artic1e)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[.]?(?!\S)"); //    article xvii
+
             regexDictionary.Add(20, @"^[\s]*[(][\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[\s]*[)](?!\S)"); //    (XVII)
             regexDictionary.Add(21, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[)](?!\S)"); //    XVII)
             regexDictionary.Add(22, @"^[\s]*[[][\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[\s]*[]](?!\S)"); //    [XVII]
@@ -167,8 +167,8 @@ namespace ReboProject
             regexDictionary.Add(24, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[:](?!\S)"); //    XVII:
             regexDictionary.Add(25, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[.](?!\S)"); //    XVII.
             regexDictionary.Add(26, @"^[\s]*(?i)(section)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[.]?(?!\S)"); //    section XVII
-            regexDictionary.Add(27, @"^[\s]*(?i)(article)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[.]?(?!\S)"); //    article XVII
-                                      
+            regexDictionary.Add(27, @"^[\s]*(?i)(article|art1c1e|art1cle|artic1e)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[.]?(?!\S)"); //    article XVII
+
             regexDictionary.Add(28, @"^[\s]*([a-z][.])(?!\S)");  //  a.
             regexDictionary.Add(29, @"^[\s]*([a-z][:])(?!\S)");  //  a:
             regexDictionary.Add(30, @"^[\s]*([(][\s]*[a-z][\s]*[)])(?!\S)");  //    (a)
@@ -176,8 +176,8 @@ namespace ReboProject
             regexDictionary.Add(32, @"^[\s]*([[][\s]*[a-z][\s]*[]])(?!\S)");  //   a]
             regexDictionary.Add(33, @"^[\s]*([a-z][]])(?!\S)");  //     [a]
             regexDictionary.Add(34, @"^[\s]*((?i)(section)[\s]*[a-z])[.]?(?!\S)");  //      section a
-            regexDictionary.Add(35, @"^[\s]*((?i)(article)[\s]*[a-z])[.]?(?!\S)");  //      article a
-                                      
+            regexDictionary.Add(35, @"^[\s]*((?i)(article|art1c1e|art1cle|artic1e)[\s]*[a-z])[.]?(?!\S)");  //      article a
+
             regexDictionary.Add(36, @"^[\s]*([A-Z][.])(?!\S)");  // A.
             regexDictionary.Add(37, @"^[\s]*([A-Z][:])(?!\S)");  // A:
             regexDictionary.Add(38, @"^[\s]*([(][\s]*[A-Z][\s]*[)])(?!\S)");  // (A)
@@ -185,8 +185,8 @@ namespace ReboProject
             regexDictionary.Add(40, @"^[\s]*([[][\s]*[A-Z][\s]*[]])(?!\S)");  // A]
             regexDictionary.Add(41, @"^[\s]*([A-Z][]])(?!\S)");  // [A]
             regexDictionary.Add(42, @"^[\s]*((?i)(section)[\s]*[A-Z])[.]?(?!\S)");  // section A
-            regexDictionary.Add(43, @"^[\s]*((?i)(ARTICLE)[\s]*[A-Z])[.]?(?!\S)");  // ARTICLE A
-            
+            regexDictionary.Add(43, @"^[\s]*((?i)(article|art1c1e|art1cle|artic1e)[\s]*[A-Z])[.]?(?!\S)");  // ARTICLE A
+
             foreach (var item in regexDictionary) // loop through all the regexs
             {
                 Regex regex = new Regex(item.Value);
@@ -1615,10 +1615,6 @@ namespace ReboProject
                         }
                     }
                 }
-                //var finalSectionJson = CreateSectionJson(root).ToString();
-                //var completeSectionTree = JObject.Parse(finalSectionJson.ToString())["children"];
-                //var lastParaVal = JObject.Parse(finalSectionJson.ToString())["para"].ToObject<List<string>>();
-                //treeCorrection(completeSectionTree, lastParaVal);
                 rootTop.Children.Add(root);
 
             }
@@ -1627,15 +1623,15 @@ namespace ReboProject
         }
 
         // combine all para within section 
-        public static void combinePara(Dictionary<int,string> sectionPara, Dictionary<int, string> sectionSectioNo, Dictionary<int, string> sectionRegex,out Dictionary<int, List<string>> combineSectionPara, out Dictionary<int, string> combineSectionSectioNo, out Dictionary<int, string> combineSectionRegex, out List<int> parentSectionNo)
+        public static void combinePara(Dictionary<int, string> sectionPara, Dictionary<int, string> sectionSectioNo, Dictionary<int, string> sectionRegex, out Dictionary<int, List<string>> combineSectionPara, out Dictionary<int, string> combineSectionSectioNo, out Dictionary<int, string> combineSectionRegex, out List<int> parentSectionNo)
         {
             List<string> doubleSectionRegex = new List<string>();
-            doubleSectionRegex.Add(@"^(\d{1,3}\.(:\d+\.?)*)[\s]?([(|\[]?([a-zA-Z]{1}|\d{0,3}|(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4})[\]|)|:|.])?(?!\S)");
-            doubleSectionRegex.Add(@"^(\d{1,3}\.\d(?:\d+\.?)*)[\s]?([(|\[]?([a-zA-Z]{1}|\d{0,3}|(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4})[]|)|:|.])?(?!\S)");
+            doubleSectionRegex.Add(@"^(\d{1,3}\.)[\s]?([(|\[]?([a-zA-Z]{1}|\d{0,3}|(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4})[\]|)|:|.])?(?!\S)");
+            doubleSectionRegex.Add(@"^(\d{1,3}\.\d[(?:\d+\.?)]*)[\s]?([(|\[]?([a-zA-Z]{1}|\d{0,3}|(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4})[]|)|:|.])?(?!\S)");
 
             combineSectionPara = new Dictionary<int, List<string>>();
-            combineSectionSectioNo =new  Dictionary<int, string>();
-            combineSectionRegex = new  Dictionary<int, string>();
+            combineSectionSectioNo = new Dictionary<int, string>();
+            combineSectionRegex = new Dictionary<int, string>();
             parentSectionNo = new List<int>();
             List<string> savepara = new List<string>();
             var count = 1;
@@ -1657,13 +1653,24 @@ namespace ReboProject
                     if (item == regex)
                     {
                         bool doubleSection = false;
-                        regexSelect(item, sectioNo, out List<string> sectionList, out List<string> regexList,out doubleSection);
-                        if (doubleSection == true) {
+                        regexSelect(item, sectioNo, out List<string> sectionList, out List<string> regexList, out doubleSection);
+                        if (doubleSection == true)
+                        {
+                            if (lastSectioNo != "")
+                            {
+                                combineSectionPara.Add(count, savepara);
+                                combineSectionSectioNo.Add(count, lastSectioNo);
+                                combineSectionRegex.Add(count, lastRegex);
+                                parentSectionNo.Add(lastParent);
+                                savepara = new List<string>();
+                                count++;
+                            }
                             List<string> savepara1 = new List<string>();
                             combineSectionPara.Add(count, savepara1);
                             combineSectionSectioNo.Add(count, sectionList.ElementAt(0));
                             combineSectionRegex.Add(count, regexList.ElementAt(0));
-                            if(countSectionRegexCount == 2)
+                            parentSectionNo.Add(lastParent);
+                            if (countSectionRegexCount == 2)
                                 parentSectionNo.Add(1);
                             else
                                 parentSectionNo.Add(0);
@@ -1710,7 +1717,7 @@ namespace ReboProject
         }
 
         // case handle eg:- 1.1(a) OR 1. VII)
-        public static void regexSelect(string regex,string sectionNo , out List<string> sectionList, out List<string> regexList, out bool doubleSection)
+        public static void regexSelect(string regex, string sectionNo, out List<string> sectionList, out List<string> regexList, out bool doubleSection)
         {
             doubleSection = false;
             Dictionary<int, string> regexDictionary = new Dictionary<int, string>(); // check the regex 
@@ -1750,7 +1757,7 @@ namespace ReboProject
 
             sectionList = new List<string>();
             regexList = new List<string>();
-            
+
             Regex regexCheckVal = new Regex("(\\d{1,3}\\.(\\d(?:\\d+\\.?)*)?)"); // check if it has section number
             var match = regexCheckVal.Match(sectionNo); // check if match found
             if (match.Success) // if found then replace it
@@ -1777,19 +1784,19 @@ namespace ReboProject
             parent = 0;
             Dictionary<int, string> matchRegexNumeric = new Dictionary<int, string>();
             // NUMBERS
-            matchRegexNumeric.Add(1, @"^(\d{1,3}\.\d(?:\d+\.?)*)[\s]?([(|\[]?([a-zA-Z]{1}|\d{0,3}|(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4})[]|)|:|.])?(?!\S)"); //    1.1  / 1.1 a)
+            matchRegexNumeric.Add(1, @"^(\d{1,3}\.\d[(?:\d+\.?)]*)[\s]?([(|\[]?([a-zA-Z]{1}|\d{0,3}|(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4})[]|)|:|.])?(?!\S)"); //    1.1  / 1.1 a)
             matchRegexNumeric.Add(2, @"^[\s]*((?i)(section)\s\d*)(?!\S)"); //    section 1
             matchRegexNumeric.Add(3, @"^[\s]*((?i)(section)\s\d+\.(?:\d+\.?)*)(?!\S)"); //    section 1.1 
-            matchRegexNumeric.Add(4, @"^[\s]*((?i)(article)\s\d*)(?!\S)"); //   article 1
-            matchRegexNumeric.Add(5, @"^[\s]*((?i)(article)\s\d+\.(?:\d+\.?)*)(?!\S)"); //  article 1.1 
+            matchRegexNumeric.Add(4, @"^[\s]*((?i)(article|art1c1e|art1cle|artic1e)\s\d*)(?!\S)"); //   article 1
+            matchRegexNumeric.Add(5, @"^[\s]*((?i)(article|art1c1e|art1cle|artic1e)\s\d+\.(?:\d+\.?)*)(?!\S)"); //  article 1.1 
             matchRegexNumeric.Add(6, @"^[\s]*(?i)(section)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[.]?(?!\S)"); //    section xvii
-            matchRegexNumeric.Add(7, @"^[\s]*(?i)(article)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[.]?(?!\S)"); //    article xvii
+            matchRegexNumeric.Add(7, @"^[\s]*(?i)(article|art1c1e|art1cle|artic1e)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[.]?(?!\S)"); //    article xvii
             matchRegexNumeric.Add(8, @"^[\s]*(?i)(section)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[.]?(?!\S)"); //    section XVII
-            matchRegexNumeric.Add(9, @"^[\s]*(?i)(article)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[.]?(?!\S)"); //    article XVII
+            matchRegexNumeric.Add(9, @"^[\s]*(?i)(article|art1c1e|art1cle|artic1e)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[.]?(?!\S)"); //    article XVII
             matchRegexNumeric.Add(10, @"^[\s]*((?i)(section)[\s]*[a-z])[.]?(?!\S)");  //      section a
-            matchRegexNumeric.Add(11, @"^[\s]*((?i)(article)[\s]*[a-z])[.]?(?!\S)");  //      article a
+            matchRegexNumeric.Add(11, @"^[\s]*((?i)(article|art1c1e|art1cle|artic1e)[\s]*[a-z])[.]?(?!\S)");  //      article a
             matchRegexNumeric.Add(12, @"^[\s]*((?i)(section)[\s]*[A-Z])[.]?(?!\S)");  // section A
-            matchRegexNumeric.Add(13, @"^[\s]*((?i)(ARTICLE)[\s]*[A-Z])[.]?(?!\S)");  // ARTICLE A
+            matchRegexNumeric.Add(13, @"^[\s]*((?i)(article|art1c1e|art1cle|artic1e)[\s]*[A-Z])[.]?(?!\S)");  // ARTICLE A
 
             foreach (var item in matchRegexNumeric)
             {
@@ -1812,7 +1819,7 @@ namespace ReboProject
                 var childJo = CreateJson(child);
                 ja.Add(childJo);
             }
-            
+
             var jaPara = new JArray();
             if (node.Para != null)
             {
@@ -1824,6 +1831,8 @@ namespace ReboProject
 
             jo["section"] = node.Value;
             jo["SectionName"] = node.SectionName;
+            jo["Level"] = node.Level;
+            jo["regex"] = node.Regex;
             jo["para"] = jaPara;
             jo["children"] = ja;
             jo["parentCheck"] = node.ParentCheck;
