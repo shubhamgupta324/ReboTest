@@ -398,6 +398,7 @@ namespace ReboProject
         public void checklibrary(JArray ja2, string[] librarySet, out bool outputFound)
         {
             outputFound = false;
+            Regex rgx = new Regex("(['^$.|?*+()\\\\])");
             //var getTheLibrary = librarySet[datapoint.ToLower()]; //  get all library for datapoint
             for (var i = 0; i < ja2.Count(); i++)
             {
@@ -407,10 +408,10 @@ namespace ReboProject
 
                 for (var singleSF = 0; singleSF < librarySet.Count(); singleSF++)
                 {
-                    var matchData = Regex.Matches(outputConfig1, @"\b\s?" + librarySet[singleSF] + "(\\s|\\b)"); // search if library in para
+                    var matchData = Regex.Matches(outputConfig1, @"\b\s?" + rgx.Replace(librarySet[singleSF], "\\$1") + "(\\s|\\b)"); // search if library in para
                     if (librarySet[singleSF].IndexOf("\"") == 0)
                     {
-                        var searchVal = (librarySet[singleSF]).Replace("\"", "");
+                        var searchVal = (rgx.Replace(librarySet[singleSF], "\\$1")).Replace("\"", "");
                         matchData = Regex.Matches(outputConfig1, "[\"]" + searchVal + "[\"][^a-zA-Z0-9_]"); // find match
                     }
                     if (matchData.Count > 0)
@@ -426,15 +427,16 @@ namespace ReboProject
         public void subCaseSearch(string lineToCheck, string checkForVal, JToken getSubCase, out bool checkFurther)
         {
             checkFurther = false;
+            Regex rgx = new Regex("(['^$.|?*+()\\\\])");
             for (var i = 0; i < getSubCase.Count(); i++)
             {
                 if (checkForVal == (getSubCase[i]["checkFor"]).ToString())
                 {
                     var keyword = (getSubCase[i]["keyword"]).ToString();
-                    var matchDataWithInIt = Regex.Matches(lineToCheck, @"\b\s?" + keyword + "(\\s|\\b)"); // find match
+                    var matchDataWithInIt = Regex.Matches(lineToCheck, @"\b\s?" + rgx.Replace(keyword, "\\$1") + "(\\s|\\b)"); // find match
                     if (keyword.IndexOf("\"") == 0)
                     {
-                        var searchVal = (keyword).Replace("\"", "");
+                        var searchVal = (rgx.Replace(keyword, "\\$1")).Replace("\"", "");
                         matchDataWithInIt = Regex.Matches(lineToCheck, "[\"]" + searchVal + "[\"][^a-zA-Z0-9_]"); // find match
                     }
                     if (matchDataWithInIt.Count > 0) // if match there
@@ -495,6 +497,7 @@ namespace ReboProject
                     for (var k = 0; k < getSearchFor.Count(); k++) // loop throuch all searchFor
                     {
                         var AllSearchFieldKeyword = (getSearchFor[k]["keyword"]).ToString(); // get the search field
+                        Regex rgx = new Regex("(['^$.|?*+()\\\\])");
                         var AllSearchFieldCaseCheck = (getSearchFor[k]["caseCheck"]).ToString().ToLower(); // get the search field op
 
                         bool checkAfterSubCaseSearchFor = true;
@@ -510,10 +513,11 @@ namespace ReboProject
                             {
                                 paraNumber += 1;
                                 var getLineText = checkPage.Value; // get the  line text
-                                var matchData = Regex.Matches(getLineText, @"\b\s?" + AllSearchFieldKeyword + "(\\s|\\b)"); // find match
+                                
+                                var matchData = Regex.Matches(getLineText, @"\b\s?" + rgx.Replace(AllSearchFieldKeyword, "\\$1") + "(\\s|\\b)"); // find match
                                 if ((AllSearchFieldKeyword).IndexOf("\"") == 0)
                                 {
-                                    var searchVal = (AllSearchFieldKeyword).Replace("\"", "");
+                                    var searchVal = (rgx.Replace(AllSearchFieldKeyword, "\\$1")).Replace("\"", "");
                                     matchData = Regex.Matches(getLineText, "[\"]" + searchVal + "[\"][^a-zA-Z0-9_]"); // find match
                                 }
                                 if (matchData.Count > 0) // if match there
@@ -569,10 +573,10 @@ namespace ReboProject
                                                 bool checkAfterSubCaseWithInExclusion = true;
                                                 var withInIt = (getWithIn[g]["keyword"]).ToString();
                                                 var withInCaseCheck = (getWithIn[g]["caseCheck"]).ToString().ToLower();
-                                                var matchDataWithInIt = Regex.Matches(SearchWithinText, @"\b\s?" + withInIt + "(\\s|\\b)");
+                                                var matchDataWithInIt = Regex.Matches(SearchWithinText, @"\b\s?" + rgx.Replace(withInIt, "\\$1") + "(\\s|\\b)");
                                                 if ((withInIt).IndexOf("\"") == 0)
                                                 {
-                                                    var searchVal = (withInIt).Replace("\"", "");
+                                                    var searchVal = (rgx.Replace(withInIt, "\\$1")).Replace("\"", "");
                                                     matchDataWithInIt = Regex.Matches(SearchWithinText, "[\"]" + searchVal + "[\"][^a-zA-Z0-9_]"); // find match
                                                 }
                                                 if (withInIt == "$")
@@ -672,6 +676,7 @@ namespace ReboProject
             var getAllAcceptedText = JArray.Parse(ja.ToString()); // get all the accepted result
             Dictionary<int, float> scoreVal = new Dictionary<int, float>();
             Dictionary<int, string> saveScoringKeyword = new Dictionary<int, string>();
+            Regex rgx = new Regex("(['^$.|?*+()\\\\])");
             for (var l = 0; l < getAllAcceptedText.Count(); l++)
             {
                 var pageContent = getAllAcceptedText[l]["pageContent"].ToString(); // get the page value to search all search fileds
@@ -682,10 +687,10 @@ namespace ReboProject
                 foreach (KeyValuePair<string, int> singleSearchFieldScore in searchFieldScore)
                 { //  loop through all the search field
                     
-                    var matchDataWithInIt = Regex.Matches(pageContent, @"\b\s?" + singleSearchFieldScore.Key + "(\\s|\\b)"); // find match
+                    var matchDataWithInIt = Regex.Matches(pageContent, @"\b\s?" + rgx.Replace(singleSearchFieldScore.Key, "\\$1") + "(\\s|\\b)"); // find match
                     if ((singleSearchFieldScore.Key).IndexOf("\"") == 0)
                     {
-                        var searchVal = (singleSearchFieldScore.Key).Replace("\"", "");
+                        var searchVal = (rgx.Replace(singleSearchFieldScore.Key, "\\$1")).Replace("\"", "");
                         matchDataWithInIt = Regex.Matches(pageContent, "[\"]" + searchVal + "[\"][^a-zA-Z0-9_]"); // find match
                     }
                     if (singleSearchFieldScore.Key == "$")
@@ -802,6 +807,7 @@ namespace ReboProject
                 foreach (KeyValuePair<int, Dictionary<int, string>> entry in savePage)
                 {
                     pageCount += 1;
+                    Regex rgx = new Regex("(['^$.|?*+()\\\\])");
                     foreach (var checkPage in entry.Value)
                     {
                         var para = checkPage.Value;
@@ -810,10 +816,10 @@ namespace ReboProject
                         for (var i = 0; i < librarySet.Count(); i++)
                         {
                             var singleLibVAl = librarySet[i];
-                            var matchData = Regex.Matches(para, @"\b\s?" + singleLibVAl + "(\\s|\\b)"); // search if library in para
+                            var matchData = Regex.Matches(para, @"\b\s?" + rgx.Replace(singleLibVAl, "\\$1") + "(\\s|\\b)"); // search if library in para
                             if ((singleLibVAl).IndexOf("\"") == 0)
                             {
-                                var searchVal = (singleLibVAl).Replace("\"", "");
+                                var searchVal = (rgx.Replace(singleLibVAl, "\\$1")).Replace("\"", "");
                                 matchData = Regex.Matches(para, "[\"]" + searchVal + "[\"][^a-zA-Z0-9_]"); // find match
                             }
                             if (matchData.Count > 0)
@@ -841,15 +847,15 @@ namespace ReboProject
         // remove para on exclusion
         public void exclusionProcess(int exclusionCount, JToken getExclusion, string SearchWithinText, out bool checkAfterSubCaseWithInExclusion)
         {
-
+            Regex rgx = new Regex("(['^$.|?*+()\\\\])");
             checkAfterSubCaseWithInExclusion = true;
             var count = 0;
             for (var i = 0; i < getExclusion.Count(); i++) // loop through all the exclusion
             {
-                var matchExclusion = Regex.Matches(SearchWithinText, @"\b\s?" + getExclusion[i]["keyword"].ToString() + "(\\s|\\b)"); // find match
+                var matchExclusion = Regex.Matches(SearchWithinText, @"\b\s?" + rgx.Replace(getExclusion[i]["keyword"].ToString(), "\\$1") + "(\\s|\\b)"); // find match
                 if ((getExclusion[i]["keyword"].ToString()).IndexOf("\"") == 0)
                 {
-                    var searchVal = (getExclusion[i]["keyword"].ToString()).Replace("\"", "");
+                    var searchVal = (rgx.Replace(getExclusion[i]["keyword"].ToString(), "\\$1")).Replace("\"", "");
                     matchExclusion = Regex.Matches(SearchWithinText, "[\"]" + searchVal + "[\"][^a-zA-Z0-9_]"); // find match
                 }
                 if (getExclusion[i]["keyword"].ToString() == "$")
@@ -877,15 +883,16 @@ namespace ReboProject
                 string[] allWithIn = foundWithIn.Split('|'); // get all the within 
                 Dictionary<string, int> getFinalSentence = new Dictionary<string, int>();
                 HashSet<string> evenNumbers = new HashSet<string>();
+                Regex rgx = new Regex("(['^$.|?*+()\\\\])");
                 foreach (var sentanceVal in getSentance) // loop through all the sentance
                 {
                     foreach (var withIn in allWithIn) // loop through all the within
                     {
                         //var withInScoreVal = withInScore[withIn];
-                        var matchData = Regex.Matches(sentanceVal, @"\b\s?" + withIn + "\\b"); // find match
+                        var matchData = Regex.Matches(sentanceVal, @"\b\s?" + rgx.Replace(withIn, "\\$1") + "\\b"); // find match
                         if ((withIn).IndexOf("\"") == 0)
                         {
-                            var searchVal = (withIn).Replace("\"", "");
+                            var searchVal = (rgx.Replace(withIn, "\\$1")).Replace("\"", "");
                             matchData = Regex.Matches(sentanceVal, "[\"]" + searchVal + "[\"][^a-zA-Z0-9_]"); // find match
                         }
                         if (withIn == "$")
