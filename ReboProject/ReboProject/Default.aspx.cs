@@ -183,7 +183,7 @@ namespace ReboProject
                         var singleCorrectSentence = "";
                         collectCorrectSentance(withInScore, ja2, out singleCorrectSentence);
                         if (singleCorrectSentence != "")
-                            getCorrectSentances += " <b> (" + (configurationVal + 1) + ")[</b>  " + singleCorrectSentence + " <b>]</b>";
+                            getCorrectSentances =   getCorrectSentances + " <b> (" + (configurationVal + 1) + ")[</b>  " + singleCorrectSentence + " <b>]</b>";
 
 
                         if (ja2.Count == 0)// check if any result found
@@ -257,7 +257,7 @@ namespace ReboProject
                                 saveDataToFolder(ja3, folderPath);
 
                                 if (getCorrectSentances == "")
-                                    getCorrectSentances += " <b> (" + (configurationVal + 1) + ")</b>  " + pdfLibPara[0];
+                                    getCorrectSentances = getCorrectSentances + " <b> (" + (configurationVal + 1) + ")</b>  " + pdfLibPara[0];
                             }
                         }
                     }
