@@ -115,28 +115,32 @@ namespace ReboProject
                     {
                         if (foundPara.IndexOf(sectionDictionary.Values.ElementAt(j).ToString()) != -1)
                         {
-                            if (sectionDictionary.Values.ElementAt(j+1).ToString().Trim().Length >= Int32.Parse(WebConfigurationManager.AppSettings["StringLength"]))
+                            if (sectionDictionary.Count <= j)
                             {
-                                if ((sectionDictionary.Values.ElementAt(j).ToString() + sectionDictionary.Values.ElementAt(j+1).ToString()).Trim() == foundPara.Trim())
+                                if (sectionDictionary.Values.ElementAt(j + 1).ToString().Trim().Length >= Int32.Parse(WebConfigurationManager.AppSettings["StringLength"]))
                                 {
-                                    getFirstLine = sectionDictionary.Values.ElementAt(0).ToString().Trim();
-                                    allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
-                                    allPara.Add(sectionDictionary.Values.ElementAt(j+1).ToString());
-                                    finalSectionOutput = SectionValParagraph(SectionNoCount, allPara, sectionDictionary.Values.ElementAt(j+1).ToString().Trim());
-                                    checkNextSection = false;
-                                    break;
+                                    if ((sectionDictionary.Values.ElementAt(j).ToString() + sectionDictionary.Values.ElementAt(j + 1).ToString()).Trim() == foundPara.Trim())
+                                    {
+                                        getFirstLine = sectionDictionary.Values.ElementAt(0).ToString().Trim();
+                                        allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
+                                        allPara.Add(sectionDictionary.Values.ElementAt(j + 1).ToString());
+                                        finalSectionOutput = SectionValParagraph(SectionNoCount, allPara, sectionDictionary.Values.ElementAt(j + 1).ToString().Trim());
+                                        checkNextSection = false;
+                                        break;
+                                    }
                                 }
-                            }
-                            else {
-                                if ((sectionDictionary.Values.ElementAt(j).ToString() + sectionDictionary.Values.ElementAt(j + 2).ToString()).Trim() == foundPara.Trim())
+                                else
                                 {
-                                    getFirstLine = sectionDictionary.Values.ElementAt(0).ToString().Trim();
-                                    allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
-                                    allPara.Add(sectionDictionary.Values.ElementAt(j + 1).ToString());
-                                    allPara.Add(sectionDictionary.Values.ElementAt(j + 2).ToString());
-                                    finalSectionOutput = SectionValParagraph(SectionNoCount, allPara, sectionDictionary.Values.ElementAt(j+2).ToString().Trim());
-                                    checkNextSection = false;
-                                    break;
+                                    if ((sectionDictionary.Values.ElementAt(j).ToString() + sectionDictionary.Values.ElementAt(j + 2).ToString()).Trim() == foundPara.Trim())
+                                    {
+                                        getFirstLine = sectionDictionary.Values.ElementAt(0).ToString().Trim();
+                                        allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
+                                        allPara.Add(sectionDictionary.Values.ElementAt(j + 1).ToString());
+                                        allPara.Add(sectionDictionary.Values.ElementAt(j + 2).ToString());
+                                        finalSectionOutput = SectionValParagraph(SectionNoCount, allPara, sectionDictionary.Values.ElementAt(j + 2).ToString().Trim());
+                                        checkNextSection = false;
+                                        break;
+                                    }
                                 }
                             }
                         }

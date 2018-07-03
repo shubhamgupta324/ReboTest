@@ -1488,7 +1488,7 @@ namespace ReboProject
 
                     string[] getSentanceColon = item["Pageoutput"].ToString().Split(new string[] { "; " }, StringSplitOptions.None);
                     string[] getSentanceFullStop = item["Pageoutput"].ToString().Split(new string[] { ". " }, StringSplitOptions.None);
-                    if (getSentanceFullStop[getSentanceFullStop.Count() - 1] == "")
+                    if (getSentanceFullStop[getSentanceFullStop.Count() - 1] == "" | getSentanceFullStop[getSentanceFullStop.Count() - 1] == " ")
                         getSentanceFullStop = getSentanceFullStop.Take(getSentanceFullStop.Count() - 1).ToArray();
                     List<string> wrongStrings = new List<string>();
                     List<string> y = getSentanceFullStop.ToList<string>();
@@ -1504,7 +1504,8 @@ namespace ReboProject
                     }
                     for (int k = 0; k < wrongStrings.Count(); k++)
                     {
-                        getSentanceFullStop[Array.IndexOf(getSentanceFullStop, wrongStrings[k]) - 1] = getSentanceFullStop[Array.IndexOf(getSentanceFullStop, wrongStrings[k]) - 1] + ". " + getSentanceFullStop[Array.IndexOf(getSentanceFullStop, wrongStrings[k])];
+                        if (Array.IndexOf(getSentanceFullStop, wrongStrings[k]) - 1 != -1)
+                            getSentanceFullStop[Array.IndexOf(getSentanceFullStop, wrongStrings[k]) - 1] = getSentanceFullStop[Array.IndexOf(getSentanceFullStop, wrongStrings[k]) - 1] + ". " + getSentanceFullStop[Array.IndexOf(getSentanceFullStop, wrongStrings[k])];
                         var listVal = new List<string>(getSentanceFullStop);
                         listVal.Remove(getSentanceFullStop[Array.IndexOf(getSentanceFullStop, wrongStrings[k])]);
                         getSentanceFullStop = listVal.ToArray();
