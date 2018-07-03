@@ -15,7 +15,6 @@ namespace ReboProject
         public static List<string> getSectionForPara(string para)
         {
             List<string> sectiongot = new List<string>();
-
             Dictionary<int, string> regexDictionary = new Dictionary<int, string>();
 
             regexDictionary.Add(1, @"^(\d{1,3}\.(:\d+\.?)*)\s"); //    1.
@@ -66,7 +65,7 @@ namespace ReboProject
             regexDictionary.Add(43, @"^[\s]*([A-Z][]])\s");  // [A]
             regexDictionary.Add(44, @"^[\s]*((?i)(section)[\s]*[A-Z])\s");  // section A
             regexDictionary.Add(45, @"^[\s]*((?i)(ARTICLE)[\s]*[A-Z])");  // ARTICLE A  
-
+            
             foreach (var item in regexDictionary)
             {
                 Regex regex = new Regex(item.Value);
@@ -115,7 +114,7 @@ namespace ReboProject
                     {
                         if (foundPara.IndexOf(sectionDictionary.Values.ElementAt(j).ToString()) != -1)
                         {
-                            if (sectionDictionary.Count <= j)
+                            if (j < sectionDictionary.Count-1)
                             {
                                 if (sectionDictionary.Values.ElementAt(j + 1).ToString().Trim().Length >= Int32.Parse(WebConfigurationManager.AppSettings["StringLength"]))
                                 {
@@ -131,15 +130,17 @@ namespace ReboProject
                                 }
                                 else
                                 {
-                                    if ((sectionDictionary.Values.ElementAt(j).ToString() + sectionDictionary.Values.ElementAt(j + 2).ToString()).Trim() == foundPara.Trim())
-                                    {
-                                        getFirstLine = sectionDictionary.Values.ElementAt(0).ToString().Trim();
-                                        allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
-                                        allPara.Add(sectionDictionary.Values.ElementAt(j + 1).ToString());
-                                        allPara.Add(sectionDictionary.Values.ElementAt(j + 2).ToString());
-                                        finalSectionOutput = SectionValParagraph(SectionNoCount, allPara, sectionDictionary.Values.ElementAt(j + 2).ToString().Trim());
-                                        checkNextSection = false;
-                                        break;
+                                    if (j < sectionDictionary.Count - 2) {
+                                        if ((sectionDictionary.Values.ElementAt(j).ToString() + sectionDictionary.Values.ElementAt(j + 2).ToString()).Trim() == foundPara.Trim())
+                                        {
+                                            getFirstLine = sectionDictionary.Values.ElementAt(0).ToString().Trim();
+                                            allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
+                                            allPara.Add(sectionDictionary.Values.ElementAt(j + 1).ToString());
+                                            allPara.Add(sectionDictionary.Values.ElementAt(j + 2).ToString());
+                                            finalSectionOutput = SectionValParagraph(SectionNoCount, allPara, sectionDictionary.Values.ElementAt(j + 2).ToString().Trim());
+                                            checkNextSection = false;
+                                            break;
+                                        }
                                     }
                                 }
                             }
@@ -165,11 +166,11 @@ namespace ReboProject
             var toSearch = "";
             Dictionary<int, string> regexDictionary = new Dictionary<int, string>();
             regexDictionary.Add(1, "[\\s]*([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}[\\s]*|\\d{0,2}[\\s]*)$"); //    1.
-            regexDictionary.Add(2, "[\\s]*([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}|\\d{0,2})$"); //    1.1 
-            regexDictionary.Add(3, "[\\s]*[\"]([a-zA-Z]{1}[\\s]*|\\d{0,2}[\\s]*)[\"]$"); //    1.1 
-            regexDictionary.Add(4, "[\\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[\\s]?"); //    1.1 
-            //if (!String.IsNullOrEmpty(finalSectionOutput)) {
-                var foundSectionName = false;
+            regexDictionary.Add(2, "[\\s]*[\"]([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}[\\s]*|\\d{0,2}[\\s]*)[\"]$"); //    1.1 
+            regexDictionary.Add(3, "[\\s]*([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}|\\d{0,2})$"); //    1.1 
+            regexDictionary.Add(4, "[\\s]*[\"]([a-zA-Z]{1}[\\s]*|\\d{0,2}[\\s]*)[\"]$"); //    1.1 
+            regexDictionary.Add(5, "[\\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[\\s]?"); //    1.1             //if (!String.IsNullOrEmpty(finalSectionOutput)) {
+            var foundSectionName = false;
                 foreach (var item in SectionName)
                 {
                     if (foundSectionName == false) {
