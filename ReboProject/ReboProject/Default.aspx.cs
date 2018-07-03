@@ -24,7 +24,7 @@ namespace ReboProject
         protected void TestClick(object sender, EventArgs e)
         {
             var watch = new System.Diagnostics.Stopwatch();
-            watch.Start();
+                watch.Start();
             string backEndVal = backEndData.Text; // get the value from front end
             if (backEndVal == "") // check if it has value else return
                 return;
@@ -155,6 +155,10 @@ namespace ReboProject
 
                                 pdfRead(fullFilePath, out savePage); // read pdf
 
+                                //var findNode = Program.SectionVal123(savePage);
+
+                                //var getTheSectionValue = Program.SectionVal123(savePage); // get the section value
+
                                 getAllFoundText(exclusionCount, fullFilePath, SearchWithin, resultSection, savePage, fileName, logic, out ja, out totalScoreDenominatorVal, out searchFieldScore); //  get the found text
 
                                 //--------------------scoring and final output ---------------------------------------------------------------------
@@ -174,10 +178,17 @@ namespace ReboProject
                             }
                         }
 
-                       
-                       
-                        if (ja2.Count == 0)// check if any result found
-                            resultFound = 0;
+
+                        
+                        if (ja2.Count > 0)// check if any result found
+                        {
+                            var getTheSectionValue = processing.SectionVal(savePage, (int)ja2[0]["pageNo"], (int)ja2[0]["paraNo"]); // get the section value
+                            ja2[0]["sectionVal"] = getTheSectionValue;
+                            ja2[0]["output"] = ja2[0]["output"].ToString().Replace("{{Paragraph Number}}", "<b>" + getTheSectionValue + "</b>");
+                        }
+                            
+
+
                         if (!ja3.HasValues && ja2.HasValues)
                         {
                             ja3.Add(ja2[0]);
@@ -357,7 +368,7 @@ namespace ReboProject
                     var i = 1;
                     foreach (TextGroup lineGroup in ordereddGroups)
                     {
-                        if ((prevRect.Bottom - lineGroup.Rect.Top) > 9)
+                        if ((prevRect.Bottom - lineGroup.Rect.Top) > 8.5)
                         { // current line is > 9 points lower than previous
                             saveLines.Add(i, sb1.ToString());
                             i++;
@@ -495,6 +506,7 @@ namespace ReboProject
                                     var searchVal = (AllSearchFieldKeyword).Replace("\"", "");
                                     matchData = Regex.Matches(getLineText, "[\"]" + searchVal + "[\"][^a-zA-Z0-9_]"); // find match
                                 }
+
                                 if (matchData.Count > 0) // if match there
                                 {
 
@@ -712,22 +724,24 @@ namespace ReboProject
                         var completeFilePathVal = getAllAcceptedText[entry.Key]["completeFilePath"];
                         var withInValFound = getAllAcceptedText[entry.Key]["foundWithIn"];
                         finalScore = entry.Value;
-                        Dictionary<int, string>.ValueCollection entry1 = savePage[pageNo].Values;
-                        var getTheSectionValue = processing.SectionVal(savePage, pageNo, paraNumber); // get the section value
-                        if (getTheSectionValue == "false")
-                            getTheSectionValue = "?";
+                        //Dictionary<int, string>.ValueCollection entry1 = savePage[pageNo].Values;
+                        ////var getTheSectionValue = processing.SectionVal(savePage, pageNo, paraNumber); // get the section value
+                        //var getTheSectionValue = "false";
+                        //if (getTheSectionValue == "false")
+                        //    getTheSectionValue = "?";
 
-                        var output = resultFormat.Replace("{{Document Name}}", "<b>" + fileNameVal.ToString() + "</b>").Replace("{{Paragraph Number}}", "<b>" + getTheSectionValue + "</b>").Replace("{{result}}", foundText).Replace("{{found text}}", AllSearchFieldKeyword1.ToString());
+                        var output = resultFormat.Replace("{{Document Name}}", "<b>" + fileNameVal.ToString() + "</b>").Replace("{{result}}", foundText).Replace("{{found text}}", AllSearchFieldKeyword1.ToString());
                         var jo1 = new JObject();
                         jo1["output"] = output;
                         jo1["Pageoutput"] = foundText;
                         jo1["AllSearchFieldKeyword"] = AllSearchFieldKeyword1;
                         jo1["fileName"] = fileNameVal;
                         jo1["pageNo"] = pageNo;
+                        jo1["paraNo"] = paraNumber;
                         jo1["score"] = finalScore +"%"+" - " + getAllScoringKeyword;
                         jo1["foundWithIn"] = withInValFound;
                         jo1["pageContent"] = pageContent;
-                        jo1["sectionVal"] = getTheSectionValue;
+                        jo1["sectionVal"] = "";
                         jo1["leaseName"] = LeaseName;
                         jo1["completeFilePath"] = completeFilePathVal;
                         ja1.Add(jo1);
