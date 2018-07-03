@@ -725,7 +725,8 @@ namespace ReboProject
                         }
                     }
                 }
-                sectionSinglePara = sectionSinglePara.Replace(lastAdded,"");
+                if(lastAdded != "")
+                    sectionSinglePara = sectionSinglePara.Replace(lastAdded,"");
                 sectionVal.Add(sectionSinglePara);
                // finalSection = finalSection + " " + sectionSinglePara;
             }

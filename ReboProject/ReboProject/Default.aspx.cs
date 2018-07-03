@@ -247,7 +247,6 @@ namespace ReboProject
                             jaLibCheck.RemoveAll();
                             jaLibCheck.Add(ja3[0]);
                             gotValueForConfiguration = true;
-                            saveDataToFolder(ja3, folderPath);
                             if (!OutputMatch.ContainsValue(ja2[0]["Pageoutput"].ToString()))
                             {
                                 OutputMatch.Add(nextDuplicateCheck, ja2[0]["Pageoutput"].ToString());
@@ -275,7 +274,6 @@ namespace ReboProject
                                 jaLibCheck.RemoveAll();
                                 jaLibCheck.Add(ja3[0]);
                                 gotValueForConfiguration = true;
-                                saveDataToFolder(ja3, folderPath);
                                 if (!OutputMatch.ContainsValue(ja2[0]["Pageoutput"].ToString()))
                                 {
                                     OutputMatch.Add(nextDuplicateCheck, ja2[0]["Pageoutput"].ToString());
@@ -317,7 +315,6 @@ namespace ReboProject
                                     ja3[0]["Pageoutput"] = ja3[0]["Pageoutput"].ToString() + pdfLibPara[0];
                                 else
                                     ja3[0]["Pageoutput"] = ja3[0]["Pageoutput"].ToString() + ". " + pdfLibPara[0];
-                                saveDataToFolder(ja3, folderPath);
 
                                 if (getCorrectSentances == "")
                                     getCorrectSentances = getCorrectSentances + " <b> (" + (configurationVal + 1) + ")</b>  " + pdfLibPara[0];
@@ -352,7 +349,6 @@ namespace ReboProject
                     jo4["correctString"] = "";
                     ja4.Add(jo4);
                     ja3.Add(ja4[0]);
-                    saveDataToFolder(ja4, folderPath);
                 }
                 finalOutput.Add(ja3[0]);
                 //---------------------------------------------------------------
@@ -446,7 +442,7 @@ namespace ReboProject
                             i++;
                             sb1.Clear();
                         }
-                        sb1.Append(lineGroup.Text);
+                        sb1.Append(lineGroup.Text + " ");
                         prevRect.String = lineGroup.Rect.String;
                     }
                     saveLines.Add(i, sb1.ToString());
@@ -916,33 +912,6 @@ namespace ReboProject
             }
         }
         
-        // save all data found in 
-        public void saveDataToFolder(JArray jArray, string folderPath)
-        {
-
-            var saveDataFolder = folderPath + "\\output";
-            var outputFilePath = saveDataFolder + "\\result.txt";
-
-            if (!Directory.Exists(saveDataFolder))//if output folder not exist
-                Directory.CreateDirectory(saveDataFolder);//create folder
-            else if (File.Exists(outputFilePath))
-                File.Delete(outputFilePath);
-
-            var pathString = System.IO.Path.Combine(saveDataFolder, "result.txt"); // create the input file
-
-            var dataMain = new JArray();
-            for (var i = 0; i < jArray.Count; i++)
-            {
-                var data = new JObject();
-                data["fileName"] = jArray[i]["fileName"].ToString();
-                data["searchField"] = jArray[i]["AllSearchFieldKeyword"].ToString();
-                data["pageNoVal"] = jArray[i]["pageNo"].ToString();
-                data["sectionVal"] = jArray[i]["sectionVal"].ToString();
-                dataMain.Add(data);
-            }
-            File.WriteAllText(pathString, dataMain.ToString());
-
-        }
 
         // check the library in whole pdf
         public void searchLibInPDF(JArray getExclusion, int exclusionCount, Dictionary<int, Dictionary<int, string>> savePage, string[] librarySet, string datapoint, out List<string> pdfLibPara, out List<int> pdfLibPageno, out List<int> pdfLibParaNo, out List<string> pdfLibValFound)
@@ -1080,6 +1049,7 @@ namespace ReboProject
                 {
                     foreach (var withIn in withInForSentence) // loop through all the within
                     {
+                        JObject collectCorrectSentanceOutputJO = new JObject();
                         MatchCollection matchData = null;
                         regexMatch(rgx, sentenceVal, withIn.Key, out matchData); // function to match
 
@@ -1090,137 +1060,16 @@ namespace ReboProject
                                 getAllTheSentence.Add(sentenceVal, item["searchFor"].ToString());
                                 sentenceSection.Add(item["sectionNo"].ToString());
                                 sentenceFileName.Add(item["fileName"].ToString());
+                                
+                                collectCorrectSentanceOutputJO["sentence"] = sentenceVal;
+                                collectCorrectSentanceOutputJO["sectionNo"] = item["sectionNo"].ToString();
+                                collectCorrectSentanceOutputJO["fileName"] = item["fileName"].ToString();
+                                collectCorrectSentanceOutputJO["search"] = item["searchFor"].ToString();
+                                collectCorrectSentanceOutput.Add(collectCorrectSentanceOutputJO);
                             }
                         }
                     }
                 }
-            }
-
-            Dictionary<string, string> allSetKeyword = new Dictionary<string, string>();
-            foreach (var item in resultAllKeyword)
-            {
-                allSetKeyword.Add(item["id"].ToString(), item["keyword"].ToString());
-            }
-            foreach (var searchVal in resultSearch)
-            {
-                var searchId = (int)searchVal["id"];
-                var searchAndCondition = searchVal["andCondition"];
-                var searchFormat = searchVal["format"].ToString();
-                var searchExclusion = searchVal["exclusion"];
-                Dictionary<string, string> getSearchExclusion = new Dictionary<string, string>();
-                foreach (var item in searchExclusion)
-                {
-                    getSearchExclusion.Add(item["keyword"].ToString(), item["Check"].ToString());
-                }
-                foreach (var andConditionVal in searchAndCondition)
-                {
-                    var andConditionId = (int)andConditionVal["id"];
-                    var andConditionOrCondition = andConditionVal["orCondition"];
-                    var checkNextOrCondition = true;
-                    foreach (var orConditionVal in andConditionOrCondition)
-                    {
-                        if (checkNextOrCondition == false)
-                            break;
-                        List<string> getKeyword = new List<string>();
-                        var orConditionKeyword = orConditionVal["keyword"].ToString();
-                        var orConditionCondition = (int)orConditionVal["condition"];
-                        var orConditionSentence = (int)orConditionVal["sentence"];
-                        var sentenceAsOutput = "";
-                        var orConditionFormat = orConditionVal["format"].ToString();
-                        string[] splitkeywordId = orConditionKeyword.Split('|');
-                        foreach (var item in splitkeywordId)
-                        {
-                            getKeyword.Add(allSetKeyword[item]);
-                        }
-                        var checkNextSentence = true;
-                        var next = 0;
-                        var checkNextSentenceExclusion = true;
-                        foreach (var singleSentence in getAllTheSentence)
-                        {
-                            if (checkNextSentence == false)
-                                break;
-                            foreach (var item in getSearchExclusion)
-                            {
-                                MatchCollection matchDataKey;
-                                regexMatch(rgx, singleSentence.Key, item.Key, out matchDataKey);
-                                MatchCollection matchDataValue;
-                                regexMatch(rgx, singleSentence.Key, item.Value, out matchDataValue);
-                                if (matchDataKey.Count > 0 && matchDataValue.Count > 0)
-                                {
-                                    checkNextSentenceExclusion = false;
-                                    break;
-                                }
-                            }
-                            if (checkNextSentenceExclusion == false)
-                                break;
-                            var count = 0;
-                            foreach (var toFIndVal in getKeyword)
-                            {
-                                var regexToFInd = "";
-                                var resultKeywordCopy = toFIndVal;
-                                if (toFIndVal.Contains("##d##"))
-                                {
-                                    var getFromString = resultKeywordCopy.Replace("##d##", "").Trim();
-                                    if (toFIndVal.IndexOf("##d##") == 0)
-                                        regexToFInd = @"([0-9\.]+[\s]*[" + getFromString + "])";
-                                    else
-                                        regexToFInd = @"([" + getFromString + "][\\s]*[0-9\\.]+)";
-                                }
-                                else
-                                {
-                                    regexToFInd = @"\b\s?" + rgx.Replace(toFIndVal, "\\$1") + "(\\s|\\b)";
-                                }
-                                Regex regex = new Regex(regexToFInd);
-                                var match = regex.Match(singleSentence.Key); // check if match found
-                                if (match.Success)
-                                {
-                                    JObject collectCorrectSentanceOutputJO = new JObject();
-                                    count++;
-                                    if (orConditionCondition == 1 && count == getKeyword.Count())
-                                    {
-                                        sentenceAsOutput = singleSentence.Key;
-                                        collectCorrectSentanceOutputJO["sentence"]= singleSentence.Key;
-                                        collectCorrectSentanceOutputJO["sectionNo"] = sentenceSection.ElementAt(next);
-                                        collectCorrectSentanceOutputJO["fileName"] = sentenceFileName.ElementAt(next);
-                                        collectCorrectSentanceOutputJO["search"] = singleSentence.Value;
-                                        collectCorrectSentanceOutput.Add(collectCorrectSentanceOutputJO);
-                                        checkNextOrCondition = false;
-                                        checkNextSentence = false;
-                                        break;
-                                    }
-                                    if (orConditionCondition == 0)
-                                    {
-                                        sentenceAsOutput = singleSentence.Key;
-                                        collectCorrectSentanceOutputJO["sentence"] = singleSentence.Key;
-                                        collectCorrectSentanceOutputJO["sectionNo"] = sentenceSection.ElementAt(next);
-                                        collectCorrectSentanceOutputJO["fileName"] = sentenceFileName.ElementAt(next);
-                                        collectCorrectSentanceOutputJO["search"] = singleSentence.Value;
-                                        collectCorrectSentanceOutput.Add(collectCorrectSentanceOutputJO);
-                                        checkNextOrCondition = false;
-                                        checkNextSentence = false;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        if (orConditionSentence == 1)
-                        {
-                            if (sentenceAsOutput == "")
-                                searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", "");
-                            else
-                                searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", sentenceAsOutput);
-                        }
-                        if (orConditionSentence == 0)
-                        {
-                            if (sentenceAsOutput == "")
-                                searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", "");
-                            else
-                                searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", orConditionFormat);
-                        }
-                    }
-                }
-                copyResultOutputFormat = copyResultOutputFormat.Replace("{{" + searchId + "}}", searchFormat);
-                finalOutputData = copyResultOutputFormat;
             }
         }
 
