@@ -77,7 +77,7 @@ namespace ReboProject
         //    }
         //    return "false";
         //}
-        public static string SectionVal(Dictionary<int, Dictionary<int, string>> savePage, int pageNo, int paraNumber)
+        public static string SectionValParagraph(Dictionary<int, Dictionary<int, string>> savePage, int pageNo, int paraNumber)
         {
 
             Dictionary<string, string> getTopVal = new Dictionary<string, string>();
@@ -96,6 +96,8 @@ namespace ReboProject
             notations.Add(6, ":");
             notations.Add(7, "section");
             notations.Add(8, "article");
+
+
 
             Dictionary<int, string> matchRegexNumeric = new Dictionary<int, string>();
 
@@ -336,24 +338,7 @@ namespace ReboProject
                                         var sectionGot = "";
                                         if (connections[check.Key] != "")
                                             getNotationType(notations, match.Value.Trim(), out sectionGot, out notationFoundIn);
-
-                                        //if(sectionGot != "")
-                                        //    allSectionVal.Add(match.Value.Trim());
-                                        //var getTheList = connections[keyToFindConnection];
-                                        //if (getTheList != null)
-                                        //{
-                                        //    if(sectionGot != getTopVal[getTheList])
-                                        //        searchNow = getTopVal[getTheList];
-                                        //}
-                                        //else
-                                        //    completeSectionFound = true;
-                                        //regexNow = AllowedChars;
-                                        //lastSection=sectionGot;
-                                        //paraNoVal = k;
-                                        //pageNoVal = i;
-                                        //matchNext = false;
-                                        //checkNextPage = false;
-                                        //checkNextPara = false;
+                                        
 
                                         var getValueFromConnection = connections[keyToFindConnection];
                                         if (sectionGot != "")
@@ -586,6 +571,170 @@ namespace ReboProject
                     }
                 }
             }
+        }
+
+        public static string SectionValSection(string pageContent, string output) {
+
+
+            Dictionary<int, string> matchRegexNumeric = new Dictionary<int, string>();
+
+            // NUMBERS
+
+            matchRegexNumeric.Add(1, @"^[\s]*(\d{1,3}\.(:\d+\.?)*)\s"); //    1.
+            matchRegexNumeric.Add(2, @"^[\s]*(\d{1,3}\.(?:\d+\.?)*)"); //    1., 1.1 
+            matchRegexNumeric.Add(3, @"^[\s]*((section)\s\d+\.(:\d+\.?)*)\s"); //    section 1.
+            matchRegexNumeric.Add(4, @"^[\s]*((section)\s\d+\.(?:\d+\.?)*)"); //   section 1., section 1.1 
+            matchRegexNumeric.Add(5, @"^[\s]*((article)\s\d)"); //   article 1,
+            matchRegexNumeric.Add(6, @"^[\s]*((article)\s\d+\.(?:\d+\.?)*)"); //   article 1., article 1.1 
+            matchRegexNumeric.Add(7, @"^[\s]*(\d{1,3}[:])\s"); //   1:
+            matchRegexNumeric.Add(8, @"^[\s]*(\d{1,3}[)])\s"); //   1)
+            matchRegexNumeric.Add(9, @"^[\s]*(\d{1,3}[]])\s"); //   1]
+            matchRegexNumeric.Add(10, @"^[\s]*([[]+\d+[]])\s"); //   [1]
+            matchRegexNumeric.Add(11, @"^[\s]*([[(]+\d+[)])\s"); //   (1)
+
+            matchRegexNumeric.Add(54, @"^[\s]*((Section)\s\d+\.(:\d+\.?)*)\s"); //    Section 1.
+            matchRegexNumeric.Add(55, @"^[\s]*((Article)\s\d)"); //   Article 1,
+            matchRegexNumeric.Add(56, @"^[\s]*((Section)\s\d+\.(?:\d+\.?)*)"); //   Section 1., Section 1.1 
+            matchRegexNumeric.Add(57, @"^[\s]*((Article)\s\d)"); //   Article 1., Article 1.1 
+            matchRegexNumeric.Add(58, @"^[\s]*((SECTION)\s\d+\.(?:\d+\.?)*)"); //   Section 1., Section 1.1 
+            matchRegexNumeric.Add(59, @"^[\s]*((ARTICLE)\s\d)"); //   Article 1., Article 1.1 
+
+            // ROMAN
+            // upper
+            matchRegexNumeric.Add(12, @"^[\s]*[(](?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[)]\s"); //    (xvii)
+            matchRegexNumeric.Add(13, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}\s"); //    xvii
+            matchRegexNumeric.Add(14, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[)]\s"); //    xvii)
+            matchRegexNumeric.Add(15, @"^[\s]*[[](?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[]]\s"); //    [xvii]
+            matchRegexNumeric.Add(16, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[]]\s"); //    xvii]
+            matchRegexNumeric.Add(17, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[:]\s"); //    xvii:
+            matchRegexNumeric.Add(18, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[.]\s"); //    xvii.
+            matchRegexNumeric.Add(19, @"^[\s]*(section)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}\s"); //    section xvii
+            matchRegexNumeric.Add(20, @"^[\s]*(article)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}"); //    article xvii
+
+            matchRegexNumeric.Add(52, @"^[\s]*(Section)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}\s"); //    Section xvii
+            matchRegexNumeric.Add(53, @"^[\s]*(Article)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}"); //    Article xvii
+            matchRegexNumeric.Add(60, @"^[\s]*(SECTION)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}\s"); //    SECTION xvii
+            matchRegexNumeric.Add(61, @"^[\s]*(ARTICLE)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}"); //    ARTICLE xvii
+
+            // lower
+            matchRegexNumeric.Add(21, @"^[\s]*[(](?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[)]\s"); //    (XVII)
+            matchRegexNumeric.Add(22, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}\s"); //    XVII
+            matchRegexNumeric.Add(23, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[)]\s"); //    XVII)
+            matchRegexNumeric.Add(24, @"^[\s]*[[](?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[]]\s"); //    [XVII]
+            matchRegexNumeric.Add(25, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[]]\s"); //    XVII]
+            matchRegexNumeric.Add(26, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[:]\s"); //    XVII:
+            matchRegexNumeric.Add(27, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[.]\s"); //    XVII.
+            matchRegexNumeric.Add(28, @"^[\s]*(section)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}\s"); //    section XVII
+            matchRegexNumeric.Add(29, @"^[\s]*(article)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}"); //    article XVII
+
+            matchRegexNumeric.Add(50, @"^[\s]*(Section)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}\s"); //    Section XVII
+            matchRegexNumeric.Add(51, @"^[\s]*(Article)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}"); //    Article XVII
+            matchRegexNumeric.Add(62, @"^[\s]*(SECTION)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}\s"); //    SECTION XVII
+            matchRegexNumeric.Add(63, @"^[\s]*(ARTICLE)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}"); //    ARTICLE XVII
+
+            // ALPHABET
+
+            matchRegexNumeric.Add(30, @"^[\s]*([a-z][.])\s");  //  a.
+            matchRegexNumeric.Add(31, @"^[\s]*([a-z][:])\s");  //  a: 
+            matchRegexNumeric.Add(32, @"^[\s]*([(][a-z][)])\s");  //    (a) 
+            matchRegexNumeric.Add(33, @"^[\s]*([a-z][)])\s");  // a) 
+            matchRegexNumeric.Add(34, @"^[\s]*([[][a-z][]])\s");  //   a] 
+            matchRegexNumeric.Add(35, @"^[\s]*([a-z][]])\s");  //     [a]
+            matchRegexNumeric.Add(36, @"^[\s]*((section)[\s]*[a-z])\s");  //      section a 
+            matchRegexNumeric.Add(37, @"^[\s]*((article)[\s]*[a-z])");  //      article a
+
+            matchRegexNumeric.Add(46, @"^[\s]*((Section)[\s]*[a-z])\s");  //    Section a
+            matchRegexNumeric.Add(47, @"^[\s]*((Article)[\s]*[a-z])");  //    Article a
+            matchRegexNumeric.Add(64, @"^[\s]*((SECTION)[\s]*[a-z])\s");  //    SECTION a
+            matchRegexNumeric.Add(65, @"^[\s]*((ARTICLE)[\s]*[a-z])");  //    ARTICLE a
+
+
+            matchRegexNumeric.Add(38, @"^[\s]*([A-Z][.])\s");  // A. 
+            matchRegexNumeric.Add(39, @"^[\s]*([A-Z][:])\s");  // A: 
+            matchRegexNumeric.Add(40, @"^[\s]*([(][A-Z][)])\s");  // (A) 
+            matchRegexNumeric.Add(41, @"^[\s]*([A-Z][)])\s");  // A) 
+            matchRegexNumeric.Add(42, @"^[\s]*([[][A-Z][]])\s");  // A]  
+            matchRegexNumeric.Add(43, @"^[\s]*([A-Z][]])\s");  // [A]    
+            matchRegexNumeric.Add(44, @"^[\s]*((section)[\s]*[A-Z])\s");  // section A    
+            matchRegexNumeric.Add(45, @"^[\s]*((article)[\s]*[A-Z])");  // article A    
+
+            matchRegexNumeric.Add(48, @"^[\s]*((Section)[\s]*[A-Z])\s");  // section A   
+            matchRegexNumeric.Add(49, @"^[\s]*((Article)[\s]*[A-Z])");  // Article A  
+            matchRegexNumeric.Add(66, @"^[\s]*((SECTION)[\s]*[A-Z])\s");  // SECTION A   
+            matchRegexNumeric.Add(67, @"^[\s]*((ARTICLE)[\s]*[A-Z])");  // ARTICLE A   
+
+            
+            string[] pageContentData = pageContent.Split(new[] { "|||" }, StringSplitOptions.None);
+            pageContentData = pageContentData.Take(pageContentData.Count() - 1).ToArray();
+            string[] outputData = output.Split(new[] { "|||. " }, StringSplitOptions.None);
+            outputData = outputData.Take(outputData.Count() - 1).ToArray();
+            var finalSection = "";
+
+            var getHeadSection = "";
+            foreach (var item in matchRegexNumeric)
+            {
+                Regex regex = new Regex(item.Value);
+                var matchHeadSection = regex.Match(pageContentData[0]); // check if match found
+                if (matchHeadSection.Success)
+                {
+                    getHeadSection = matchHeadSection.Value.Trim();
+                    break;
+                }
+            }
+            List<string> sectionVal = new List<string>();
+            for (int i = 0; i < outputData.Length; i++)
+            {
+                var sectionSinglePara = "";
+                var start =Array.IndexOf<string>(pageContentData, outputData[i]);
+                List<string> startRegex = new List<string>();
+                foreach (var item in matchRegexNumeric)
+                {
+                    Regex regex = new Regex(item.Value);
+                    var match = regex.Match(outputData[i]); // check if match found
+                    if (match.Success) {
+                        sectionSinglePara = sectionSinglePara + match.Value.Trim();
+                        startRegex.Add(item.Value);
+                        break;
+                    }
+                }
+
+                var lastAdded = "";
+                for (int j = start; j >=0; j--)
+                {
+                    var checkThisRegex = true;
+                    foreach (var item in matchRegexNumeric)
+                    {
+                        foreach (var val in startRegex)
+                        {
+                            if (val == item.Value)
+                            {
+                                checkThisRegex = false;
+                                break;
+                            }
+                        }
+                        if (checkThisRegex == false)
+                            continue;
+                        Regex regex = new Regex(item.Value);
+                        var match = regex.Match(pageContentData[j]); // check if match found
+
+                        if (match.Success && !sectionSinglePara.Contains(match.Value.Trim())) {
+                            lastAdded = match.Value.Trim();
+                            if (sectionSinglePara == "")
+                                startRegex.Add(item.Value);
+                            sectionSinglePara = match.Value.Trim() + " " + sectionSinglePara;
+                        }
+                    }
+                }
+                sectionSinglePara = sectionSinglePara.Replace(lastAdded,"");
+                sectionVal.Add(sectionSinglePara);
+               // finalSection = finalSection + " " + sectionSinglePara;
+            }
+            for (var i=0;i< sectionVal.Count();i++) {
+                finalSection = finalSection + " " + sectionVal[i];
+            }
+            finalSection = getHeadSection+" ("+finalSection+")";
+            
+            return finalSection;
         }
 
     }
