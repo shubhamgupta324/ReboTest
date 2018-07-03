@@ -31,7 +31,10 @@ namespace ReboProject
             // -------------get the common data----------------
             var backendObject = JObject.Parse(backEndVal.ToString()); // complete json 
             var folder = backendObject["folder"].ToString();// folder path
-            var resultset = backendObject["result"][0]["set"];// eg: {{filename}}; {{result}}: {{pagenumber}}
+            var resultSearch = backendObject["result"][0]["search"];// eg: {{filename}}; {{result}}: {{pagenumber}}
+            var SentenceResultOutputFormat = backendObject["result"][0]["SentenceoutputFormat"].ToString();// eg: {{filename}}; {{result}}: {{pagenumber}}
+            var resultOutputFormat = backendObject["result"][0]["outputFormat"].ToString();// eg: {{filename}}; {{result}}: {{pagenumber}}
+            var resultAllKeyword = backendObject["result"][0]["allKeyword"];// eg: {{filename}}; {{result}}: {{pagenumber}}
             var libraryVal = ""; // get all the library value
             if ((LibVal.Text) != "")
                 libraryVal = LibVal.Text;
@@ -75,8 +78,16 @@ namespace ReboProject
                 Dictionary<int, string> OutputMatch = new Dictionary<int, string>();
                 string getCorrectSentances = "";
                 JArray jaCompleteSentence = new JArray();
+                Dictionary<string, int> withInForSentence = new Dictionary<string, int>();
+                List<string> getParaForSentence = new List<string>();
+                Dictionary<string,string> getSectionAndFileName = new Dictionary<string, string>();
+                var getSectionAndFileNameAndSearchJA = new JArray();
+                var nextVal = 0;
+                var copyResultOutputFormat = SentenceResultOutputFormat;
                 for (var configurationVal = 0; configurationVal < configuration.Count(); configurationVal++)
                 {
+                    var getSectionAndFileNameAndSearchJO = new JObject();
+                    var getTheWithinDictionary = true;
                     var gotValueForConfiguration = false;
                     var myKey = configurationOrder.FirstOrDefault(x => x.Value == list[configurationVal]).Key;
                     var configurationIndexSelect = configurationOrder[myKey];
@@ -173,14 +184,23 @@ namespace ReboProject
                                 else
                                     getAllFoundText(startPageVal, endPageVal, getNode, exclusionCount, fullFilePath, SearchWithin, savePage, fileName, logic, out ja, out totalScoreDenominatorVal, out searchFieldScore, out withInScore); //  get the found text
 
+                                if (getTheWithinDictionary == true) { // get the within in Dictionary for sentence
+                                    foreach (var item in withInScore)
+                                    {
+                                        if (!withInForSentence.ContainsKey(item.Key)) // check if dictionary has the same key
+                                            withInForSentence.Add(item.Key, item.Value);
+                                    }
+                                }
+                                
+                                
                                 //--------------------scoring and final output ---------------------------------------------------------------------
                                 scoring(OutputMatch, LeaseName, savePage, totalScoreDenominatorVal, searchFieldScore, ja, multipleRead, out ja1, out accptedValThere, out finalScore);
 
                                 for (int i = 0; i < ja1.Count; i++)// get only one highest score value
                                 {
-                                    if (type == 1)
+                                    if (type == 1) // check in all pdf or stop if found in one
                                         readNextFile = 0;
-                                    if (TopfinalScore < finalScore)
+                                    if (TopfinalScore < finalScore) // check the score to get the highest
                                     {
                                         TopfinalScore = finalScore;
                                         ja2.RemoveAll();
@@ -189,34 +209,37 @@ namespace ReboProject
                                 }
                             }
                         }
-                    
                         
                         if (ja2.Count > 0)// check if any result found
                         {
+                            var getTheSectionValue = "";
                             if (SearchWithin == 3) {
                                 pdfRead(ja2[0]["completeFilePath"].ToString(), out savePage);
-                                var getTheSectionValue = processing.SectionValParagraph(savePage, (int)ja2[0]["pageNo"], (int)ja2[0]["paraNo"]); // get the section value
+
+                                getTheSectionValue = processing.SectionValParagraph(savePage, (int)ja2[0]["pageNo"], (int)ja2[0]["paraNo"]); // get the section value
                                 ja2[0]["sectionVal"] = getTheSectionValue;
-                                //ja2[0]["output"] = ja2[0]["output"].ToString().Replace("{{Paragraph Number}}", "<b>" + getTheSectionValue + "</b>");
                             }
                             if (SearchWithin == 2) {
-                                var getTheSectionValue = processing.SectionValSection(ja2[0]["pageContent"].ToString(),ja2[0]["Pageoutput"].ToString()); // get the section value
+                                getTheSectionValue = processing.SectionValSection(ja2[0]["pageContent"].ToString(),ja2[0]["Pageoutput"].ToString()); // get the section value
                                 ja2[0]["sectionVal"] = getTheSectionValue;
-                                //ja2[0]["output"] = ja2[0]["output"].ToString().Replace("{{Paragraph Number}}", "<b>" + getTheSectionValue + "</b>");
                             }
-                           
+                            if (!getParaForSentence.Contains(ja2[0]["Pageoutput"].ToString()))
+                            {
+                                //getParaForSentence.Add(ja2[0]["Pageoutput"].ToString());// get all the para in list for sentence
+                                ///getSectionAndFileNameAndSearch.Add(ja2[0]["fileNameVal"].ToString(), getTheSectionValue); AllSearchFieldKeyword nextVal
+                                getSectionAndFileNameAndSearchJO["Pageoutput"] = ja2[0]["Pageoutput"].ToString();
+                                getSectionAndFileNameAndSearchJO["fileName"] = ja2[0]["fileName"].ToString();
+                                getSectionAndFileNameAndSearchJO["sectionNo"] = getTheSectionValue;
+                                getSectionAndFileNameAndSearchJO["searchFor"] = ja2[0]["AllSearchFieldKeyword"].ToString();
+                                getSectionAndFileNameAndSearchJA.Add(getSectionAndFileNameAndSearchJO);
+                            }
+
                         }
-
-
-                        // get the correct sentance
-                        JArray jaSentenceCollection = new JArray();
-                        collectCorrectSentance(resultset, withInScore, ja2, out jaSentenceCollection);
-                        if (jaSentenceCollection.Count > 0)
-                            jaCompleteSentence.Add(jaSentenceCollection[0]);
-
+                        
 
                         if (ja2.Count == 0)// check if any result found
                             resultFound = 0;
+
                         if (!ja3.HasValues && ja2.HasValues)
                         {
                             ja3.Add(ja2[0]);
@@ -232,7 +255,7 @@ namespace ReboProject
                         {
                             if (ja3.HasValues && ja2.HasValues)
                             {
-                                ja3[0]["output"] = ja3[0]["output"].ToString() + System.Environment.NewLine + ja2[0]["output"].ToString();
+                                ja3[0]["output"] = ja3[0]["output"].ToString() + System.Environment.NewLine + "###" +ja2[0]["output"].ToString();
                                 ja3[0]["pageNo"] = ja3[0]["pageNo"].ToString() + " , " + ja2[0]["pageNo"].ToString();
                                 ja3[0]["fileName"] = ja3[0]["fileName"].ToString() + " , " + ja2[0]["fileName"].ToString();
                                 ja3[0]["score"] = ja3[0]["score"].ToString() + " ||| " + ja2[0]["score"].ToString();
@@ -275,7 +298,7 @@ namespace ReboProject
                                     getTheSectionValue = "?";
                                     //var output = resultset.Replace("{{Document Name}}", "").Replace("{{Paragraph Number}}", "<b>" + getTheSectionValue + "</b>").Replace("{{result}}", pdfLibPara[0]).Replace("{{found text}}", "....");
                                 var output = pdfLibPara[0];
-                                ja3[0]["output"] = ja3[0]["output"].ToString() + System.Environment.NewLine + output;
+                                ja3[0]["output"] = ja3[0]["output"].ToString() + System.Environment.NewLine + "###" + output;
                                 ja3[0]["foundWithIn"] = ja3[0]["foundWithIn"].ToString() + " ||| Library";
                                 ja3[0]["AllSearchFieldKeyword"] = ja3[0]["AllSearchFieldKeyword"].ToString() + " ||| Library";
                                 ja3[0]["pageNo"] = ja3[0]["pageNo"].ToString() + " , " + pdfLibPageno[0];
@@ -291,34 +314,37 @@ namespace ReboProject
                             }
                         }
                     }
+                    nextVal++;
                 }
-                
-                // build format
-                if (jaCompleteSentence.Count > 0)
-                {
+
+                // get the final output 
+                if (getSectionAndFileNameAndSearchJA.HasValues) {
+                    var finalOutputData = "";
+                    JArray collectCorrectSentanceOutput = new JArray();
+                    collectCorrectSentance(getSectionAndFileNameAndSearchJA, withInForSentence, resultAllKeyword, resultSearch, copyResultOutputFormat, out finalOutputData, out collectCorrectSentanceOutput);
                     var format = "";
-                    buildFormat(jaCompleteSentence, out format);
+                    buildFormat(collectCorrectSentanceOutput, finalOutputData, resultOutputFormat, out format);
                     ja3[0]["correctString"] = format;
                 }
 
                 if (ja3.Count == 0)
-            {
-                var ja4 = new JArray();
-                var jo4 = new JObject();
-                jo4["output"] = "Lease is silent";
-                jo4["AllSearchFieldKeyword"] = "";
-                jo4["fileName"] = "";
-                jo4["pageNo"] = 0;
-                jo4["score"] = 0;
-                jo4["sectionVal"] = "";
-                jo4["leaseName"] = LeaseName;
-                jo4["foundWithIn"] = "";
-                jo4["correctString"] = "";
-                ja4.Add(jo4);
-                ja3.Add(ja4[0]);
-                saveDataToFolder(ja4, folderPath);
-            }
-            finalOutput.Add(ja3[0]);
+                {
+                    var ja4 = new JArray();
+                    var jo4 = new JObject();
+                    jo4["output"] = "Lease is silent";
+                    jo4["AllSearchFieldKeyword"] = "";
+                    jo4["fileName"] = "";
+                    jo4["pageNo"] = 0;
+                    jo4["score"] = 0;
+                    jo4["sectionVal"] = "";
+                    jo4["leaseName"] = LeaseName;
+                    jo4["foundWithIn"] = "";
+                    jo4["correctString"] = "";
+                    ja4.Add(jo4);
+                    ja3.Add(ja4[0]);
+                    saveDataToFolder(ja4, folderPath);
+                }
+                finalOutput.Add(ja3[0]);
                 //---------------------------------------------------------------
             }
             frontEndData.Text = finalOutput.ToString(); // set the data in front end
@@ -975,106 +1001,6 @@ namespace ReboProject
                 checkAfterSubCaseWithInExclusion = false;
         }
 
-        // get all the correct sentance from all the para 
-        public void collectCorrectSentance(JToken resultset, Dictionary<string, int> withInScore, JArray ja2, out JArray jaSentenceCollection)
-        {
-            jaSentenceCollection = new JArray();
-            if (ja2.HasValues)
-            {
-                var checkNextFormat = true;
-                var getCorrectSentance = "";
-                for (int i = 0; i < resultset.Count(); i++)
-                {
-                    var toFInd = resultset[i]["toFind"];
-                    var format = resultset[i]["format"].ToString();
-                    for (int j = 0; j < toFInd.Count(); j++)
-                    {
-                        var getCorrectSentanceCopy = "";
-                        var toFIndVal = toFInd[j]["keyword"].ToString();
-                        var pageContent = ja2[0]["Pageoutput"].ToString(); // get the para
-                        string[] getSentanceColon = pageContent.Split(new string[] { "; " }, StringSplitOptions.None);
-                        string[] getSentanceFullStop = pageContent.Split(new string[] { ". " }, StringSplitOptions.None);
-                        string[] getSentance = getSentanceColon.Count() > getSentanceFullStop.Count() ? getSentanceColon : getSentanceFullStop;
-                        var foundWithIn = ja2[0]["foundWithIn"].ToString();
-                        string[] allWithIn = { };
-                        if (foundWithIn != null)
-                            allWithIn = foundWithIn.Split('|'); // get all the within 
-                        Dictionary<string, int> getFinalSentence = new Dictionary<string, int>();
-                        HashSet<string> evenNumbers = new HashSet<string>();
-                        Regex rgx = new Regex("(['^$.|?*+()\\\\])");
-                        foreach (var sentanceVal in getSentance) // loop through all the sentance
-                        {
-                            foreach (var withIn in allWithIn) // loop through all the within
-                            {
-                                MatchCollection matchData = null;
-                                regexMatch(rgx, sentanceVal, withIn, out matchData); // function to match
-
-                                if (matchData.Count > 0) // if found add the score of that within
-                                {
-                                    evenNumbers.Add(sentanceVal);
-                                    getCorrectSentanceCopy = getCorrectSentanceCopy + " " + sentanceVal;
-                                }
-                            }
-                        }
-                        var count = 0;
-                        var regexToFInd = "";
-                        var resultKeywordCopy = toFIndVal;
-                        if (toFIndVal.Contains("##d##"))
-                        {
-                            var getFromString = resultKeywordCopy.Replace("##d##", "").Trim();
-                            if (toFIndVal.IndexOf("##d##") == 0)
-                                regexToFInd = @"([0-9\.]+[\s]*[" + getFromString + "])";
-                            else
-                                regexToFInd = @"([" + getFromString + "][\\s]*[0-9\\.]+)";
-                        }
-                        else
-                        {
-                            regexToFInd = @"\b\s?" + rgx.Replace(toFIndVal, "\\$1") + "(\\s|\\b)";
-                        }
-                        foreach (var item in evenNumbers)
-                        {
-                            if (toFIndVal == "")
-                            {
-                                count++;
-                                checkNextFormat = false;
-                                break;
-                            }
-                            Regex regex = new Regex(regexToFInd);
-                            var match = regex.Match(item); // check if match found
-                            if (match.Success)
-                            {
-                                count++;
-                                checkNextFormat = false;
-                                break;
-                            }
-                        }
-                        if (count > 0)
-                        {
-                            getCorrectSentance = getCorrectSentance + getCorrectSentanceCopy;
-                            var documentNameVal = ja2[0]["fileName"].ToString().ToLower();
-                            var joSentence = new JObject();
-                            if(documentNameVal.IndexOf("lease")==0)
-                                joSentence["DocumentName"] = "";
-                            else
-                                joSentence["DocumentName"] = ja2[0]["fileName"].ToString();
-                            joSentence["SectionNumber"] = ja2[0]["sectionVal"];
-                            joSentence["SearchFor"] = ja2[0]["AllSearchFieldKeyword"].ToString();
-                            joSentence["FoundText"] = getCorrectSentance;
-                            joSentence["Format"] = format;
-                            joSentence["caseSelected"] = i+1;
-                            jaSentenceCollection.Add(joSentence);
-                            //format = format.Replace("{{Document Name}}", ja2["fileName"].ToString()).Replace("{{searchFor}}", ja2["AllSearchFieldKeyword"].ToString()).Replace("{{found text}}", getCorrectSentance);
-                            break;
-                        }
-                            
-                    }
-                    if (checkNextFormat == false)
-                        break;
-                }
-            }
-
-        }
-
         public void getPageNo(int totalPages, string startRange, string endRange, out int startPageVal, out int endPageVal)
         {
             startPageVal = 0;
@@ -1123,50 +1049,211 @@ namespace ReboProject
             }
         }
 
-        public void buildFormat(JArray jaCompleteSentence, out string format)
+        // get all the correct sentance from all the para 
+        public void collectCorrectSentance(JArray getSectionAndFileNameAndSearchJA, Dictionary<string,int> withInForSentence,JToken resultAllKeyword,JToken resultSearch,string copyResultOutputFormat, out string finalOutputData, out JArray collectCorrectSentanceOutput)
+        {
+            finalOutputData = "";
+            collectCorrectSentanceOutput = new JArray();
+            Dictionary<string,string> getAllTheSentence = new Dictionary<string, string>();
+            List<string> sentenceSection = new List<string>();
+            List<string> sentenceFileName = new List<string>();
+            Regex rgx = new Regex("(['^$.|?*+()\\\\])");
+            foreach (var item in getSectionAndFileNameAndSearchJA)
+            {
+                
+                string[] getSentanceColon = item["Pageoutput"].ToString().Split(new string[] { "; " }, StringSplitOptions.None);
+                string[] getSentanceFullStop = item["Pageoutput"].ToString().Split(new string[] { ". " }, StringSplitOptions.None);
+                if (getSentanceColon.Count() < getSentanceFullStop.Count())
+                    getSentanceFullStop = getSentanceFullStop.Take(getSentanceFullStop.Count() - 1).ToArray();
+                string[] getSentance = getSentanceColon.Count() > getSentanceFullStop.Count() ? getSentanceColon : getSentanceFullStop;
+                foreach (var sentenceVal in getSentance)
+                {
+                    foreach (var withIn in withInForSentence) // loop through all the within
+                    {
+                        MatchCollection matchData = null;
+                        regexMatch(rgx, sentenceVal, withIn.Key, out matchData); // function to match
+
+                        if (matchData.Count > 0) // if found add the score of that within
+                        {
+                            if (!getAllTheSentence.ContainsKey(sentenceVal))
+                            {
+                                getAllTheSentence.Add(sentenceVal, item["searchFor"].ToString());
+                                sentenceSection.Add(item["sectionNo"].ToString());
+                                sentenceFileName.Add(item["fileName"].ToString());
+                            }
+                        }
+                    }
+                }
+            }
+
+            Dictionary<string, string> allSetKeyword = new Dictionary<string, string>();
+            foreach (var item in resultAllKeyword)
+            {
+                allSetKeyword.Add(item["id"].ToString(), item["keyword"].ToString());
+            }
+            foreach (var searchVal in resultSearch)
+            {
+                var searchId = (int)searchVal["id"];
+                var searchAndCondition = searchVal["andCondition"];
+                var searchFormat = searchVal["format"].ToString();
+                var searchExclusion = searchVal["exclusion"];
+                Dictionary<string, string> getSearchExclusion = new Dictionary<string, string>();
+                foreach (var item in searchExclusion)
+                {
+                    getSearchExclusion.Add(item["keyword"].ToString(), item["Check"].ToString());
+                }
+                foreach (var andConditionVal in searchAndCondition)
+                {
+                    var andConditionId = (int)andConditionVal["id"];
+                    var andConditionOrCondition = andConditionVal["orCondition"];
+                    var checkNextOrCondition = true;
+                    foreach (var orConditionVal in andConditionOrCondition)
+                    {
+                        if (checkNextOrCondition == false)
+                            break;
+                        List<string> getKeyword = new List<string>();
+                        var orConditionKeyword = orConditionVal["keyword"].ToString();
+                        var orConditionCondition = (int)orConditionVal["condition"];
+                        var orConditionSentence = (int)orConditionVal["sentence"];
+                        var sentenceAsOutput = "";
+                        var orConditionFormat = orConditionVal["format"].ToString();
+                        string[] splitkeywordId = orConditionKeyword.Split('|');
+                        foreach (var item in splitkeywordId)
+                        {
+                            getKeyword.Add(allSetKeyword[item]);
+                        }
+                        var checkNextSentence = true;
+                        var next = 0;
+                        var checkNextSentenceExclusion = true;
+                        foreach (var singleSentence in getAllTheSentence)
+                        {
+                            if (checkNextSentence == false)
+                                break;
+                            foreach (var item in getSearchExclusion)
+                            {
+                                MatchCollection matchDataKey;
+                                regexMatch(rgx, singleSentence.Key, item.Key, out matchDataKey);
+                                MatchCollection matchDataValue;
+                                regexMatch(rgx, singleSentence.Key, item.Value, out matchDataValue);
+                                if (matchDataKey.Count > 0 && matchDataValue.Count > 0)
+                                {
+                                    checkNextSentenceExclusion = false;
+                                    break;
+                                }
+                            }
+                            if (checkNextSentenceExclusion == false)
+                                break;
+                            var count = 0;
+                            foreach (var toFIndVal in getKeyword)
+                            {
+                                var regexToFInd = "";
+                                var resultKeywordCopy = toFIndVal;
+                                if (toFIndVal.Contains("##d##"))
+                                {
+                                    var getFromString = resultKeywordCopy.Replace("##d##", "").Trim();
+                                    if (toFIndVal.IndexOf("##d##") == 0)
+                                        regexToFInd = @"([0-9\.]+[\s]*[" + getFromString + "])";
+                                    else
+                                        regexToFInd = @"([" + getFromString + "][\\s]*[0-9\\.]+)";
+                                }
+                                else
+                                {
+                                    regexToFInd = @"\b\s?" + rgx.Replace(toFIndVal, "\\$1") + "(\\s|\\b)";
+                                }
+                                Regex regex = new Regex(regexToFInd);
+                                var match = regex.Match(singleSentence.Key); // check if match found
+                                if (match.Success)
+                                {
+                                    JObject collectCorrectSentanceOutputJO = new JObject();
+                                    count++;
+                                    if (orConditionCondition == 1 && count == getKeyword.Count())
+                                    {
+                                        sentenceAsOutput = singleSentence.Key;
+                                        collectCorrectSentanceOutputJO["sentence"]= singleSentence.Key;
+                                        collectCorrectSentanceOutputJO["sectionNo"] = sentenceSection.ElementAt(next);
+                                        collectCorrectSentanceOutputJO["fileName"] = sentenceFileName.ElementAt(next);
+                                        collectCorrectSentanceOutputJO["search"] = singleSentence.Value;
+                                        collectCorrectSentanceOutput.Add(collectCorrectSentanceOutputJO);
+                                        checkNextOrCondition = false;
+                                        checkNextSentence = false;
+                                        break;
+                                    }
+                                    if (orConditionCondition == 0)
+                                    {
+                                        sentenceAsOutput = singleSentence.Key;
+                                        collectCorrectSentanceOutputJO["sentence"] = singleSentence.Key;
+                                        collectCorrectSentanceOutputJO["sectionNo"] = sentenceSection.ElementAt(next);
+                                        collectCorrectSentanceOutputJO["fileName"] = sentenceFileName.ElementAt(next);
+                                        collectCorrectSentanceOutputJO["search"] = singleSentence.Value;
+                                        collectCorrectSentanceOutput.Add(collectCorrectSentanceOutputJO);
+                                        checkNextOrCondition = false;
+                                        checkNextSentence = false;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if (orConditionSentence == 1)
+                        {
+                            if (sentenceAsOutput == "")
+                                searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", "");
+                            else
+                                searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", sentenceAsOutput);
+                        }
+                        if (orConditionSentence == 0)
+                        {
+                            if (sentenceAsOutput == "")
+                                searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", "");
+                            else
+                                searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", orConditionFormat);
+                        }
+                    }
+                }
+                copyResultOutputFormat = copyResultOutputFormat.Replace("{{" + searchId + "}}", searchFormat);
+                finalOutputData = copyResultOutputFormat;
+            }
+        }
+
+        public void buildFormat(JArray jaCompleteData, string finalOutputData, string resultOutputFormat, out string format)
         {
             format = "";
-            Dictionary<int, string> getformat = new Dictionary<int, string>();
-            for (int i = 0; i < jaCompleteSentence.Count; i++)
-            {
-                if (!getformat.ContainsKey((int)jaCompleteSentence[i]["caseSelected"]))
-                    getformat.Add((int)jaCompleteSentence[i]["caseSelected"], jaCompleteSentence[i]["Format"].ToString());
-            }
-            var listSort = getformat.Keys.ToList();
-            listSort.Sort();
             var DocumentName = "";
             var SectionNumber = "";
             var SearchFor = "";
             var FoundText = "";
-            for (int i = 0; i < jaCompleteSentence.Count; i++)
+            for (int i = 0; i < jaCompleteData.Count; i++)
             {
-                if (!DocumentName.Contains(jaCompleteSentence[i]["DocumentName"].ToString()))
+                if (!DocumentName.Contains(jaCompleteData[i]["fileName"].ToString()))
                 {
                     if (DocumentName == "")
-                        DocumentName = DocumentName + jaCompleteSentence[i]["DocumentName"].ToString();
+                        DocumentName = DocumentName + jaCompleteData[i]["fileName"].ToString();
                     else
-                        DocumentName = DocumentName + ", " + jaCompleteSentence[i]["DocumentName"].ToString();
+                        DocumentName = DocumentName + ", " + jaCompleteData[i]["fileName"].ToString();
                 }
-                if (SectionNumber == "")
-                    SectionNumber = SectionNumber + jaCompleteSentence[i]["SectionNumber"].ToString();
-                else
-                    SectionNumber = SectionNumber + "& " + jaCompleteSentence[i]["SectionNumber"].ToString();
-
-                if (!DocumentName.Contains(jaCompleteSentence[i]["SearchFor"].ToString()))
+            }
+            for (int i = 0; i < jaCompleteData.Count; i++)
+            {
+                if (!SectionNumber.Contains(jaCompleteData[i]["sectionNo"].ToString()))
+                {
+                    if (SectionNumber == "")
+                        SectionNumber = SectionNumber + jaCompleteData[i]["sectionNo"].ToString();
+                    else
+                        SectionNumber = SectionNumber + "& " + jaCompleteData[i]["sectionNo"].ToString();
+                }
+            }
+            for (int i = 0; i < jaCompleteData.Count; i++)
+            {
+                if (!SearchFor.Contains(jaCompleteData[i]["search"].ToString()))
                 {
                     if (SearchFor == "")
-                        SearchFor = SearchFor + jaCompleteSentence[i]["SearchFor"].ToString();
+                        SearchFor = SearchFor + jaCompleteData[i]["search"].ToString();
                     else
-                        SearchFor = SearchFor + " and " + jaCompleteSentence[i]["SearchFor"].ToString();
+                        SearchFor = SearchFor + " and " + jaCompleteData[i]["search"].ToString();
                 }
-
-                if (FoundText == "")
-                    FoundText = FoundText + jaCompleteSentence[i]["FoundText"].ToString();
-                else
-                    FoundText = FoundText + ". " + jaCompleteSentence[i]["FoundText"].ToString();
             }
-            format = getformat[listSort[0]];
-            format = format.Replace("{{DocumentName}}", DocumentName).Replace("{{searchFor}}", SearchFor).Replace("{{found text}}", FoundText).Replace("{{Paragraph Number}}", SectionNumber);
+            FoundText = finalOutputData;
+
+            format = resultOutputFormat.Replace("{{DocumentName}}", DocumentName).Replace("{{searchFor}}", SearchFor).Replace("{{found text}}", FoundText).Replace("{{Paragraph Number}}", SectionNumber);
         }
     }
 }
