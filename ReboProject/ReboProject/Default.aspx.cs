@@ -504,7 +504,7 @@ namespace ReboProject
                             i++;
                             sb1.Clear();
                         }
-                        sb1.Append(lineGroup.Text);
+                        sb1.Append(lineGroup.Text + " ");
                         prevRect.String = lineGroup.Rect.String;
                     }
                     saveLines.Add(i, sb1.ToString());
