@@ -1009,6 +1009,7 @@ namespace ReboProject
                                                         SearchWithinText = getNextParaToCheck;
                                                         checkNextWithIn = false;
                                                         readNextPara = 1;
+                                                        foundWithIn = true;
                                                         // getCurrentParaSearchFor = AllSearchFieldKeyword;
                                                     }
                                                     else
@@ -1039,7 +1040,7 @@ namespace ReboProject
                                     if (hasSectionNo == false)
                                     {
                                         SearchWithinText = SearchWithinText + savePage[pageCount + 1][1];
-                                        sectionPageNos = pageCount + "|" + pageCount + 1;
+                                        sectionPageNos = pageCount + "|" + (pageCount + 1);
                                         readNextPara = 1;
                                     }
                                 }
