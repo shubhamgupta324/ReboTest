@@ -183,7 +183,7 @@ namespace ReboProject
                         var singleCorrectSentence = "";
                         collectCorrectSentance(withInScore, ja2, out singleCorrectSentence);
                         if (singleCorrectSentence != "")
-                            getCorrectSentances += " <b> (" + (configurationVal + 1) + ")</b>  " + singleCorrectSentence;
+                            getCorrectSentances += " <b> (" + (configurationVal + 1) + ")[</b>  " + singleCorrectSentence + " <b>]</b>";
 
 
                         if (ja2.Count == 0)// check if any result found
@@ -705,7 +705,7 @@ namespace ReboProject
                             scorePerSearch += (singleSearchFieldScore.Value * matchDataWithInIt.Count); // increment the score
                     }
                 }
-                setScoringKeyword = "("+ setScoringKeyword + ")";
+                setScoringKeyword = "( "+ setScoringKeyword + " )";
                 finalScorePerSearch = ((double)scorePerSearch / (double)totalScoreDenominatorVal) * 100; // get the percentage
                 scoreVal.Add(l, (float)finalScorePerSearch); // save that in deictionary
                 saveScoringKeyword.Add(l, setScoringKeyword);
@@ -870,18 +870,18 @@ namespace ReboProject
             if (ja2.HasValues)
             {
                 var pageContent = ja2[0]["Pageoutput"].ToString(); // get the para
-                string[] getSentance = pageContent.Split('.'); // split on "."
+                //string[] getSentance = pageContent.Split('hello'); // split on "."
+                //string[] getSentance = Regex.Split(pageContent, ". ");
+                string[] getSentance = pageContent.Split(new string[] { ". " }, StringSplitOptions.None);
                 var foundWithIn = ja2[0]["foundWithIn"].ToString(); 
                 string[] allWithIn = foundWithIn.Split('|'); // get all the within 
-
-                var sentenceFound = 0;
                 Dictionary<string, int> getFinalSentence = new Dictionary<string, int>();
+                HashSet<string> evenNumbers = new HashSet<string>();
                 foreach (var sentanceVal in getSentance) // loop through all the sentance
                 {
-                    var sentanceScore = 0;
                     foreach (var withIn in allWithIn) // loop through all the within
                     {
-                        var withInScoreVal = withInScore[withIn];
+                        //var withInScoreVal = withInScore[withIn];
                         var matchData = Regex.Matches(sentanceVal, @"\b\s?" + withIn + "\\b"); // find match
                         if ((withIn).IndexOf("\"") == 0)
                         {
@@ -895,16 +895,16 @@ namespace ReboProject
 
                         if (matchData.Count > 0) // if found add the score of that within
                         {
-                            sentanceScore += withInScoreVal;
-                            sentenceFound = 1;
+                            evenNumbers.Add(sentanceVal);
                         }
                     }
-                    if (sentenceFound == 1 && sentanceScore !=0)  // if score there add it in dictionary
-                        getFinalSentence.Add(sentanceVal, sentanceScore);
-                    sentenceFound = 0;
                 }
-                var output=getFinalSentence.OrderByDescending(x => x.Value).First(); // sort and get the high score sentence for para
-                getCorrectSentance = output.Key;
+                var count = 0;
+                foreach (var item in evenNumbers)
+                {
+                    count++;
+                    getCorrectSentance = getCorrectSentance + "<b>(" + count + ")</b>" + item;
+                }
             }
 
         }
