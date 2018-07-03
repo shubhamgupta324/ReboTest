@@ -116,6 +116,7 @@
                 var leaseNameVal = data[i].leaseName;
                 var correctStringVal =data[i].correctString;
                 htmlBuilderProject.push("<tr><td style='max-width:305px'>"+"("+leaseNameVal +")  "+ fileName + "</td ><td style='width:50px'>" + pageNumber + "</td > <td style='width:100px'>" + foundText + "</td><td style='width:115px'>" + scoreVal +"%"+ "</td><td style='width:115px'>" + foundWithInVal + "</td><td style='width:600px'>" + outputVal + "</td><td style='width:600px'>" + correctStringVal + "</td></tr>");
+
             }
             $("#allVal").html(htmlBuilderProject.join(""));
         }
