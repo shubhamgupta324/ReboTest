@@ -33,7 +33,7 @@ namespace ReboProject
             var multipleDatapointJson = backendObject["Datapoint"]; // get json for all datapoints
             var sectionLib = backendObject["sectionLib"]; // section library
             var collectSectionLib = "";
-            foreach (var item in sectionLib)
+            foreach (var item in sectionLib)//get all the section
             {
                 if (String.IsNullOrEmpty(collectSectionLib))
                     collectSectionLib = collectSectionLib + item;
@@ -43,11 +43,10 @@ namespace ReboProject
             //---------------------------------- read all files----------------------------------
             var folder = backendObject["folder"].ToString();// folder path
             var folderPath = "";
-            string drivePath = WebConfigurationManager.AppSettings["DrivePath"]; // get the access to d 
-            var userDefinePath = drivePath + folder;
-            string[] subdirectoryEntries = Directory.GetDirectories(userDefinePath);
+            string drivePath = WebConfigurationManager.AppSettings["DrivePath"]; // get the drive path
+            var userDefinePath = drivePath + folder;// get the project path
+            string[] subdirectoryEntries = Directory.GetDirectories(userDefinePath);// get all the lease folder
             var listVal = new List<string>(subdirectoryEntries);
-            listVal.Remove(drivePath+ folder+"\\"+"highlight");
             subdirectoryEntries = listVal.ToArray();
             string[] pdfFiles = { };
             var filepath = ""; // full file path
@@ -59,12 +58,12 @@ namespace ReboProject
             Dictionary<string, Dictionary<int, Dictionary<int, string>>> saveAllSectionRegex = new Dictionary<string, Dictionary<int, Dictionary<int, string>>>();  // save section for each page
             for (var folderval = 0; folderval < subdirectoryEntries.Length; folderval++)
             {
-                folderPath = subdirectoryEntries[folderval]; // get the folder from where to get pdf
+                folderPath = subdirectoryEntries[folderval]; // get the first folder
                 var fornotAbstractedLease = folderPath.Split('\\');
                 var fornotAbstractedLeaseName = fornotAbstractedLease[fornotAbstractedLease.Length - 1];
-                pdfFiles = Directory.GetFiles(folderPath, "*.pdf").Select(Path.GetFileName).ToArray(); // get all the pdf file in that folder\
+                pdfFiles = Directory.GetFiles(folderPath, "*.pdf").Select(Path.GetFileName).ToArray(); //get the pdf from folder
                 folder_fileName.Add(folderPath, pdfFiles);// get the folder name and the files in it
-                foreach (var fileNameVal in pdfFiles)
+                foreach (var fileNameVal in pdfFiles) // loop through all the pdfs
                 {
                     Dictionary<int, Dictionary<int, string>> savePageSingleFile = new Dictionary<int, Dictionary<int, string>>();  // save pagenumber and the para
                     Dictionary<int, Dictionary<int, string>> saveSectionNo = new Dictionary<int, Dictionary<int, string>>();  // save section for each para 
@@ -392,18 +391,21 @@ namespace ReboProject
                         nextVal++;
                     }
 
-                    // get the final output 
+                    // get complete output 
                     if (getSectionAndFileNameAndSearchJA.HasValues)
                     {
                         var finalOutputData = "";
                         JArray collectCorrectSentanceOutput = new JArray();
+                        // get the filename, sectionNo and data....
                         collectCorrectSentance(SearchWithinVal, checkNextLine, financialSelect, sentenceStart, sentenceEnd, SentenceResultOutputFormatCondition, getSectionAndFileNameAndSearchJA, withInForSentence, resultAllKeyword, resultSearch, copyResultOutputFormat, out finalOutputData, out collectCorrectSentanceOutput);
                         var format = "";
+                        // set the complete format
                         buildFormat(outputNotFoundMessage, collectCorrectSentanceOutput, finalOutputData, resultOutputFormat, out format);
+                        // save the format in json
                         ja3[0]["correctString"] = format;
                     }
 
-                    if (ja3.Count == 0)
+                    if (ja3.Count == 0) // if no output Found... display "Lease is silent"
                     {
                         var ja4 = new JArray();
                         var jo4 = new JObject();
@@ -420,7 +422,7 @@ namespace ReboProject
                         ja3.Add(ja4[0]);
                         //saveDataToFolder(ja4, folderPath);
                     }
-                    finalOutput.Add(ja3[0]);
+                    finalOutput.Add(ja3[0]); // saves output of all the datapoint-lease
                     //if (ja3[0]["output"].ToString() != "Lease is silent" && ja3[0]["output"].ToString() != "lease is silent")
                     //    highlightPdf(ja3[0]["output"].ToString(), ja3[0]["pageNo"].ToString(), ja3[0]["completeFilePath"].ToString(), ja3[0]["dataPointName"].ToString());
                     
@@ -433,7 +435,7 @@ namespace ReboProject
 
 
             frontEndData.Text = finalOutput.ToString(); // set the data in front end
-            watch.Stop();
+            watch.Stop(); // total time
             displayTime.Text = (watch.ElapsedMilliseconds / 60000).ToString() + " mins";
         }
 
@@ -525,6 +527,7 @@ namespace ReboProject
                 short PageIndex = 1;
                 var lastSectionPageNo = 0;
                 Dictionary<int, string> saveSectionPara = new Dictionary<int, string>();
+                var lastLine = "";
                 while (PageIndex <= doc.PageCount) // save the value in dictionary 
                 {
                     TextOperation op = new TextOperation(doc);
@@ -542,19 +545,37 @@ namespace ReboProject
                     Dictionary<int, string> saveSectionNoRegex = new Dictionary<int, string>();
 
                     var i = 1;
-
-                    List<string> sectionNo = new List<string>(); ;
+                    
+                    List<string> sectionNoCheck = new List<string>();
+                    var lineCount = 0;
+                    var nextPara = false;
                     foreach (TextGroup lineGroup in ordereddGroups)
                     {
+                        nextPara = false;
                         if ((prevRect.Bottom - lineGroup.Rect.Top) > 8.5)
+                            nextPara = true;
+                        lineCount++;
+                        bool section = false;
+                        checkSection(collectSectionLib, sb1.ToString(), out section);
+
+                        if (section != true)
+                            sectionNoCheck = processing.getSectionForPara(lineGroup.Text, lastLine, nextPara); // get the section value
+                        else
+                        {
+                            sectionNoCheck.Add(null);
+                            sectionNoCheck.Add(null);
+                        }
+                        if (nextPara == true || sectionNoCheck.ElementAt(0) != null || section == true)
                         { // current line is > 9 points lower than previous
-                            saveLines.Add(i, sb1.ToString());
+                            if(lastLine == "")
+                                saveLines.Add(i, lineGroup.Text);
+                            else
+                                saveLines.Add(i, sb1.ToString());
                             // get section
-                            sectionNo = processing.getSectionForPara(sb1.ToString()); // get the section value
-                            saveSectionNo.Add(i, sectionNo[0]);
-                            saveSectionNoRegex.Add(i, sectionNo[1]);
-                            bool section = false;
-                            checkSection(collectSectionLib, sb1.ToString(), out section);
+                            //sectionNo = processing.getSectionForPara(sb1.ToString()); // get the section value
+                            saveSectionNo.Add(i, sectionNoCheck[0]);
+                            saveSectionNoRegex.Add(i, sectionNoCheck[1]);
+                            //checkSection(collectSectionLib, sb1.ToString(), out section);
                             nextSection++;
                             if (section == true)
                             {
@@ -573,6 +594,15 @@ namespace ReboProject
                             i++;
                             sb1.Clear();
                         }
+                        if (ordereddGroups.Count == lineCount)
+                        {
+                            var getStringLength = Int32.Parse(WebConfigurationManager.AppSettings["StringLength"]);
+                            if (lineGroup.Text.Length > getStringLength)
+                                lastLine = lineGroup.Text;
+                        }
+                        else
+                            lastLine = lineGroup.Text;
+
                         if (!lineGroup.Text.EndsWith(" "))
                             sb1.Append(lineGroup.Text + " ");
                         else
@@ -584,9 +614,9 @@ namespace ReboProject
                     nextSection++;
                     saveSectionPara.Add(nextSection, sb1.ToString());
                     // get section
-                    sectionNo = processing.getSectionForPara(sb1.ToString()); // get the section value
-                    saveSectionNo.Add(i, sectionNo[0]);
-                    saveSectionNoRegex.Add(i, sectionNo[1]);
+                    sectionNoCheck = processing.getSectionForPara(sb1.ToString(), lastLine, nextPara); // get the section value
+                    saveSectionNo.Add(i, sectionNoCheck[0]);
+                    saveSectionNoRegex.Add(i, sectionNoCheck[1]);
 
                     savePage.Add(PageIndex, saveLines);
                     savePageSection.Add(PageIndex, saveSectionNo);
@@ -1128,8 +1158,8 @@ namespace ReboProject
             }
         }
 
-        public void withInProcess(int exclusionCount ,string AllSearchFieldKeyword, bool checkExclusion, JToken getExclusion,JToken getSubCase, string SearchWithinText,Regex rgx, JToken getWithIn, out string acceptParaWithIn,out List<string> saveAllPara,out List<string> saveAllSearchFor,out bool checkInNextPara, out bool checkCompleteSection) {
-
+        public void withInProcess(int exclusionCount ,string AllSearchFieldKeyword, bool checkExclusion, JToken getExclusion,JToken getSubCase, string SearchWithinText,Regex rgx, JToken getWithIn, out string acceptParaWithIn,out List<string> saveAllPara,out List<string> saveAllSearchFor,out bool checkInNextPara, out bool checkCompleteSection)
+        {
             acceptParaWithIn = "";
             checkCompleteSection = true;
             saveAllPara =new  List<string>();
@@ -2325,7 +2355,9 @@ namespace ReboProject
         //        doc.Save(newFilePath);
         //    }
         //}
-        private string replaceSplChar(string text)
+
+        
+        private string replaceSplChar(string text)// replace special character before highlight...
         {
             var specialChar = "(,),*,\",^,#,$,!,@,%,~,{,},[,],\\,_,`,:,;,+,=,-,>,/";// get specail chars from web config
             var specialCharArr = specialChar.Split(','); // split by ','
