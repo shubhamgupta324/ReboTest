@@ -1,18 +1,16 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Web;
-using System.Web.UI;
-using System.Web.Configuration;
-using System.Web.UI.WebControls;
 using System.IO;
+using System.Linq;
 using System.Text;
-using Newtonsoft.Json.Linq;
+using System.Text.RegularExpressions;
+using System.Web.Configuration;
+using System.Web.UI;
+using System.Web.UI.WebControls;
 using WebSupergoo.ABCpdf10;
 using WebSupergoo.ABCpdf10.Operations;
-using System.Collections;
-using System.Text.RegularExpressions;
-using ReboProject;
 
 namespace ReboProject
 {
@@ -210,6 +208,7 @@ namespace ReboProject
                             var mainLeaseRead = (int)configuration[myKey - 1]["MainLeaseRead"];// skip main lease read
                             var pageNoRange = configuration[myKey - 1]["PageNoRange"];// skip main lease read
                             var startPage = pageNoRange[0]["startRange"].ToString();
+                            var readDuplicate = pageNoRange[0]["readDuplicate"].ToString();
                             var endPage = pageNoRange[0]["endRange"].ToString();
                             var startPageVal = 0;
                             var endPageVal = 0;
@@ -276,7 +275,7 @@ namespace ReboProject
                                     }
 
                                     //--------------------scoring and final output ---------------------------------------------------------------------
-                                    scoring(PageNoMatch, datapointName, OutputMatch, LeaseName, savePage, totalScoreDenominatorVal, searchFieldScore, ja, multipleRead, out ja1, out finalScore);
+                                    scoring(readDuplicate, PageNoMatch, datapointName, OutputMatch, LeaseName, savePage, totalScoreDenominatorVal, searchFieldScore, ja, multipleRead, out ja1, out finalScore);
 
                                     for (int i = 0; i < ja1.Count; i++)// get only one highest score value
                                     {
@@ -1356,7 +1355,7 @@ namespace ReboProject
         }
         //--------------------------------------------------------------------------------------------------------------------------------------
 
-        public void scoring(Dictionary<int, string>  PageNoMatch, string datapointName, Dictionary<int, string> OutputMatch, string LeaseName, Dictionary<int, Dictionary<int, string>> savePage, int totalScoreDenominatorVal, Dictionary<string, int> searchFieldScore, JArray ja, int multipleRead, out JArray ja1, out float finalScore)
+        public void scoring(string readDuplicate, Dictionary<int, string>  PageNoMatch, string datapointName, Dictionary<int, string> OutputMatch, string LeaseName, Dictionary<int, Dictionary<int, string>> savePage, int totalScoreDenominatorVal, Dictionary<string, int> searchFieldScore, JArray ja, int multipleRead, out JArray ja1, out float finalScore)
         {
             var onlyTopResult = true;
             ja1 = new JArray();
@@ -1411,16 +1410,22 @@ namespace ReboProject
                     for (var i= 0;i < OutputMatch.Count(); i++) // check for duplicate... if the same sentance is already an output
                     {
                         var duplicateByPage = false;
-                        if (sectionPageNos != "")
+                        if (readDuplicate == "1")
                         {
-                            List<string> foundResultPage = new List<string>(PageNoMatch.ElementAt(i).Value.Trim().Split('|'));
-                            List<string> currentResultPage = new List<string>(sectionPageNos.Trim().Split('|'));
-                            List<string> duplicates = foundResultPage.Intersect(currentResultPage).ToList();
-                            if (duplicates.Count > 0)
+                            if (sectionPageNos != "")
                             {
-                                duplicateByPage = true;
+                                List<string> foundResultPage = new List<string>(PageNoMatch.ElementAt(i).Value.Trim().Split('|'));
+                                List<string> currentResultPage = new List<string>(sectionPageNos.Trim().Split('|'));
+                                List<string> duplicates = foundResultPage.Intersect(currentResultPage).ToList();
+                                if (duplicates.Count > 0)
+                                {
+                                    duplicateByPage = true;
+                                }
                             }
                         }
+                        else
+                            duplicateByPage = true;
+                       
                             
                         
                         if ((OutputMatch.ElementAt(i).Value.Trim() == pageContent.Trim() | OutputMatch.ElementAt(i).Value.Trim().IndexOf(pageContent.Trim()) != -1 | pageContent.Trim().IndexOf(OutputMatch.ElementAt(i).Value.Trim()) != -1) & duplicateByPage == true)
@@ -1643,11 +1648,23 @@ namespace ReboProject
                     paragraphSection.Add(item["sectionNo"].ToString());
                     paragraphFileName.Add(item["fileName"].ToString());
 
-                    string[] finalBreak = { };
-                    string[] getSentanceColon = item["Pageoutput"].ToString().Split(new string[] { ""+ paraBreakCondition .Trim()+ " " }, StringSplitOptions.None);
-                    string[] getSentanceFullStop = item["Pageoutput"].ToString().Split(new string[] { ". " }, StringSplitOptions.None);
-                    if (paraBreakCondition.Trim() == "")
+                    var getAllBreakPoints = paraBreakCondition.Trim().Split('|');
+                    Dictionary<string, int> saveSplitIndex = new Dictionary<string, int>();
+                    saveSplitIndex.Add(".", item["Pageoutput"].ToString().IndexOf(". "));
+                    foreach (var singleBreak in getAllBreakPoints)
                     {
+                        var indexVal = item["Pageoutput"].ToString().IndexOf(singleBreak+ " ");
+                        saveSplitIndex.Add(singleBreak,indexVal);
+                    }
+                    var top = saveSplitIndex.OrderBy(pair => pair.Value);
+                    var topVal = top.First().Key;
+
+                    string[] finalBreak = { };
+
+                    //if (paraBreakCondition.Trim() == "")
+                    if (topVal == ".")
+                    {
+                        string[] getSentanceFullStop = item["Pageoutput"].ToString().Split(new string[] { ". " }, StringSplitOptions.None);
                         if (getSentanceFullStop[getSentanceFullStop.Count() - 1] == "" | getSentanceFullStop[getSentanceFullStop.Count() - 1] == " ")
                             getSentanceFullStop = getSentanceFullStop.Take(getSentanceFullStop.Count() - 1).ToArray();
                         List<string> wrongStrings = new List<string>();
@@ -1679,32 +1696,36 @@ namespace ReboProject
                         }
                         finalBreak = getSentanceFullStop;
                     }
-                   
 
-                    else if (paraBreakCondition.Trim() != "")
+                    //else if (paraBreakCondition.Trim() != "")
+                    else 
                     {
+                        string[] getSentanceColon = item["Pageoutput"].ToString().Split(new string[] { "" + topVal + " " }, StringSplitOptions.None);
                         List<string> finalSentences = new List<string>();
                         for (int i = 0; i < getSentanceColon.Count(); i++)
                         {
                             string[] splitString = getSentanceColon[i].Split(new string[] { ". " }, StringSplitOptions.None);
-                            List<string> splitOnFullStop = splitString.ToList<string>();
-                            List<string> wrongStringsFullStop = new List<string>();
-                            splitOnFullStop.RemoveAll(p => string.IsNullOrEmpty(p));
-                            for (var u = 0; u < splitOnFullStop.Count(); u++)
-                            {
-                                var trimString = splitOnFullStop[u].Trim();
-                                var nextLine = false;
-                                Regex regex = new Regex("^[\"|'|(|\\d]");
-                                var match = regex.Match(trimString); // check if match found
-                                if (match.Success)
+                            if (splitString.Count() == 1)
+                                finalSentences.Add(splitString[0]);
+                            else {
+                                List<string> splitOnFullStop = splitString.ToList<string>();
+                                List<string> wrongStringsFullStop = new List<string>();
+                                splitOnFullStop.RemoveAll(p => string.IsNullOrEmpty(p));
+                                for (var u = 0; u < splitOnFullStop.Count(); u++)
                                 {
-                                    nextLine = true;
+                                    var trimString = splitOnFullStop[u].Trim();
+                                    var nextLine = false;
+                                    Regex regex = new Regex("^[\"|'|(|\\d]");
+                                    var match = regex.Match(trimString); // check if match found
+                                    if (match.Success)
+                                    {
+                                        nextLine = true;
+                                    }
+                                    if (char.IsUpper(trimString[0]) | nextLine == true)
+                                    {
+                                        finalSentences.Add(trimString);
+                                    }
                                 }
-                                if (char.IsUpper(trimString[0]) | nextLine == true)
-                                {
-                                    finalSentences.Add(trimString);
-                                }
-                                
                             }
                         }
                         getSentanceColon = finalSentences.ToArray();
