@@ -1496,7 +1496,7 @@ namespace ReboProject
                         foreach (var item in allFormatSave)
                         {
                             var outputStringVal = item.Value;
-                            if (outputStringVal.IndexOf(sentenceAsOutput) != -1) {
+                            if (outputStringVal.IndexOf(sentenceAsOutput.Trim()) != -1 && sentenceAsOutput !="") {
                                 duplicateFound = true;
                                 break;
                             }
