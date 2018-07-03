@@ -1492,6 +1492,15 @@ namespace ReboProject
                             next++;
                         }
                         var finalOutputSentence = "";
+                        var duplicateFound = false;
+                        foreach (var item in allFormatSave)
+                        {
+                            var outputStringVal = item.Value;
+                            if (outputStringVal.IndexOf(sentenceAsOutput) != -1) {
+                                duplicateFound = true;
+                                break;
+                            }
+                        }
                         if (orConditionSentence == 1)
                         {
                             if (sentenceAsOutput != "")
@@ -1500,14 +1509,20 @@ namespace ReboProject
                                 {
                                     if (orConditionFormat.IndexOf("{{" + andConditionId + "}}") != -1)
                                     {
-                                        orConditionFormat = orConditionFormat.Replace("{{" + andConditionId + "}}", sentenceAsOutput);
+                                        if (searchFormat.IndexOf(sentenceAsOutput) == -1 && duplicateFound == false)
+                                            orConditionFormat = orConditionFormat.Replace("{{" + andConditionId + "}}", sentenceAsOutput);
+                                        else
+                                            orConditionFormat = orConditionFormat.Replace("{{" + andConditionId + "}}", "");
                                         startToEnd(sentenceStartList, sentenceEndList, orConditionFormat, out finalOutputSentence);
                                         stringOutput.Add(finalOutputSentence);
                                         searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", finalOutputSentence);
                                     }
                                     else
                                     {
-                                        startToEnd(sentenceStartList, sentenceEndList, sentenceAsOutput + " " + orConditionFormat, out finalOutputSentence);
+                                        if(searchFormat.IndexOf(sentenceAsOutput) == -1 && duplicateFound == false)
+                                            startToEnd(sentenceStartList, sentenceEndList, sentenceAsOutput + " " + orConditionFormat, out finalOutputSentence);
+                                        else
+                                            startToEnd(sentenceStartList, sentenceEndList,orConditionFormat, out finalOutputSentence);
                                         stringOutput.Add(finalOutputSentence);
                                         searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", finalOutputSentence);
                                     }
@@ -1515,9 +1530,14 @@ namespace ReboProject
                                 }
                                 else
                                 {
-                                    startToEnd(sentenceStartList, sentenceEndList, sentenceAsOutput, out finalOutputSentence);
-                                    stringOutput.Add(finalOutputSentence);
-                                    searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", finalOutputSentence);
+                                    if (searchFormat.IndexOf(sentenceAsOutput) == -1 && duplicateFound == false)
+                                    {
+                                        startToEnd(sentenceStartList, sentenceEndList, sentenceAsOutput, out finalOutputSentence);
+                                        stringOutput.Add(finalOutputSentence);
+                                        searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", finalOutputSentence);
+                                    }
+                                    else
+                                        searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", "");
                                 }
                             }
                         }
