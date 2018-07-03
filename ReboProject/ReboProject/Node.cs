@@ -8,6 +8,7 @@ namespace ReboProject
 {
     class Program
     {
+        // for Only section
         public static List<Dictionary<Dictionary<string, int>, int>> getSectionVal(int startPageVal,int endPageVal, Dictionary<int, Dictionary<int, string>> savePage, Dictionary<int, Dictionary<int, string>> savePageSectionRegex)
         {
             List<Dictionary<Dictionary<string, int>, int>> dataSet = new List<Dictionary<Dictionary<string, int>, int>>();
@@ -146,6 +147,7 @@ namespace ReboProject
             return dataSet;
         }
         
+        // get the section page number
         public static List<string> completeSection(int sectionPageNo, Dictionary<int, Dictionary<int, string>> savePage, Dictionary<string, int> sectionRegex, Dictionary<string, int> entry, string getLineText, string myRegex)
         {
             List<string> sectionData = new List<string>();
@@ -307,6 +309,7 @@ namespace ReboProject
             return sectionData;
         }
 
+        // get section para
         public static void getNotationType(string Sentence, int sectionPageNo, Dictionary<int, Dictionary<int, string>> savePage, out int pageNoVal, out int paraNoVal)
         {
             pageNoVal = 0;
@@ -330,6 +333,7 @@ namespace ReboProject
 
         }
 
+        // check if the para has section number or not for paragraph
         public static bool checkHasSectionNo(string sentence) {
             var hasSectionNo = false;
 
