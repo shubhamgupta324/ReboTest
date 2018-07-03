@@ -208,70 +208,64 @@ namespace ReboProject
             return sectiongot;
         }
 
-        public static void checkPara(bool readSection, int totalParaCount,int sentenceMergeCount, JToken subChild,List<string> sectionList,string[] sectionNoreadAllPara, out List<string> sectionListCopy, out int paraCountSave, out bool sectionCheckParent)
+        public static void checkPara(Dictionary<string, string> sectionList, string sectionNoreadAllParaData, JToken subChild, out List<string> sectionListCopy, out bool foundSection, out bool readSection)
         {
-            paraCountSave = 0;
-            sectionCheckParent = true;
+            foundSection = false;
+            readSection = true;
             sectionListCopy = new List<string>();
             foreach (var item in subChild)
             {
                 sectionListCopy = new List<string>();
-                paraCountSave = 0;
-                sectionList = new List<string>();
                 var child = item["children"];
                 var sectioNo = item["section"].ToString();
                 var paraData = item["para"];
                 var parentCheck = (int)item["parentCheck"];
 
-                foreach (var sectionNoreadAllParaData in sectionNoreadAllPara)
+                for (int j = 0; j < paraData.Count(); j++)
                 {
-                    var exitAllParaLoop = false;
-                    for (int j = 0; j < paraData.Count(); j++)
+                    var paraVal = paraData[j].ToString().Trim();
+                    if ((paraVal.IndexOf(sectionNoreadAllParaData.Trim()) != -1 | sectionNoreadAllParaData.Trim().IndexOf(paraVal) != -1) & paraVal.Length > 10)
                     {
-                        var paraVal = paraData[j].ToString().Trim();
-                        if ((paraVal.IndexOf(sectionNoreadAllParaData.Trim()) != -1 | sectionNoreadAllParaData.Trim().IndexOf(paraVal) != -1 ) & paraVal.Length > 50)
+                        if (!sectionListCopy.Contains(sectioNo) & !sectionList.ContainsKey(sectioNo))
                         {
-                            if (!sectionListCopy.Contains(sectioNo) & readSection == true)
+                            sectionList.Add(sectioNo, "sectionNo");
+                            foundSection = true;
+                            if (parentCheck == 1)
                             {
-                                sectionListCopy.Add(sectioNo);
-                                if (parentCheck == 1)
-                                {
-                                    readSection = false;
-                                    sectionCheckParent = false;
-                                }
-                            }
-                                
-                            totalParaCount++;
-                            paraCountSave = totalParaCount;
-                            if (totalParaCount == sentenceMergeCount)
-                            {
-                                exitAllParaLoop = true;
+                                readSection = false;
                                 break;
                             }
                         }
-                        if (exitAllParaLoop == true)
-                            break;
                     }
                 }
-
-                if (child.Count()>0 & readSection == true)
-                    checkPara(readSection, totalParaCount, sentenceMergeCount,child, sectionList, sectionNoreadAllPara, out sectionListCopy, out paraCountSave, out sectionCheckParent);
-                if (sectionListCopy.Count() > 0)
+                if (child.Count() > 0 & foundSection == false)
                 {
-                    if (!sectionListCopy.Contains(sectioNo) & readSection == true)
+                    checkPara(sectionList, sectionNoreadAllParaData, child, out sectionListCopy, out foundSection, out readSection);
+                    if (sectionListCopy.Count > 0 & foundSection == true)
                     {
-                        sectionListCopy.Add(sectioNo);
-                        if (parentCheck == 1)
+                        List<string> sectionListCopyList = new List<string>();
+                        foreach (var sectionData in sectionListCopy)
                         {
-                            readSection = false;
-                            sectionCheckParent = false;
+                            sectionListCopyList.Add(sectionData);
                         }
+                        if (readSection == true)
+                            sectionListCopyList.Add(sectioNo);
+                        if (parentCheck == 1)
+                            readSection = false;
+                        sectionListCopy = new List<string>();
+                        sectionListCopy = sectionListCopyList;
+                        foundSection = true;
+                        break;
                     }
-                    break;
                 }
+                else if (foundSection == true)
+                {
+                    sectionListCopy.Add(sectioNo);
+                }
+                if (foundSection == true)
+                    break;
             }
-
-        } 
+        }
 
         // get the complete section 
         public static string getCompleteParaSection(string SectionNoCount, JArray ja2, Dictionary<int, Dictionary<int, string>> saveSectionNoAllFiles, Dictionary<Dictionary<int, string>, int> saveAllSection, string outputPara, string DefaultSectionName, JToken SectionName, string singleFileSectionTree)
@@ -285,6 +279,18 @@ namespace ReboProject
             var sectionNoreadPara = ja2[0]["sectionNoreadPara"].ToString();
             var sectionNoreadAllPara = sectionNoreadPara.Split('|');
 
+            var sectionNoreadAllParaData = "";
+            var list = new List<string>(sectionNoreadAllPara);
+            if (sectionNoreadAllPara.Count() > 1)
+            {
+                if (list.ElementAt(1).Length > 20)
+                    sectionNoreadAllParaData = list.ElementAt(1);
+                else
+                    sectionNoreadAllParaData = list.ElementAt(0);
+            }
+            else
+                sectionNoreadAllParaData = list.ElementAt(0);
+
 
             var foundPara = "";
             if (outputPara == "")
@@ -296,104 +302,127 @@ namespace ReboProject
 
             var completeTree = JObject.Parse(singleFileSectionTree.ToString())["children"];
 
-            List<string> sectionList = new List<string>();
+            Dictionary<string, string> sectionList = new Dictionary<string, string>();
             List<string> sectionListCopy = new List<string>();
-            var foundSection = false;
 
             //----------get section data---------------
-            
+
             var toFInd = foundPara.Trim();
-            var totalParaCount = 0;
-            for (int i = 0; i < completeTree.Count(); i++)
+            var CheckNextChild = true;
+            for (int i = 0; i < completeTree.Count(); i++) // loop through complete tree
             {
-                var child = completeTree[i]["children"];
-                var childSection = completeTree[i]["section"].ToString();
+                var child = completeTree[i]["children"]; // get the children
+                var childSection = completeTree[i]["section"].ToString(); // get the section no
                 var SectionNameData = "";
                 if (completeTree[i]["SectionName"].ToString() != "")
-                    SectionNameData = completeTree[i]["SectionName"].ToString();
+                    SectionNameData = completeTree[i]["SectionName"].ToString(); // get the section name
                 else
                     SectionNameData = null;
                 var childCount = child.Count();
-                foreach (var item in child)
+
+                CheckNextChild = true;
+
+                foreach (var item in child) // loop through all the children of the section
                 {
-                    var sectionCheckParent = true;
-                    var readSection = true;
-                    var paraCountSave = 0;
                     var subChild = item["children"];
                     var sectioNo = item["section"].ToString();
                     var subChildCount = subChild.Count();
                     var paraData = item["para"];
                     var parentCheck = (int)item["parentCheck"];
-                    var exitAllParaLoop = false;
-                    foreach (var sectionNoreadAllParaData in sectionNoreadAllPara)
+                    var readSection = true;
+
+                    for (int j = 0; j < paraData.Count(); j++)
                     {
-                        for (int j = 0; j < paraData.Count(); j++)
+                        var paraVal = paraData[j].ToString().Trim();
+                        if ((paraVal.IndexOf(sectionNoreadAllParaData.Trim()) != -1 | sectionNoreadAllParaData.Trim().IndexOf(paraVal) != -1) & paraVal.Length > 20)
                         {
-                            var paraVal = paraData[j].ToString().Trim();
-                            if ((paraVal.IndexOf(sectionNoreadAllParaData.Trim()) != -1 | sectionNoreadAllParaData.Trim().IndexOf(paraVal) != -1) & paraVal.Length >50)
-                            //if (paraVal == sectionNoreadAllParaData.Trim())
+                            if (!sectionListCopy.Contains(sectioNo) & readSection == true & !sectionList.ContainsKey(sectioNo))
                             {
-                                if (!sectionListCopy.Contains(sectioNo) & readSection == true & !sectionList.Contains(sectioNo))
+                                sectionList.Add(sectioNo, "sectionNo");
+                                if (parentCheck == 1)
                                 {
-                                    sectionList.Add(sectioNo);
-                                    sectionListCopy.Add(sectioNo);
-                                    if (parentCheck == 1)
-                                        readSection = false;
-                                }
-                                totalParaCount++;
-                                paraCountSave = totalParaCount;
-                                if (totalParaCount == sentenceMergeCount)
-                                {
-                                    foundSection = true;
-                                    exitAllParaLoop = true;
+                                    CheckNextChild = false;
                                     break;
                                 }
-                            }
-                            if (exitAllParaLoop == true)
                                 break;
+                            }
                         }
                     }
-                    if (subChildCount > 0)
-                        checkPara(readSection, totalParaCount, sentenceMergeCount, subChild, sectionList, sectionNoreadAllPara, out sectionListCopy, out paraCountSave, out sectionCheckParent);
-                    if (sectionListCopy.Count() > 0 & paraCountSave >= sentenceMergeCount)
+                    if (subChildCount > 0 & CheckNextChild == true)
                     {
-                        if (sectionCheckParent == true & !sectionListCopy.Contains(sectioNo))
+                        var sectionNoReturn = new List<string>();
+                        var foundSection = false;
+                        checkPara(sectionList, sectionNoreadAllParaData, subChild, out sectionListCopy, out foundSection, out readSection);
+                        if (sectionListCopy.Count > 0 & foundSection == true)
                         {
-                            sectionListCopy.Add(sectioNo);
+                            List<string> sectionListCopyList = new List<string>();
+                            foreach (var sectionData in sectionListCopy)
+                            {
+                                sectionListCopyList.Add(sectionData);
+                            }
+                            if (readSection == true)
+                                sectionListCopyList.Add(sectioNo);
+                            sectionListCopy = new List<string>();
+                            sectionListCopy = sectionListCopyList;
+                            foundSection = true;
+                            CheckNextChild = false;
                         }
-                        foundSection = true;
+                    }
+                    if (sectionListCopy.Count() > 0 & CheckNextChild == false)
+                    {
+                        sectionList = new Dictionary<string, string>();
+                        foreach (var sectionData in sectionListCopy)
+                        {
+                            sectionList.Add(sectionData, "SectionNo");
+                        }
+                        if (SectionNameData != null)
+                            sectionList.Add(SectionNameData, "sectionParent");
+                        break;
+                    }
+                    else if (sectionList.Count() > 0)
+                    {
+                        if (SectionNameData != null)
+                            sectionList.Add(SectionNameData, "sectionParent");
+                        CheckNextChild = false;
                         break;
                     }
                 }
-                if (sectionList.Count() > 0 & foundSection == true)
-                    sectionList.Add(SectionNameData);
-                if (sectionListCopy.Count() > 0 & foundSection == true)
-                {
-                    sectionListCopy.Add(SectionNameData);
+                if (CheckNextChild == false)
                     break;
-                }
             }
 
-            var finalSectionVal = new List<string>();
-            if (sectionListCopy.Count() > 0)
-                finalSectionVal= sectionListCopy;
-            else if(sectionList.Count() > 0)
-                finalSectionVal = sectionList;
-            if (finalSectionVal.Count >0 )
+            var finalSectionVal = new Dictionary<string, string>();
+            finalSectionVal = sectionList;
+            if (finalSectionVal.Count > 0)
             {
-                if (finalSectionVal[finalSectionVal.Count - 1] != null | finalSectionVal[finalSectionVal.Count - 1] != "")
-                    getFirstLine = finalSectionVal[finalSectionVal.Count - 1];
+                if ((finalSectionVal.ElementAt(finalSectionVal.Count - 1).Key != null | finalSectionVal.ElementAt(finalSectionVal.Count - 1).Key != "") & finalSectionVal.ElementAt(finalSectionVal.Count - 1).Value == "sectionParent")
+                {
+                    getFirstLine = finalSectionVal.ElementAt(finalSectionVal.Count - 1).Key;
+                    finalSectionVal.Remove(getFirstLine);
+                }
+
                 else
                     getFirstLine = null;
 
-                finalSectionVal.RemoveAt(finalSectionVal.Count - 1);
+                var totalSectionShow = 0;
+                if (SectionNoCount == "0")
+                    totalSectionShow = finalSectionVal.Count;
+                else
+                    totalSectionShow = Int32.Parse(SectionNoCount);
+                var sectionCount = 0;
                 for (int i = finalSectionVal.Count - 1; i >= 0; i--)
                 {
-                    var sectionNoVal = finalSectionVal[i].Trim();
-                    if (finalSectionOutput == "")
-                        finalSectionOutput = sectionNoVal;
-                    else
-                        finalSectionOutput = finalSectionOutput + " " + sectionNoVal;
+                    sectionCount++;
+                    if (finalSectionVal.ElementAt(i).Key != null)
+                    {
+                        var sectionNoVal = finalSectionVal.ElementAt(i).Key.Trim();
+                        if (finalSectionOutput == "")
+                            finalSectionOutput = sectionNoVal;
+                        else
+                            finalSectionOutput = finalSectionOutput + " " + sectionNoVal;
+                    }
+                    if (sectionCount == totalSectionShow)
+                        break;
                 }
             }
             else
@@ -410,7 +439,7 @@ namespace ReboProject
                 regexDictionary.Add(3, "[\\s]*([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}|\\d{0,2})$"); //
                 regexDictionary.Add(4, "[\\s]*[\"]([a-zA-Z]{1}[\\s]*|\\d{0,2}[\\s]*)[\"]$"); //
                 regexDictionary.Add(5, "[\\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[\\s]?"); //
-                
+
                 foreach (var SecName in SectionName) // loop through all the main head sections 
                 {
                     if (foundSectionName == false)
@@ -438,7 +467,6 @@ namespace ReboProject
                 finalSectionOutput = DefaultSectionName + " " + finalSectionOutput;
             return finalSectionOutput;
         }
-
         // loop through all the section regex to get complete section number
         //public static string SectionValParagraph(string SectionNoCount, List<string> allPara, string ouputPara)
         //{
@@ -1477,14 +1505,8 @@ namespace ReboProject
         // tree view of section
         public static void createTree(Dictionary<Dictionary<int, string>, int> saveSection, Dictionary<Dictionary<int, string>, int> saveSectionWithsectionNo, Dictionary<Dictionary<int, string>, int> saveSectionWithRegex, List<string> sectionNameFound, out string finalJson)
         {
-             Dictionary<int, string> regexDictionary = new Dictionary<int, string>(); // check the regex 
-            
-            regexDictionary.Add(1, @"^(\d{1,3}\.\d(?:\d+\.?)*)[\s]?([(|\[]?([a-zA-Z]{1}|\d{0,3}|(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4})[]|)|:|.])?(?!\S)"); //    1.1  / 1.1 a)
-            regexDictionary.Add(2, @"^[\s]*((?i)(section)\s\d+\.(?:\d+\.?)*)(?!\S)"); //    section 1.1 
-            regexDictionary.Add(3, @"^[\s]*((?i)(article)\s\d+\.(?:\d+\.?)*)(?!\S)"); //  article 1.1 
-
             Node rootTop = new Node("ROOT", -1);
-            for ( int i = 0; i < saveSection.Count(); i++)
+            for (int i = 0; i < saveSection.Count(); i++)
             {
                 int defaultLevel = 0;
                 var regexVal = "";
@@ -1506,6 +1528,8 @@ namespace ReboProject
 
                 combinePara(sectionPara, sectionSectioNo, SectionRegex, out combineSectionPara, out combineSectionSectioNo, out combineSectionRegex, out parentSectionNo);
 
+                //treeCorrection(combineSectionPara, combineSectionSectioNo, combineSectionRegex);
+
                 List<string> allSection = new List<string>();
                 List<string> allregex = new List<string>();
                 for (int j = 0; j < combineSectionPara.Count(); j++)
@@ -1517,19 +1541,25 @@ namespace ReboProject
                     allSection.Add(sectioNo);
                     allregex.Add(regex);
 
+                    var rootSectionName = "";
+                    if (sectionNameFound.Count == 0)
+                        rootSectionName = "";
+                    else
+                        rootSectionName = sectionNameFound.ElementAt(i);
+
                     if (sectioNo == "" & combineSectionPara.Count() == 1)
                     {
                         root.Value = sectioNo;
                         root.Para = para;
-                        root.SectionName = sectionNameFound.ElementAt(i);
+                        root.SectionName = rootSectionName;
                     }
                     else
                     {
-                        if (j==0 & sectioNo == "")
+                        if (j == 0 & sectioNo == "")
                         {
                             root.Value = sectioNo;
                             root.Para = para;
-                            root.SectionName = sectionNameFound.ElementAt(i);
+                            root.SectionName = rootSectionName;
                         }
                         else
                         {
@@ -1537,7 +1567,7 @@ namespace ReboProject
 
                             if (stack.Count == 0)
                             {
-                                var child = new Node(sectioNo, root.Level + 1, para, regex,"", parent);
+                                var child = new Node(sectioNo, root.Level + 1, para, regex, "", parent);
                                 root.Children.Add(child);
                                 lastNode = child;
                                 stack.Push(new KeyValuePair<string, Node>(regex, root));
@@ -1545,7 +1575,7 @@ namespace ReboProject
                             else
                             {
                                 bool differentSection = false;
-                                if (matchedKeys.Contains(regex) & differentSection== false)
+                                if (matchedKeys.Contains(regex) & differentSection == false)
                                 {
                                     var breakFlag = false;
                                     while (breakFlag == false)
@@ -1555,7 +1585,7 @@ namespace ReboProject
                                         var top = stack.Peek();
                                         if (top.Key == regex)
                                         {
-                                            var child = new Node(sectioNo, top.Value.Level + 1, para, regex,"", parent);
+                                            var child = new Node(sectioNo, top.Value.Level + 1, para, regex, "", parent);
                                             top.Value.Children.Add(child);
 
                                             lastNode = child;
@@ -1572,7 +1602,7 @@ namespace ReboProject
                                 {
                                     if (lastNode != null)
                                     {
-                                        var child = new Node(sectioNo, lastNode.Level + 1, para, regex,"", parent);
+                                        var child = new Node(sectioNo, lastNode.Level + 1, para, regex, "", parent);
                                         lastNode.Children.Add(child);
                                         stack.Push(new KeyValuePair<string, Node>(regex, lastNode));
 
@@ -1585,11 +1615,16 @@ namespace ReboProject
                         }
                     }
                 }
+                //var finalSectionJson = CreateSectionJson(root).ToString();
+                //var completeSectionTree = JObject.Parse(finalSectionJson.ToString())["children"];
+                //var lastParaVal = JObject.Parse(finalSectionJson.ToString())["para"].ToObject<List<string>>();
+                //treeCorrection(completeSectionTree, lastParaVal);
                 rootTop.Children.Add(root);
+
             }
             finalJson = CreateJson(rootTop).ToString();
             //testc(rootTop);
-       }
+        }
 
         // combine all para within section 
         public static void combinePara(Dictionary<int,string> sectionPara, Dictionary<int, string> sectionSectioNo, Dictionary<int, string> sectionRegex,out Dictionary<int, List<string>> combineSectionPara, out Dictionary<int, string> combineSectionSectioNo, out Dictionary<int, string> combineSectionRegex, out List<int> parentSectionNo)
