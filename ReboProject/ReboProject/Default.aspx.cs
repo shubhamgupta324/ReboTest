@@ -1292,7 +1292,9 @@ namespace ReboProject
                     getSentanceFullStop = getSentanceFullStop.Take(getSentanceFullStop.Count() - 1).ToArray();
                 List<string> wrongStrings = new List<string>();
 
-
+                List<string> y = getSentanceFullStop.ToList<string>();
+                y.RemoveAll(p => string.IsNullOrEmpty(p));
+                getSentanceFullStop = y.ToArray();
                 for (int i = 1; i < getSentanceFullStop.Count(); i++)
                 {
                     var trimString = getSentanceFullStop[i].Trim();
