@@ -541,8 +541,6 @@ namespace ReboProject
                 short PageIndex = 1;
                 var lastSectionPageNo = 0;
                 Dictionary<int, string> saveSectionPara = new Dictionary<int, string>();
-                Dictionary<int, string> saveSectionSectonNo = new Dictionary<int, string>();
-                Dictionary<int, string> saveSectionRegex = new Dictionary<int, string>();
                 var lastLine = "";
                 while (PageIndex <= doc.PageCount) // save the value in dictionary 
                 {
@@ -592,12 +590,8 @@ namespace ReboProject
                             // get section
                             if (searchFound == 1 & lineCount > 1)
                             {
-                                saveSectionSectonNo.Add(i, null);
-                                saveSectionRegex.Add(i, null);
                                 saveSectionNo.Add(i, null);
                                 saveSectionNoRegex.Add(i, null);
-                                saveSectionSectonNo.Add(i, sectionNoCheck[0]);
-                                saveSectionRegex.Add(i, sectionNoCheck[1]);
                                 saveSectionNo.Add(i+1, sectionNoCheck[0]);
                                 saveSectionNoRegex.Add(i+1, sectionNoCheck[1]);
                                 firstParaNoSection = true;
