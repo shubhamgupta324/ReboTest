@@ -208,7 +208,7 @@ namespace ReboProject
                             var mainLeaseRead = (int)configuration[myKey - 1]["MainLeaseRead"];// skip main lease read
                             var pageNoRange = configuration[myKey - 1]["PageNoRange"];// skip main lease read
                             var startPage = pageNoRange[0]["startRange"].ToString();
-                            var readDuplicate = pageNoRange[0]["readDuplicate"].ToString();
+                            var readDuplicate = configuration[myKey - 1]["readDuplicate"].ToString();
                             var endPage = pageNoRange[0]["endRange"].ToString();
                             var startPageVal = 0;
                             var endPageVal = 0;
@@ -541,6 +541,8 @@ namespace ReboProject
                 short PageIndex = 1;
                 var lastSectionPageNo = 0;
                 Dictionary<int, string> saveSectionPara = new Dictionary<int, string>();
+                Dictionary<int, string> saveSectionSectonNo = new Dictionary<int, string>();
+                Dictionary<int, string> saveSectionRegex = new Dictionary<int, string>();
                 var lastLine = "";
                 while (PageIndex <= doc.PageCount) // save the value in dictionary 
                 {
@@ -571,10 +573,10 @@ namespace ReboProject
                             nextPara = true;
                         lineCount++;
                         bool section = false;
-                        checkSection(collectSectionLib, sb1.ToString(), out section);
+                        checkSection(collectSectionLib, lineGroup.Text.Trim(), out section);
 
                         if (section != true)
-                            sectionNoCheck = processing.getSectionForPara(lineGroup.Text, lastLine, nextPara); // get the section value
+                            sectionNoCheck = processing.getSectionForPara(lineGroup.Text.Trim(), lastLine, nextPara); // get the section value
                         else
                         {
                             sectionNoCheck.Add(null);
@@ -584,14 +586,18 @@ namespace ReboProject
                         { // current line is > 9 points lower than previous
                             searchFound++;
                             if (lastLine == "")
-                                saveLines.Add(i, lineGroup.Text);
+                                saveLines.Add(i, lineGroup.Text.Trim());
                             else
                                 saveLines.Add(i, sb1.ToString());
                             // get section
                             if (searchFound == 1 & lineCount > 1)
                             {
+                                saveSectionSectonNo.Add(i, null);
+                                saveSectionRegex.Add(i, null);
                                 saveSectionNo.Add(i, null);
                                 saveSectionNoRegex.Add(i, null);
+                                saveSectionSectonNo.Add(i, sectionNoCheck[0]);
+                                saveSectionRegex.Add(i, sectionNoCheck[1]);
                                 saveSectionNo.Add(i+1, sectionNoCheck[0]);
                                 saveSectionNoRegex.Add(i+1, sectionNoCheck[1]);
                                 firstParaNoSection = true;
@@ -631,16 +637,16 @@ namespace ReboProject
                         if (ordereddGroups.Count == lineCount)
                         {
                             var getStringLength = Int32.Parse(WebConfigurationManager.AppSettings["StringLength"]);
-                            if (lineGroup.Text.Length > getStringLength)
+                            if (lineGroup.Text.Trim().Length > getStringLength)
                                 lastLine = lineGroup.Text;
                         }
                         else
-                            lastLine = lineGroup.Text;
+                            lastLine = lineGroup.Text.Trim();
 
-                        if (!lineGroup.Text.EndsWith(" "))
-                            sb1.Append(lineGroup.Text + " ");
+                        if (!lineGroup.Text.Trim().EndsWith(" "))
+                            sb1.Append(lineGroup.Text.Trim() + " ");
                         else
-                            sb1.Append(lineGroup.Text);
+                            sb1.Append(lineGroup.Text.Trim());
                         prevRect.String = lineGroup.Rect.String;
                         lastSectionPageNo = PageIndex;
                     }
