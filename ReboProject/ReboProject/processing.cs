@@ -8,75 +8,7 @@ namespace ReboProject
 {
     public class processing
     {
-        //public static string SectionVal(Dictionary<int, Dictionary<int, string>> savePage, int pageNo, int paraNumber)
-        //{
-        //    //---------------------------REGEX--------------------------------------------------------
-        //    Dictionary<int, string> matchRegexNumeric = new Dictionary<int, string>();
-        //    matchRegexNumeric.Add(1, @"^(\d+\.(?:\d+\.?)*)"); //    (1.), (1.1) and (1.1.1)
-        //    matchRegexNumeric.Add(2, @"^(\d+(.\d+)+(\:\d+))"); //   (1.1:1)
-        //    matchRegexNumeric.Add(3, @"^(\d+(\:\d+))"); //  (1:1)
-        //    matchRegexNumeric.Add(4, @"^((section)\s\d+\.(?:\d+\.?)*)"); //   (section 1.), (section 1.1) and (section 1.1.1)
-        //    matchRegexNumeric.Add(5, @"^((section)\s\d+(.\d+)+(\:\d+))"); //    (section 1.1:1)
-        //    matchRegexNumeric.Add(6, @"^((section)\s\d+(\:\d+))"); //   (section 1:1)
-        //    matchRegexNumeric.Add(7, @"^(\(+\d+\))\s");  // (1)
-
-        //    matchRegexNumeric.Add(8, @"^[ \t](\d+\.(?:\d+\.?)*)"); //    ( 1.), ( 1.1) and ( 1.1.1)
-        //    matchRegexNumeric.Add(9, @"^[ \t](\d+(.\d+)+(\:\d+))"); //   ( 1.1:1)
-        //    matchRegexNumeric.Add(10, @"^[ \t](\d+(\:\d+))"); //  ( 1:1)
-        //    matchRegexNumeric.Add(11, @"^[ \t]((section)\s\d+\.(?:\d+\.?)*)"); //   ( section 1.), ( section 1.1) and ( section 1.1.1)
-        //    matchRegexNumeric.Add(12, @"^[ \t]((section)\s\d+(.\d+)+(\:\d+))"); //    ( section 1.1:1)
-        //    matchRegexNumeric.Add(13, @"^[ \t]((section)\s\d+(\:\d+))"); //   ( section 1:1)
-        //    matchRegexNumeric.Add(14, @"^[ \t](\(+\d+\))\s");  // ( 1)
-
-        //    Dictionary<int, string> matchRegexAlphabet = new Dictionary<int, string>();
-        //    matchRegexAlphabet.Add(1, @"^[ \t]([a-zA-Z]+\.)\s");  // a.  
-        //    matchRegexAlphabet.Add(2, @"^[ \t](\(+[a-zA-Z]+\))\s");  // (a)
-        //    matchRegexAlphabet.Add(3, @"^([a-zA-Z]+\.)\s");  // a.  
-        //    matchRegexAlphabet.Add(4, @"^(\(+[a-zA-Z]+\))\s");  // (a)
-
-        //    //-------------------------------------------------------------------------------------------
-        //    var count = pageNo - 3;
-        //    var endPageCheck = 0;
-        //    if (count > 0)
-        //        endPageCheck = pageNo - 2;
-
-        //    for (int i = pageNo; i > endPageCheck; i--) // loop through current and last 2 pages
-        //    {
-        //        var entry1 = savePage[i].Values; // get the content of current page
-        //        var paraCount = paraNumber-1; // paraNumber // get the para number of result in current page
-        //        if (i != pageNo) // if previous page 
-        //            paraCount = entry1.Count()-1; // take all para in a page to check
-        //        for (var j= paraCount;j >= 0; j--) { // loop th
-
-        //            var entry2 = entry1.ElementAt(j);
-        //            var textLower = @entry2.ToLower().ToString();
-        //            foreach (var check in matchRegexNumeric)
-        //            {
-        //                String AllowedChars = check.Value;
-        //                Regex regex = new Regex(AllowedChars);
-        //                var match = regex.Match(textLower);
-        //                if (match.Success)
-        //                {
-        //                    var sectionVal = (match.Value).Replace("section", "");
-        //                    return sectionVal;
-        //                }             
-        //            }
-        //            var text = @entry2.ToLower().ToString();
-        //            foreach (var  check in matchRegexAlphabet) {
-        //                String AllowedChars = check.Value;
-        //                Regex regex = new Regex(AllowedChars);
-        //                var match = regex.Match(text);
-        //                if (match.Success)
-        //                {
-        //                    var sectionVal = (match.Value).Replace("section", "");
-        //                    return sectionVal;
-                            
-        //                }
-        //            }
-        //        }
-        //    }
-        //    return "false";
-        //}
+       
         public static string SectionValParagraph(Dictionary<int, Dictionary<int, string>> savePage, int pageNo, int paraNumber)
         {
 
@@ -97,12 +29,8 @@ namespace ReboProject
             notations.Add(7, "section");
             notations.Add(8, "article");
 
-
-
             Dictionary<int, string> matchRegexNumeric = new Dictionary<int, string>();
-
             // NUMBERS
-
             matchRegexNumeric.Add(1, @"^[\s]*(\d+\.(:\d+\.?)*)\s"); //    1.
             matchRegexNumeric.Add(2, @"^[\s]*(\d+\.(?:\d+\.?)*)"); //    1., 1.1 
             matchRegexNumeric.Add(3, @"^[\s]*((section)\s\d+\.(:\d+\.?)*)\s"); //    section 1.
@@ -114,7 +42,6 @@ namespace ReboProject
             matchRegexNumeric.Add(9, @"^[\s]*(\d+[]])\s"); //   1]
             matchRegexNumeric.Add(10, @"^[\s]*([[]+\d+[]])\s"); //   [1]
             matchRegexNumeric.Add(11, @"^[\s]*([[(]+\d+[)])\s"); //   (1)
-
             matchRegexNumeric.Add(54, @"^[\s]*((Section)\s\d+\.(:\d+\.?)*)\s"); //    Section 1.
             matchRegexNumeric.Add(55, @"^[\s]*((Article)\s\d)"); //   Article 1,
             matchRegexNumeric.Add(56, @"^[\s]*((Section)\s\d+\.(?:\d+\.?)*)"); //   Section 1., Section 1.1 
@@ -133,7 +60,6 @@ namespace ReboProject
             matchRegexNumeric.Add(18, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[.]\s"); //    xvii.
             matchRegexNumeric.Add(19, @"^[\s]*(section)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}\s"); //    section xvii
             matchRegexNumeric.Add(20, @"^[\s]*(article)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}"); //    article xvii
-
             matchRegexNumeric.Add(52, @"^[\s]*(Section)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}\s"); //    Section xvii
             matchRegexNumeric.Add(53, @"^[\s]*(Article)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}"); //    Article xvii
             matchRegexNumeric.Add(60, @"^[\s]*(SECTION)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}\s"); //    SECTION xvii
@@ -149,14 +75,12 @@ namespace ReboProject
             matchRegexNumeric.Add(27, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[.]\s"); //    XVII.
             matchRegexNumeric.Add(28, @"^[\s]*(section)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}\s"); //    section XVII
             matchRegexNumeric.Add(29, @"^[\s]*(article)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}"); //    article XVII
-
             matchRegexNumeric.Add(50, @"^[\s]*(Section)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}\s"); //    Section XVII
             matchRegexNumeric.Add(51, @"^[\s]*(Article)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}"); //    Article XVII
             matchRegexNumeric.Add(62, @"^[\s]*(SECTION)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}\s"); //    SECTION XVII
             matchRegexNumeric.Add(63, @"^[\s]*(ARTICLE)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}"); //    ARTICLE XVII
 
             // ALPHABET
-
             matchRegexNumeric.Add(30, @"^[\s]*([a-z][.])\s");  //  a.
             matchRegexNumeric.Add(31, @"^[\s]*([a-z][:])\s");  //  a: 
             matchRegexNumeric.Add(32, @"^[\s]*([(][a-z][)])\s");  //    (a) 
@@ -165,13 +89,10 @@ namespace ReboProject
             matchRegexNumeric.Add(35, @"^[\s]*([a-z][]])\s");  //     [a]
             matchRegexNumeric.Add(36, @"^[\s]*((section)[\s]*[a-z])\s");  //      section a 
             matchRegexNumeric.Add(37, @"^[\s]*((article)[\s]*[a-z])");  //      article a
-
             matchRegexNumeric.Add(46, @"^[\s]*((Section)[\s]*[a-z])\s");  //    Section a
             matchRegexNumeric.Add(47, @"^[\s]*((Article)[\s]*[a-z])");  //    Article a
             matchRegexNumeric.Add(64, @"^[\s]*((SECTION)[\s]*[a-z])\s");  //    SECTION a
             matchRegexNumeric.Add(65, @"^[\s]*((ARTICLE)[\s]*[a-z])");  //    ARTICLE a
-
-
             matchRegexNumeric.Add(38, @"^[\s]*([A-Z][.])\s");  // A. 
             matchRegexNumeric.Add(39, @"^[\s]*([A-Z][:])\s");  // A: 
             matchRegexNumeric.Add(40, @"^[\s]*([(][A-Z][)])\s");  // (A) 
@@ -180,14 +101,12 @@ namespace ReboProject
             matchRegexNumeric.Add(43, @"^[\s]*([A-Z][]])\s");  // [A]    
             matchRegexNumeric.Add(44, @"^[\s]*((section)[\s]*[A-Z])\s");  // section A    
             matchRegexNumeric.Add(45, @"^[\s]*((article)[\s]*[A-Z])");  // article A    
-
             matchRegexNumeric.Add(48, @"^[\s]*((Section)[\s]*[A-Z])\s");  // section A   
             matchRegexNumeric.Add(49, @"^[\s]*((Article)[\s]*[A-Z])");  // Article A  
             matchRegexNumeric.Add(66, @"^[\s]*((SECTION)[\s]*[A-Z])\s");  // SECTION A   
             matchRegexNumeric.Add(67, @"^[\s]*((ARTICLE)[\s]*[A-Z])");  // ARTICLE A   
 
             //next 68
-
             Dictionary<int, string> connections = new Dictionary<int, string>();
             connections.Add(1,"numberVal"); //    1.
             connections.Add(2, ""); //    1., 1.1 
@@ -206,7 +125,6 @@ namespace ReboProject
             connections.Add(57, ""); //   Article 1., Article 1.1 
             connections.Add(58, ""); //   SECTION 1., SECTION 1.1 
             connections.Add(59, ""); //   ARTICLE 1., ARTICLE 1.1 
-
             connections.Add(12, "lowCaseNumeric"); //    (xvii)
             connections.Add(13, "lowCaseNumeric"); //    xvii
             connections.Add(14, "lowCaseNumeric"); //    xvii)
@@ -220,7 +138,6 @@ namespace ReboProject
             connections.Add(53, "lowCaseNumeric"); //    article xvii
             connections.Add(60, "lowCaseNumeric"); //    SECTION xvii
             connections.Add(61, "lowCaseNumeric"); //    ARTICLE xvii
-
             connections.Add(21, "upCaseNumeric"); //    (XVII)
             connections.Add(22, "upCaseNumeric"); //    XVII
             connections.Add(23, "upCaseNumeric"); //    XVII)
@@ -234,7 +151,6 @@ namespace ReboProject
             connections.Add(51, "upCaseNumeric"); //    article XVII
             connections.Add(62, "upCaseNumeric"); //    SECTION XVII
             connections.Add(63, "upCaseNumeric"); //    ARTICLE XVII
-
             connections.Add(30, "lowCaseAlpha");  //   A.
             connections.Add(31, "lowCaseAlpha");  //  A:
             connections.Add(32, "lowCaseAlpha");  //   (A)
@@ -247,8 +163,6 @@ namespace ReboProject
             connections.Add(49, "lowCaseAlpha");  //     Article A 
             connections.Add(66, "lowCaseAlpha");  //     SECTION A
             connections.Add(67, "lowCaseAlpha");  //     ARTICLE A 
-
-
             connections.Add(38, "upCaseAlpha");  // a. 
             connections.Add(39, "upCaseAlpha");  // a: 
             connections.Add(40, "upCaseAlpha");  // (a)  
@@ -261,7 +175,6 @@ namespace ReboProject
             connections.Add(47, "upCaseAlpha");  // article a    
             connections.Add(64, "upCaseAlpha");  // SECTION a    
             connections.Add(65, "upCaseAlpha");  // ARTICLE a  
-
 
 
             List<string> allSectionVal = new List<string>();
