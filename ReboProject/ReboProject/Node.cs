@@ -15,7 +15,7 @@ namespace ReboProject
         static Stack<KeyValuePair<int, Node>> stack = new Stack<KeyValuePair<int, Node>>();
         static List<int> matchedKeys = new List<int>();
         static Node lastNode;
-        public static Dictionary<Dictionary<string, int>, int> SectionVal123(Dictionary<int, Dictionary<int, string>> savePage)
+        public static Dictionary<Dictionary<string, int>, int> SectionVal123(int startPageVal,int endPageVal, Dictionary<int, Dictionary<int, string>> savePage)
         {
             //stack = new Stack<KeyValuePair<int, Node>>();
             //matchedKeys = new List<int>();
@@ -116,6 +116,10 @@ namespace ReboProject
             foreach (KeyValuePair<int, Dictionary<int, string>> entry in savePage) // get the page
             {
                 pageno++;
+                if (pageno < startPageVal)
+                    continue;
+                if (pageno > endPageVal)
+                    break;
                 if (startPage == 0)
                     startPage = pageno;
                 var paraNoVal = 0;

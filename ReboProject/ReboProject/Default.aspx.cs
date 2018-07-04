@@ -125,7 +125,11 @@ namespace ReboProject
                         var multipleRead = (int)configuration[myKey - 1]["MultipleRead"];  // to get score of multiple occurance
                         var SearchWithin = (int)configuration[myKey - 1]["SearchWithin"];// 1=page, 2=section, 3=paragraph
                         var mainLeaseRead = (int)configuration[myKey - 1]["MainLeaseRead"];// skip main lease read
-
+                        var pageNoRange = configuration[myKey - 1]["PageNoRange"];// skip main lease read
+                        var startPage = pageNoRange[0]["startRange"].ToString();
+                        var endPage = pageNoRange[0]["endRange"].ToString();
+                        var startPageVal = 0;
+                        var endPageVal = 0;
 
                         Dictionary<string, int> searchFieldScore = new Dictionary<string, int>(); // saves the foundtext
                         Dictionary<string, int> withInScore = new Dictionary<string, int>(); // saves the foundtext
@@ -159,15 +163,15 @@ namespace ReboProject
                                 //read the file
 
                                 pdfRead(fullFilePath, out savePage); // read pdf
-
+                                getPageNo(savePage.Count(), startPage, endPage, out startPageVal, out endPageVal);
                                 Dictionary<Dictionary<string, int>, int> getNode = new Dictionary<Dictionary<string, int>, int>();
                                 if (SearchWithin == 2)
                                 {
-                                    getNode = Program.SectionVal123(savePage);
-                                    getAllFoundText(getNode, exclusionCount, fullFilePath, SearchWithin, resultSection, savePage, fileName, logic, out ja, out totalScoreDenominatorVal, out searchFieldScore, out withInScore); //  get the found text
+                                    getNode = Program.SectionVal123(startPageVal, endPageVal, savePage);
+                                    getAllFoundText(startPageVal, endPageVal,getNode, exclusionCount, fullFilePath, SearchWithin, resultSection, savePage, fileName, logic, out ja, out totalScoreDenominatorVal, out searchFieldScore, out withInScore); //  get the found text
                                 }
                                 else
-                                    getAllFoundText(getNode, exclusionCount, fullFilePath, SearchWithin, resultSection, savePage, fileName, logic, out ja, out totalScoreDenominatorVal, out searchFieldScore, out withInScore); //  get the found text
+                                    getAllFoundText(startPageVal, endPageVal, getNode, exclusionCount, fullFilePath, SearchWithin, resultSection, savePage, fileName, logic, out ja, out totalScoreDenominatorVal, out searchFieldScore, out withInScore); //  get the found text
 
                                 //--------------------scoring and final output ---------------------------------------------------------------------
                                 scoring(OutputMatch, LeaseName, savePage, resultFormat, totalScoreDenominatorVal, searchFieldScore, ja, multipleRead, out ja1, out accptedValThere, out finalScore);
@@ -486,7 +490,7 @@ namespace ReboProject
         }
 
         //-----------------------------------------FOUND TEXT-----------------------------------------------------------------------------------
-        public void getAllFoundText(Dictionary<Dictionary<string, int>, int> getNode, int exclusionCount, string fullFilePath, int SearchWithin, int resultSection, Dictionary<int, Dictionary<int, string>> savePage, string fileName, JToken logic, out JArray ja, out int totalScoreDenominatorVal, out Dictionary<string, int> searchFieldScore, out Dictionary<string, int> withInScore)
+        public void getAllFoundText(int startPageVal, int endPageVal,Dictionary<Dictionary<string, int>, int> getNode, int exclusionCount, string fullFilePath, int SearchWithin, int resultSection, Dictionary<int, Dictionary<int, string>> savePage, string fileName, JToken logic, out JArray ja, out int totalScoreDenominatorVal, out Dictionary<string, int> searchFieldScore, out Dictionary<string, int> withInScore)
         {
             withInScore = new Dictionary<string, int>();
             totalScoreDenominatorVal = 0;
@@ -520,6 +524,10 @@ namespace ReboProject
                                 foreach (KeyValuePair<int, Dictionary<int, string>> entry in savePage) // get the page
                                 {
                                     pageCount += 1;
+                                    if (pageCount < startPageVal)
+                                        continue;
+                                    if (pageCount > endPageVal)
+                                        break;
                                     // saves the lineText
                                     JArray ja1Val = new JArray();
                                     StringBuilder sb3 = new StringBuilder();
@@ -541,7 +549,7 @@ namespace ReboProject
                         {
                             bool checkAfterSubCaseSearchFor = true;
                             JArray ja1Val = new JArray();
-                            processSearchForAndwithInSection(getSearchFor, entry, rgx, getSubCase, checkAfterSubCaseSearchFor, SearchWithin, resultSection, getWithIn, getExclusion, exclusionCount, gotResult, fileName, fullFilePath, out ja1Val);
+                            processSearchForAndwithInSection(startPageVal, endPageVal, getSearchFor, entry, rgx, getSubCase, checkAfterSubCaseSearchFor, SearchWithin, resultSection, getWithIn, getExclusion, exclusionCount, gotResult, fileName, fullFilePath, out ja1Val);
                             if (ja1Val.HasValues)
                                 ja.Add(ja1Val[0]);
                         }
@@ -644,7 +652,7 @@ namespace ReboProject
             }
         }
 
-        public void processSearchForAndwithInSection(JToken getSearchFor, KeyValuePair<Dictionary<string, int>, int> entry, Regex rgx, JToken getSubCase, bool checkAfterSubCaseSearchFor, int SearchWithin, int resultSection, JToken getWithIn, JToken getExclusion, int exclusionCount, int gotResult, string fileName, string fullFilePath, out JArray ja)
+        public void processSearchForAndwithInSection(int startPageVal, int endPageVal,JToken getSearchFor, KeyValuePair<Dictionary<string, int>, int> entry, Regex rgx, JToken getSubCase, bool checkAfterSubCaseSearchFor, int SearchWithin, int resultSection, JToken getWithIn, JToken getExclusion, int exclusionCount, int gotResult, string fileName, string fullFilePath, out JArray ja)
         {
             ja = new JArray();
             var pageCount = entry.Value;
@@ -996,5 +1004,64 @@ namespace ReboProject
 
         }
 
+        public void getPageNo(int totalPages, string startRange, string endRange, out int startPageVal, out int endPageVal)
+        {
+
+            startPageVal = 0;
+            endPageVal = 0;
+
+            // get start value
+            if (startRange == "")
+            {
+                startPageVal = 1;
+            }
+            else if (startRange.Contains("<"))
+            {
+                startPageVal = 1;
+            }
+            else if (startRange.Contains(">"))
+            {
+                var startRangeNumber = startRange.Replace(">", "");
+                var pageNo = Int32.Parse(startRangeNumber);
+                if (pageNo <= totalPages)
+                    startPageVal = pageNo;
+                else
+                    startPageVal = 1;
+            }
+            else if (!startRange.Contains(">") && !startRange.Contains("<"))
+            {
+                if (Int32.Parse(startRange) <= totalPages)
+                    startPageVal = Int32.Parse(startRange);
+                else
+                    startPageVal = 1;
+            }
+
+            // get end value
+            if (endRange == "")
+            {
+                endPageVal = totalPages;
+            }
+            else if (endRange.Contains("<"))
+            {
+                var endRangeNumber = endRange.Replace("<", "");
+                var pageNo = Int32.Parse(endRangeNumber);
+                if ((totalPages - pageNo) > 0 && startPageVal <= (totalPages - pageNo))
+                    endPageVal = totalPages - pageNo;
+                else
+                    endPageVal = totalPages;
+            }
+            else if (endRange.Contains(">"))
+            {
+                endPageVal = totalPages;
+            }
+            else if (!endRange.Contains(">") && !endRange.Contains("<"))
+            {
+                if (Int32.Parse(endRange) >= startPageVal && Int32.Parse(endRange) <= totalPages)
+                    endPageVal = Int32.Parse(endRange);
+                else
+                    endPageVal = Int32.Parse(endRange);
+            }
+
+        }
     }
 }
