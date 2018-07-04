@@ -41,9 +41,9 @@ namespace ReboProject
             afterCheckWord.Add(4, "days");
             afterCheckWord.Add(5, "months");
             afterCheckWord.Add(6, "years");
-            
 
-            if (!String.IsNullOrEmpty(lastLine) || nextPara == true) // if last line not there......(first page of pdf) or its a different para
+
+            if (String.IsNullOrEmpty(lastLine) || nextPara == true) // if last line not there......(first page of pdf) or its a different para
                 sectiongot = regexLoop(para);
             else // if last line there
             {
@@ -54,41 +54,15 @@ namespace ReboProject
                     var sectionNumber = sectiongot[0]; // get the section number
                     var sectionLength = sectionNumber.Length; // length of section number
                     var sentenceWithoutSection = paraCopy.Remove(0, sectionLength).Trim(); // remove section number from 
-                    var firsTChar = sentenceWithoutSection[0];
-                    if (firsTChar.ToString() == char.ToUpper(firsTChar).ToString())
-                    {
-                        if (lastLine.EndsWith(".") || lastLine.EndsWith(";") || lastLine.EndsWith(","))
+                    if (sentenceWithoutSection != "") {
+                        var firsTChar = sentenceWithoutSection[0];
+                        if (firsTChar.ToString() == char.ToUpper(firsTChar).ToString())
                         {
-                            foreach (var item in afterCheckWord)
+                            if (lastLine.EndsWith(".") || lastLine.EndsWith(";") || lastLine.EndsWith(","))
                             {
-                                if (sentenceWithoutSection.IndexOf("item") == 0)
+                                foreach (var item in afterCheckWord)
                                 {
-                                    sectiongot = new List<string>();
-                                    sectiongot.Add(null);
-                                    sectiongot.Add(null);
-                                    break;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            var checkBeforeWords = true;
-                            foreach (var item in afterCheckWord)
-                            {
-                                if (sentenceWithoutSection.IndexOf(item.Value) == 0)
-                                {
-                                    sectiongot = new List<string>();
-                                    sectiongot.Add(null);
-                                    sectiongot.Add(null);
-                                    checkBeforeWords = false;
-                                    break;
-                                }
-                            }
-                            if (checkBeforeWords == true)
-                            {
-                                foreach (var item in checkWordBefore)
-                                {
-                                    if (lastLine.EndsWith(item.Value))
+                                    if (sentenceWithoutSection.IndexOf(item.Value) == 0)
                                     {
                                         sectiongot = new List<string>();
                                         sectiongot.Add(null);
@@ -97,15 +71,44 @@ namespace ReboProject
                                     }
                                 }
                             }
+                            else
+                            {
+                                var checkBeforeWords = true;
+                                foreach (var item in afterCheckWord)
+                                {
+                                    if (sentenceWithoutSection.IndexOf(item.Value) == 0)
+                                    {
+                                        sectiongot = new List<string>();
+                                        sectiongot.Add(null);
+                                        sectiongot.Add(null);
+                                        checkBeforeWords = false;
+                                        break;
+                                    }
+                                }
+                                if (checkBeforeWords == true)
+                                {
+                                    foreach (var item in checkWordBefore)
+                                    {
+                                        if (lastLine.EndsWith(item.Value))
+                                        {
+                                            sectiongot = new List<string>();
+                                            sectiongot.Add(null);
+                                            sectiongot.Add(null);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
                         }
-                        
+                        else
+                        {
+                            sectiongot = new List<string>();
+                            sectiongot.Add(null);
+                            sectiongot.Add(null);
+                        }
                     }
-                    else
-                    {
-                        sectiongot = new List<string>();
-                        sectiongot.Add(null);
-                        sectiongot.Add(null);
-                    }
+                    
                 }
             }
             
@@ -119,11 +122,11 @@ namespace ReboProject
             List<string> sectiongot = new List<string>();
             Dictionary<int, string> regexDictionary = new Dictionary<int, string>(); // check the regex 
 
-            regexDictionary.Add(1, @"^([1-9]{1,3}\.(:\d+\.?)*)[\s]?([(|\[]?([a-zA-Z]{1}|\d{0,3}|(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4})[\]|)|:|.])?(?!\S)"); //    1./ 1. a)
-            regexDictionary.Add(2, @"^([1-9]{1,3}\.\d(?:\d+\.?)*)[\s]?([(|\[]?([a-zA-Z]{1}|\d{0,3}|(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4})[]|)|:|.])?(?!\S)"); //    1.1  / 1.1 a)
-            regexDictionary.Add(3, @"^[\s]*((?i)(section)\s\d+\.(:\d+\.?)*)(?!\S)"); //    section 1.
+            regexDictionary.Add(1, @"^(\d{1,3}\.(:\d+\.?)*)[\s]?([(|\[]?([a-zA-Z]{1}|\d{0,3}|(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4})[\]|)|:|.])?(?!\S)"); //    1./ 1. a)
+            regexDictionary.Add(2, @"^(\d{1,3}\.\d(?:\d+\.?)*)[\s]?([(|\[]?([a-zA-Z]{1}|\d{0,3}|(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4})[]|)|:|.])?(?!\S)"); //    1.1  / 1.1 a)
+            regexDictionary.Add(3, @"^[\s]*((?i)(section)\s\d*)(?!\S)"); //    section 1
             regexDictionary.Add(4, @"^[\s]*((?i)(section)\s\d+\.(?:\d+\.?)*)(?!\S)"); //    section 1.1 
-            regexDictionary.Add(5, @"^[\s]*((?i)(article)\s\d)"); //   article 1,
+            regexDictionary.Add(5, @"^[\s]*((?i)(article)\s\d*)(?!\S)"); //   article 1
             regexDictionary.Add(6, @"^[\s]*((?i)(article)\s\d+\.(?:\d+\.?)*)(?!\S)"); //  article 1.1 
             regexDictionary.Add(7, @"^[\s]*([1-9]{1,3}[:])(?!\S)"); //   1:
             regexDictionary.Add(8, @"^[\s]*([1-9]{1,3}[)])(?!\S)"); //   1)
@@ -327,9 +330,9 @@ namespace ReboProject
             // NUMBERS
             matchRegexNumeric.Add(1, @"^(\d{1,3}\.(:\d+\.?)*)[\s]?([(|\[]?([a-zA-Z]{1}|\d{0,3}|(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4})[\]|)|:|.])?(?!\S)"); //    1./ 1. a)
             matchRegexNumeric.Add(2, @"^(\d{1,3}\.\d(?:\d+\.?)*)[\s]?([(|\[]?([a-zA-Z]{1}|\d{0,3}|(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4})[]|)|:|.])?(?!\S)"); //    1.1  / 1.1 a)
-            matchRegexNumeric.Add(3, @"^[\s]*((?i)(section)\s\d+\.(:\d+\.?)*)(?!\S)"); //    section 1.
+            matchRegexNumeric.Add(3, @"^[\s]*((?i)(section)\s\d*)(?!\S)"); //    section 1
             matchRegexNumeric.Add(4, @"^[\s]*((?i)(section)\s\d+\.(?:\d+\.?)*)(?!\S)"); //    section 1.1 
-            matchRegexNumeric.Add(5, @"^[\s]*((?i)(article)\s\d)"); //   article 1,
+            matchRegexNumeric.Add(5, @"^[\s]*((?i)(article)\s\d*)(?!\S)"); //   article 1
             matchRegexNumeric.Add(6, @"^[\s]*((?i)(article)\s\d+\.(?:\d+\.?)*)(?!\S)"); //  article 1.1 
             matchRegexNumeric.Add(7, @"^[\s]*([1-9]{1,3}[:])(?!\S)"); //   1:
             matchRegexNumeric.Add(8, @"^[\s]*([1-9]{1,3}[)])(?!\S)"); //   1)
@@ -429,7 +432,6 @@ namespace ReboProject
 
             
             var notationFoundIn = "";
-            var checkNextPara = true;
             var matchNextRegex = true;
             var nextToSearchVal = "";
             var regexToSearchNext ="";
