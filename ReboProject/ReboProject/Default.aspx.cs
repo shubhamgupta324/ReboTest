@@ -33,6 +33,7 @@ namespace ReboProject
             var folder = backendObject["folder"].ToString();// folder path
             var resultSection = (int)backendObject["result"][0]["section"];// page or sentance or paragraph
             var resultFormat = backendObject["result"][0]["format"].ToString();// eg: {{filename}}; {{result}}: {{pagenumber}}
+            var resultKeyword = backendObject["result"][0]["keyword"].ToString();// eg: {{filename}}; {{result}}: {{pagenumber}}
             var libraryVal = ""; // get all the library value
             if ((LibVal.Text) != "")
                 libraryVal = LibVal.Text;
@@ -190,6 +191,7 @@ namespace ReboProject
                         if (ja2.Count > 0)// check if any result found
                         {
                             if (SearchWithin == 3) {
+                                pdfRead(ja2[0]["completeFilePath"].ToString(), out savePage); // read pdf
                                 var getTheSectionValue = processing.SectionValParagraph(savePage, (int)ja2[0]["pageNo"], (int)ja2[0]["paraNo"]); // get the section value
                                 ja2[0]["sectionVal"] = getTheSectionValue;
                                 ja2[0]["output"] = ja2[0]["output"].ToString().Replace("{{Paragraph Number}}", "<b>" + getTheSectionValue + "</b>");
@@ -205,7 +207,7 @@ namespace ReboProject
 
                         // get the correct sentance
                         var singleCorrectSentence = "";
-                        collectCorrectSentance(withInScore, ja2, out singleCorrectSentence);
+                        collectCorrectSentance(resultKeyword, withInScore, ja2, out singleCorrectSentence);
                         if (singleCorrectSentence != "")
                             getCorrectSentances = getCorrectSentances + " <b> (" + (configurationVal + 1) + ")[</b>  " + singleCorrectSentence + " <b>]</b>";
 
@@ -959,15 +961,15 @@ namespace ReboProject
         }
 
         // get all the correct sentance from all the para 
-        public void collectCorrectSentance(Dictionary<string, int> withInScore, JArray ja2, out string getCorrectSentance)
+        public void collectCorrectSentance(String resultKeyword, Dictionary<string, int> withInScore, JArray ja2, out string getCorrectSentance)
         {
             getCorrectSentance = "";
             if (ja2.HasValues)
             {
                 var pageContent = ja2[0]["Pageoutput"].ToString(); // get the para
-                //string[] getSentance = pageContent.Split('hello'); // split on "."
-                //string[] getSentance = Regex.Split(pageContent, ". ");
-                string[] getSentance = pageContent.Split(new string[] { ". " }, StringSplitOptions.None);
+                string[] getSentanceColon = pageContent.Split(new string[] { "; " }, StringSplitOptions.None);
+                string[] getSentanceFullStop = pageContent.Split(new string[] { ". " }, StringSplitOptions.None);
+                string[] getSentance = getSentanceColon.Count() > getSentanceFullStop.Count() ? getSentanceColon: getSentanceFullStop;
                 var foundWithIn = ja2[0]["foundWithIn"].ToString(); 
                 string[] allWithIn = foundWithIn.Split('|'); // get all the within 
                 Dictionary<string, int> getFinalSentence = new Dictionary<string, int>();
@@ -986,12 +988,32 @@ namespace ReboProject
                         }
                     }
                 }
+                //var count = 0;
+                //foreach (var item in evenNumbers)
+                //{
+                //    count++;
+                //    getCorrectSentance = getCorrectSentance + "<b>(" + count + ")</b>" + item;
+                //}
                 var count = 0;
+                var regexToFInd = "";
+                if (resultKeyword.Contains("##d##"))
+                {
+                    var getFromString = resultKeyword.Replace("##d##", "").Trim();
+                    regexToFInd = @"(\d+[\s]*[" + getFromString + "])";
+                }
+                else {
+                    regexToFInd = @"\b\s?" + rgx.Replace(resultKeyword, "\\$1") + "(\\s|\\b)";
+                }
                 foreach (var item in evenNumbers)
                 {
-                    count++;
-                    getCorrectSentance = getCorrectSentance + "<b>(" + count + ")</b>" + item;
+                    var matchData = Regex.Matches(item, regexToFInd);
+                    if (matchData.Count > 0)
+                    {
+                        count++;
+                        getCorrectSentance = getCorrectSentance + "<b>(" + count + ")</b>" + item;
+                    }
                 }
+
             }
 
         }
