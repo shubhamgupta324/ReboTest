@@ -520,6 +520,11 @@ namespace ReboProject
                                     var searchVal = (rgx.Replace(AllSearchFieldKeyword, "\\$1")).Replace("\"", "");
                                     matchData = Regex.Matches(getLineText, "[\"]" + searchVal + "[\"][^a-zA-Z0-9_]"); // find match
                                 }
+                                if (AllSearchFieldKeyword == "$")
+                                    matchData = Regex.Matches(getLineText, @"([$]+)"); // find match    
+                                if (AllSearchFieldKeyword == "%")
+                                    matchData = Regex.Matches(getLineText, @"(%)"); // find match
+
                                 if (matchData.Count > 0) // if match there
                                 {
 
