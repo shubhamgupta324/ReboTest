@@ -194,6 +194,7 @@ namespace ReboProject
                         if (ja2.Count > 0)// check if any result found
                         {
                             if (SearchWithin == 3) {
+                                pdfRead(ja2[0]["completeFilePath"].ToString(), out savePage);
                                 var getTheSectionValue = processing.SectionValParagraph(savePage, (int)ja2[0]["pageNo"], (int)ja2[0]["paraNo"]); // get the section value
                                 ja2[0]["sectionVal"] = getTheSectionValue;
                                 ja2[0]["output"] = ja2[0]["output"].ToString().Replace("{{Paragraph Number}}", "<b>" + getTheSectionValue + "</b>");
@@ -534,6 +535,7 @@ namespace ReboProject
                                     var paraNumber = 0;
                                     foreach (var checkPage in entry.Value) // each page value
                                     {
+                                        paraNumber = paraNumber + 1;
                                         processSearchForAndwithInParagraph(paraNumber, checkPage, AllSearchFieldKeyword, rgx, AllSearchFieldCaseCheck, getSubCase, checkAfterSubCaseSearchFor, SearchWithin, resultSection, getWithIn, getExclusion, exclusionCount, gotResult, fileName, pageCount, fullFilePath, out ja1Val);
                                         if (ja1Val.HasValues)
                                             ja.Add(ja1Val[0]);
@@ -564,7 +566,7 @@ namespace ReboProject
         {
 
             ja = new JArray();
-            paraNumber += 1;
+            //paraNumber += 1;
             var completeSectionText = "";
             var getLineText = checkPage.Value; // get the  line text
             MatchCollection matchData;
@@ -973,8 +975,6 @@ namespace ReboProject
             if (ja2.HasValues)
             {
                 var pageContent = ja2[0]["Pageoutput"].ToString(); // get the para
-                //string[] getSentance = pageContent.Split('hello'); // split on "."
-                //string[] getSentance = Regex.Split(pageContent, ". ");
                 string[] getSentance = pageContent.Split(new string[] { ". " }, StringSplitOptions.None);
                 var foundWithIn = ja2[0]["foundWithIn"].ToString(); 
                 string[] allWithIn = foundWithIn.Split('|'); // get all the within 
@@ -985,7 +985,7 @@ namespace ReboProject
                 {
                     foreach (var withIn in allWithIn) // loop through all the within
                     {
-                        MatchCollection matchData;
+                        MatchCollection matchData = null;
                         regexMatch(rgx, sentanceVal, withIn, out matchData); // function to match
                         
                         if (matchData.Count > 0) // if found add the score of that within
