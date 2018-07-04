@@ -2311,7 +2311,7 @@ namespace ReboProject
         public static List<string> getCurrencyAmount(string html)
         {
 
-            string Pattern = @"(?<SYMBOL>[$â‚¬Â£]){1}[\s]*(?<AMOUNT>[\d{1,3}(\.(\d(?:\d+\.?)*)?)?]+)";
+            string Pattern = @"(?<SYMBOL>[$â‚¬Â£]){1}[\s]*([\d{1,3}]+(\.\d(?:\d+\.?)*)?)";
             List<string> formattedString = new List<string>();
             foreach (Match m in Regex.Matches(html, Pattern))
             {
@@ -2804,7 +2804,7 @@ namespace ReboProject
             amountListCopy = new List<string>();
             foreach (var item in amountList)
             {
-                string Pattern = @"(?<SYMBOL>[$â‚¬Â£]){1}[\s]*(?<AMOUNT>[\d{1,3}(\.(\d(?:\d+\.?)*)?)?]+)";
+                string Pattern = @"(?<SYMBOL>[$â‚¬Â£]){1}[\s]*([\d{1,3}]+(\.\d(?:\d+\.?)*)?)";
                 foreach (Match m in Regex.Matches(item, Pattern))
                 {
                     amountListCopy.Add(m.Value);
