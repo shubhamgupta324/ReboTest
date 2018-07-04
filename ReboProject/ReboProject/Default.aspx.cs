@@ -364,7 +364,7 @@ namespace ReboProject
                                 jaLibCheck.RemoveAll();
                                 jaLibCheck.Add(ja3[0]);
                                 gotValueForConfiguration = true;
-                                saveDataToFolder(ja3, folderPath);
+                                //saveDataToFolder(ja3, folderPath);
                                 if (!OutputMatch.ContainsValue(ja2[0]["Pageoutput"].ToString()))
                                 {
                                     OutputMatch.Add(nextDuplicateCheck, ja2[0]["Pageoutput"].ToString().Replace("|||. ", "").Replace("###", "").Trim());
@@ -391,7 +391,7 @@ namespace ReboProject
                                     jaLibCheck.RemoveAll();
                                     jaLibCheck.Add(ja3[0]);
                                     gotValueForConfiguration = true;
-                                    saveDataToFolder(ja3, folderPath);
+                                    //saveDataToFolder(ja3, folderPath);
                                     if (!OutputMatch.ContainsValue(ja2[0]["Pageoutput"].ToString()))
                                     {
                                         OutputMatch.Add(nextDuplicateCheck, ja2[0]["Pageoutput"].ToString());
@@ -430,7 +430,7 @@ namespace ReboProject
                                         ja3[0]["Pageoutput"] = ja3[0]["Pageoutput"].ToString() + pdfLibPara[0];
                                     else
                                         ja3[0]["Pageoutput"] = ja3[0]["Pageoutput"].ToString() + ". " + pdfLibPara[0];
-                                    saveDataToFolder(ja3, folderPath);
+                                    //saveDataToFolder(ja3, folderPath);
 
                                     if (getCorrectSentances == "")
                                         getCorrectSentances = getCorrectSentances + " <b> (" + (configurationVal + 1) + ")</b>  " + pdfLibPara[0];
@@ -466,7 +466,7 @@ namespace ReboProject
                         jo4["correctString"] = "";
                         ja4.Add(jo4);
                         ja3.Add(ja4[0]);
-                        saveDataToFolder(ja4, folderPath);
+                        //saveDataToFolder(ja4, folderPath);
                     }
                     finalOutput.Add(ja3[0]);
                     //---------------------------------------------------------------
@@ -1278,7 +1278,8 @@ namespace ReboProject
                 
                 string[] getSentanceColon = item["Pageoutput"].ToString().Split(new string[] { "; " }, StringSplitOptions.None);
                 string[] getSentanceFullStop = item["Pageoutput"].ToString().Split(new string[] { ". " }, StringSplitOptions.None);
-                getSentanceFullStop = getSentanceFullStop.Take(getSentanceFullStop.Count() - 1).ToArray();
+                if(getSentanceFullStop[getSentanceFullStop.Count() - 1] == "")
+                    getSentanceFullStop = getSentanceFullStop.Take(getSentanceFullStop.Count() - 1).ToArray();
                 if (getSentanceColon.Count() > getSentanceFullStop.Count()) {
                     for (int i = 0; i < getSentanceColon.Count(); i++)
                     {
