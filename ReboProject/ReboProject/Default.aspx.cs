@@ -80,7 +80,7 @@ namespace ReboProject
                 var list = configurationOrder.Values.ToList();
                 list.Sort(); // sort to get the configuration order
                 
-                for (var folderval=0; folderval< savePageAllFiles.Count; folderval++)
+                for (var folderval=0; folderval< subdirectoryEntries.Length; folderval++)
                 {
                     var ja3 = new JArray(); // get the final output of one configuration from configuration
                     var jaLibCheck = new JArray(); // get the final output of one configuration from library
@@ -169,8 +169,8 @@ namespace ReboProject
 
                             // -----------get the file order--------------
                             ArrayList fileDetails = new ArrayList();
-                            var fileFullPathToRead = folder_fileName.Keys.ElementAt(folderval);
-
+                            
+                            var fileFullPathToRead = subdirectoryEntries[folderval];
                             fileToRead(folder_fileName,mainLeaseRead, fileFullPathToRead, sort, type, out fileDetails);
                             var FilePathPlusLeaseName = folderPath.Split('\\');
                             //---------------------------------------------
@@ -416,25 +416,64 @@ namespace ReboProject
         }
         
         // get the file order
-        public void fileToRead(Dictionary<string,string[]> folder_fileName, int mainLeaseRead, string folderPath, int sort, int type, out ArrayList fileDetails)
+        //public void fileToRead(Dictionary<string,string[]> folder_fileName, int mainLeaseRead, string folderPath, int sort, int type, out ArrayList fileDetails)
+        //{
+        //    fileDetails = new ArrayList();
+        //    var pdfFiles = folder_fileName[folderPath];
+        //    if (pdfFiles.Length > 0) // check if file is there in folder
+        //    {
+        //        for (var j = 0; j < pdfFiles.Length; j++) // loop through all the files
+        //        {
+        //            var index = sort == 2 ? pdfFiles.Length - (j + 1) : j; // get the file by order
+        //            var fileNameVal = pdfFiles[index]; // get the index of the file to read
+        //            var lowerFileNameVal = fileNameVal.ToLower();
+        //            if (mainLeaseRead == 0 && lowerFileNameVal.IndexOf("lease") == 0) // check if only one file there and name starts with lease
+        //                continue;
+        //            var filepath = folderPath + "\\" + fileNameVal; // full path of file save 
+        //            fileDetails.Add(filepath); // save in arraylist
+        //        }
+        //    }
+        //}
+
+
+        public void fileToRead(Dictionary<string, string[]> folder_fileName, int mainLeaseRead, string folderPath, int sort, int type, out ArrayList fileDetails)
         {
             fileDetails = new ArrayList();
-            var pdfFiles = folder_fileName[folderPath];
-            if (pdfFiles.Length > 0) // check if file is there in folder
+            if (true)
             {
-                for (var j = 0; j < pdfFiles.Length; j++) // loop through all the files
+                var pdfFiles = folder_fileName[folderPath];
+                Dictionary<string, DateTime> fileSort = new Dictionary<string, DateTime>();
+                for (var j = 0; j < pdfFiles.Length; j++)
                 {
-                    var index = sort == 2 ? pdfFiles.Length - (j + 1) : j; // get the file by order
-                    var fileNameVal = pdfFiles[index]; // get the index of the file to read
-                    var lowerFileNameVal = fileNameVal.ToLower();
-                    if (mainLeaseRead == 0 && lowerFileNameVal.IndexOf("lease") == 0) // check if only one file there and name starts with lease
+                    var fileNameVal = pdfFiles[j];
+                    var getDate = fileNameVal.Split('-')[0];
+                    var mm = getDate[0].ToString() + getDate[1].ToString();
+                    var dd = getDate[2].ToString() + getDate[3].ToString();
+                    var yyyy = getDate[4].ToString() + getDate[5].ToString() + getDate[6].ToString() + getDate[7].ToString();
+                    DateTime dateVal = new DateTime(Convert.ToInt32(yyyy), Convert.ToInt32(mm), Convert.ToInt32(dd), 0, 0, 0);
+                    //var uniDate = dateVal.ToUniversalTime();
+                    fileSort.Add(fileNameVal, dateVal);
+                }
+                var desc = sort == 2 ? 0 : 1; // get the file by order
+                Dictionary<string, DateTime> sortedFile = new Dictionary<string, DateTime>();
+                if (desc == 0)
+                    sortedFile = fileSort.OrderBy(x => x.Value).ToDictionary(x => x.Key, x => x.Value);
+                else
+                    sortedFile = fileSort.OrderByDescending(x => x.Value).ToDictionary(x => x.Key, x => x.Value);
+
+
+                foreach (var item in sortedFile)
+                {
+                    var fileNameVal = item.Key;
+                    var lowerFileNameVal = fileNameVal.ToLower().Split('-')[1];
+                    if (mainLeaseRead == 0 && lowerFileNameVal.IndexOf(" lease") == 0)
                         continue;
-                    var filepath = folderPath + "\\" + fileNameVal; // full path of file save 
-                    fileDetails.Add(filepath); // save in arraylist
+
+                    var filepath = folderPath + "\\" + fileNameVal; // full path of file
+                    fileDetails.Add(filepath);
                 }
             }
         }
-        
         // get the paragraph lines
         public void pdfRead(string filepath, out Dictionary<int, Dictionary<int, string>> savePage)
         {
