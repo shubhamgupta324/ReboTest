@@ -75,122 +75,154 @@ namespace ReboProject
                 Dictionary<int, Dictionary<int, string>> savePageLib = new Dictionary<int, Dictionary<int, string>>();  // save pagenumber and the lines in it
                 Dictionary<int, string> OutputMatch = new Dictionary<int, string>();
                 string getCorrectSentances = "";
-                    for (var configurationVal = 0; configurationVal < configuration.Count(); configurationVal++)
+                for (var configurationVal = 0; configurationVal < configuration.Count(); configurationVal++)
+                {
+                    var gotValueForConfiguration = false;
+                    var myKey = configurationOrder.FirstOrDefault(x => x.Value == list[configurationVal]).Key;
+                    var configurationIndexSelect = configurationOrder[myKey];
+                    var connectorVal = (int)configuration[myKey - 1]["Connector"];// get the connector output to check Mandatory or library check
+                    var datapoint = configuration[myKey - 1]["Datapoint"].ToString(); // Datapoint 
+                    var exclusionCount = 0;
+                    if (configuration[myKey - 1]["ExclusionCount"].ToString() != "")
+                        exclusionCount = (int)configuration[myKey - 1]["ExclusionCount"]; // all searchFor and there respected withIn
+                    var logic = configuration[myKey - 1]["logic"]; // all searchFor and there respected withIn
+                    JArray getExclusion = null;
+                    foreach (var getTheExclusion in logic)
                     {
-                        var gotValueForConfiguration = false;
-                        var myKey = configurationOrder.FirstOrDefault(x => x.Value == list[configurationVal]).Key;
-                        var configurationIndexSelect = configurationOrder[myKey];
-                        var connectorVal = (int)configuration[myKey - 1]["Connector"];// get the connector output to check Mandatory or library check
-                        var datapoint = configuration[myKey - 1]["Datapoint"].ToString(); // Datapoint 
-                        var exclusionCount = 0;
-                        if (configuration[myKey - 1]["ExclusionCount"].ToString() != "")
-                            exclusionCount = (int)configuration[myKey - 1]["ExclusionCount"]; // all searchFor and there respected withIn
-                        var logic = configuration[myKey - 1]["logic"]; // all searchFor and there respected withIn
-                        JArray getExclusion = null;
-                        foreach (var getTheExclusion in logic)
+                        getExclusion = (JArray)getTheExclusion["exclusion"];
+                    }
+                    bool executeConfiguration = true;
+                    List<int> pdfLibPageno = new List<int>();
+                    List<int> pdfLibParaNo = new List<int>();
+                    List<string> pdfLibPara = new List<string>();
+                    List<string> pdfLibValFound = new List<string>();
+                    var outputFound = false;
+                    if (connectorVal == 2)
+                    { // check if the last output contain the library value
+                        if (LibArr[0] != "" && jaLibCheck.Count != 0)
                         {
-                            getExclusion = (JArray)getTheExclusion["exclusion"];
-                        }
-                        bool executeConfiguration = true;
-                        List<int> pdfLibPageno = new List<int>();
-                        List<int> pdfLibParaNo = new List<int>();
-                        List<string> pdfLibPara = new List<string>();
-                        List<string> pdfLibValFound = new List<string>();
-                        var outputFound = false;
-                        if (connectorVal == 2)
-                        { // check if the last output contain the library value
-                            if (LibArr[0] != "" && jaLibCheck.Count != 0)
-                            {
-                                checklibrary(jaLibCheck, LibArr, out outputFound); // check if output of first logic has library value
-                                if (outputFound == false)
-                                { // check the whole pdf for library 
-                                    if (!jaLibCheck.HasValues)
-                                        break;
-                                    pdfRead(jaLibCheck[0]["completeFilePath"].ToString(), out savePage); // read pdf
-                                    searchLibInPDF(getExclusion, exclusionCount, savePage, LibArr, datapoint, out pdfLibPara, out pdfLibPageno, out pdfLibParaNo, out pdfLibValFound);
-                                    savePageLib = savePage;
-                                    executeConfiguration = pdfLibPara.Count() != 0 ? executeConfiguration = true : executeConfiguration = false; // if found get the second para else skip
-                                }
+                            checklibrary(jaLibCheck, LibArr, out outputFound); // check if output of first logic has library value
+                            if (outputFound == false)
+                            { // check the whole pdf for library 
+                                if (!jaLibCheck.HasValues)
+                                    break;
+                                pdfRead(jaLibCheck[0]["completeFilePath"].ToString(), out savePage); // read pdf
+                                searchLibInPDF(getExclusion, exclusionCount, savePage, LibArr, datapoint, out pdfLibPara, out pdfLibPageno, out pdfLibParaNo, out pdfLibValFound);
+                                savePageLib = savePage;
+                                executeConfiguration = pdfLibPara.Count() != 0 ? executeConfiguration = true : executeConfiguration = false; // if found get the second para else skip
                             }
-                            else
-                                executeConfiguration = false;
                         }
+                        else
+                            executeConfiguration = false;
+                    }
 
-                        if (executeConfiguration == true)
-                        { // check if to execute configurationDatapoint
-                            var sort = (int)configuration[myKey - 1]["FileOrder"]["sort"]; // asc or desc
-                            var type = (int)configuration[myKey - 1]["FileOrder"]["type"]; // Single File Search or All File Search
-                            var datapointID = (int)configuration[myKey - 1]["DpId"]; // Datapoint ID
-                            var datapointName = configuration[myKey - 1]["Datapoint"].ToString(); // Datapoint ID
-                            var multipleRead = (int)configuration[myKey - 1]["MultipleRead"];  // to get score of multiple occurance
-                            var SearchWithin = (int)configuration[myKey - 1]["SearchWithin"];// 1=page, 2=section, 3=paragraph
-                            var mainLeaseRead = (int)configuration[myKey - 1]["MainLeaseRead"];// skip main lease read
+                    if (executeConfiguration == true)
+                    { // check if to execute configurationDatapoint
+                        var sort = (int)configuration[myKey - 1]["FileOrder"]["sort"]; // asc or desc
+                        var type = (int)configuration[myKey - 1]["FileOrder"]["type"]; // Single File Search or All File Search
+                        var datapointID = (int)configuration[myKey - 1]["DpId"]; // Datapoint ID
+                        var datapointName = configuration[myKey - 1]["Datapoint"].ToString(); // Datapoint ID
+                        var multipleRead = (int)configuration[myKey - 1]["MultipleRead"];  // to get score of multiple occurance
+                        var SearchWithin = (int)configuration[myKey - 1]["SearchWithin"];// 1=page, 2=section, 3=paragraph
+                        var mainLeaseRead = (int)configuration[myKey - 1]["MainLeaseRead"];// skip main lease read
 
 
-                            Dictionary<string, int> searchFieldScore = new Dictionary<string, int>(); // saves the foundtext
-                            Dictionary<string, int> withInScore = new Dictionary<string, int>(); // saves the foundtext
-                            var totalScoreDenominatorVal = 0; // get the total score of all the search field
-                            var ja1 = new JArray();
-                            var ja2 = new JArray();
+                        Dictionary<string, int> searchFieldScore = new Dictionary<string, int>(); // saves the foundtext
+                        Dictionary<string, int> withInScore = new Dictionary<string, int>(); // saves the foundtext
+                        var totalScoreDenominatorVal = 0; // get the total score of all the search field
+                        var ja1 = new JArray();
+                        var ja2 = new JArray();
 
-                            // -----------get the file order--------------
-                            ArrayList fileDetails = new ArrayList();
-                            fileToRead(mainLeaseRead, folderPath, sort, type, pdfFiles, out fileDetails);
-                            var FilePathPlusLeaseName = folderPath.Split('\\');
-                            //---------------------------------------------
+                        // -----------get the file order--------------
+                        ArrayList fileDetails = new ArrayList();
+                        fileToRead(mainLeaseRead, folderPath, sort, type, pdfFiles, out fileDetails);
+                        var FilePathPlusLeaseName = folderPath.Split('\\');
+                        //---------------------------------------------
 
-                            LeaseName = FilePathPlusLeaseName[FilePathPlusLeaseName.Length - 1]; // get the lease name
-                            var fileName = "";
-                            float finalScore = 0;
-                            var resultFound = 1;
-                            float TopfinalScore = 0;
-                            var readNextFile = 1;
+                        LeaseName = FilePathPlusLeaseName[FilePathPlusLeaseName.Length - 1]; // get the lease name
+                        var fileName = "";
+                        float finalScore = 0;
+                        var resultFound = 1;
+                        float TopfinalScore = 0;
+                        var readNextFile = 1;
 
-                            //bool condition1 = true;
-                            foreach (string fullFilePath in fileDetails)
+                        //bool condition1 = true;
+                        foreach (string fullFilePath in fileDetails)
+                        {
+                            if (readNextFile == 1)
                             {
-                                if (readNextFile == 1)
+                                var ja = new JArray();
+                                var getTheIndividualFileName = fullFilePath.Split('\\');
+                                fileName = getTheIndividualFileName[getTheIndividualFileName.Length - 1]; // get the file name
+                                int index = fileName.LastIndexOf(".");
+                                fileName = fileName.Substring(0, index);
+                                //read the file
+
+                                pdfRead(fullFilePath, out savePage); // read pdf
+                                
+                                Dictionary<Dictionary<string, int>, int> getNode = new Dictionary<Dictionary<string, int>, int>();
+                                if (SearchWithin == 2)
                                 {
-                                    var ja = new JArray();
-                                    var getTheIndividualFileName = fullFilePath.Split('\\');
-                                    fileName = getTheIndividualFileName[getTheIndividualFileName.Length - 1]; // get the file name
-                                    int index = fileName.LastIndexOf(".");
-                                    fileName = fileName.Substring(0, index);
-                                    //read the file
+                                    getNode = Program.SectionVal123(savePage);
+                                    getAllFoundText(getNode, exclusionCount, fullFilePath, SearchWithin, resultSection, savePage, fileName, logic, out ja, out totalScoreDenominatorVal, out searchFieldScore, out withInScore); //  get the found text
+                                }
+                                else
+                                    getAllFoundText(getNode, exclusionCount, fullFilePath, SearchWithin, resultSection, savePage, fileName, logic, out ja, out totalScoreDenominatorVal, out searchFieldScore, out withInScore); //  get the found text
 
-                                    pdfRead(fullFilePath, out savePage); // read pdf
+                                
+                                //--------------------scoring and final output ---------------------------------------------------------------------
+                                scoring(OutputMatch, LeaseName, savePage, resultFormat, totalScoreDenominatorVal, searchFieldScore, ja, multipleRead, out ja1, out accptedValThere, out finalScore);
 
-                                    getAllFoundText(exclusionCount, fullFilePath, SearchWithin, resultSection, savePage, fileName, logic, out ja, out totalScoreDenominatorVal, out searchFieldScore, out withInScore); //  get the found text
-
-                                    //--------------------scoring and final output ---------------------------------------------------------------------
-                                    scoring(OutputMatch, LeaseName, savePage, resultFormat, totalScoreDenominatorVal, searchFieldScore, ja, multipleRead, out ja1, out accptedValThere, out finalScore);
-
-                                    for (int i = 0; i < ja1.Count; i++)// get only one highest score value
+                                for (int i = 0; i < ja1.Count; i++)// get only one highest score value
+                                {
+                                    if (type == 1)
+                                        readNextFile = 0;
+                                    if (TopfinalScore < finalScore)
                                     {
-                                        if (type == 1)
-                                            readNextFile = 0;
-                                        if (TopfinalScore < finalScore)
-                                        {
-                                            TopfinalScore = finalScore;
-                                            ja2.RemoveAll();
-                                            ja2.Add(ja1[i]);
-                                        }
+                                        TopfinalScore = finalScore;
+                                        ja2.RemoveAll();
+                                        ja2.Add(ja1[i]);
                                     }
                                 }
                             }
+                        }
 
-                        // get the correct sentance
-                        var singleCorrectSentence = "";
-                        collectCorrectSentance(withInScore, ja2, out singleCorrectSentence);
-                        if (singleCorrectSentence != "")
-                            getCorrectSentances =   getCorrectSentances + " <b> (" + (configurationVal + 1) + ")[</b>  " + singleCorrectSentence + " <b>]</b>";
+                    // get the correct sentance
+                    var singleCorrectSentence = "";
+                    collectCorrectSentance(withInScore, ja2, out singleCorrectSentence);
+                    if (singleCorrectSentence != "")
+                        getCorrectSentances =   getCorrectSentances + " <b> (" + (configurationVal + 1) + ")[</b>  " + singleCorrectSentence + " <b>]</b>";
 
 
-                        if (ja2.Count == 0)// check if any result found
-                            resultFound = 0;
-                        if (!ja3.HasValues && ja2.HasValues)
+                    if (ja2.Count == 0)// check if any result found
+                        resultFound = 0;
+                    if (!ja3.HasValues && ja2.HasValues)
+                    {
+                        ja3.Add(ja2[0]);
+                        jaLibCheck.RemoveAll();
+                        jaLibCheck.Add(ja3[0]);
+                        gotValueForConfiguration = true;
+                        saveDataToFolder(ja3, folderPath);
+                        if (!OutputMatch.ContainsKey(connectorVal))
+                            OutputMatch.Add(connectorVal, ja2[0]["Pageoutput"].ToString());
+                    }
+
+                    else
+                    {
+                        if (ja3.HasValues && ja2.HasValues)
                         {
-                            ja3.Add(ja2[0]);
+                            ja3[0]["output"] = ja3[0]["output"].ToString() + System.Environment.NewLine + ja2[0]["output"].ToString();
+                            ja3[0]["pageNo"] = ja3[0]["pageNo"].ToString() + " , " + ja2[0]["pageNo"].ToString();
+                            ja3[0]["fileName"] = ja3[0]["fileName"].ToString() + " , " + ja2[0]["fileName"].ToString();
+                            ja3[0]["score"] = ja3[0]["score"].ToString() + " ||| " + ja2[0]["score"].ToString();
+                            ja3[0]["foundWithIn"] = ja3[0]["foundWithIn"].ToString() + " ||| " + ja2[0]["foundWithIn"].ToString();
+                            ja3[0]["AllSearchFieldKeyword"] = ja3[0]["AllSearchFieldKeyword"].ToString() + " ||| " + ja2[0]["AllSearchFieldKeyword"].ToString();
+
+                            if (ja3[0]["Pageoutput"].ToString().EndsWith("."))
+                                ja3[0]["Pageoutput"] = ja3[0]["Pageoutput"].ToString() + ja2[0]["Pageoutput"].ToString();
+                            else
+                                ja3[0]["Pageoutput"] = ja3[0]["Pageoutput"].ToString() + ". " + ja2[0]["Pageoutput"].ToString();
+
                             jaLibCheck.RemoveAll();
                             jaLibCheck.Add(ja3[0]);
                             gotValueForConfiguration = true;
@@ -198,99 +230,76 @@ namespace ReboProject
                             if (!OutputMatch.ContainsKey(connectorVal))
                                 OutputMatch.Add(connectorVal, ja2[0]["Pageoutput"].ToString());
                         }
-
-                        else
+                    }
+                }
+                if (connectorVal == 2 && outputFound == false && LibArr[0] != "")
+                {
+                    if (pdfLibPara.Count() == 1 && gotValueForConfiguration == false)
+                    {
+                        var outputSame = false;
+                        foreach (var getOutputToCheck in OutputMatch)
                         {
-                            if (ja3.HasValues && ja2.HasValues)
+                            if (getOutputToCheck.Value == pdfLibPara[0])
                             {
-                                ja3[0]["output"] = ja3[0]["output"].ToString() + System.Environment.NewLine + ja2[0]["output"].ToString();
-                                ja3[0]["pageNo"] = ja3[0]["pageNo"].ToString() + " , " + ja2[0]["pageNo"].ToString();
-                                ja3[0]["fileName"] = ja3[0]["fileName"].ToString() + " , " + ja2[0]["fileName"].ToString();
-                                ja3[0]["score"] = ja3[0]["score"].ToString() + " ||| " + ja2[0]["score"].ToString();
-                                ja3[0]["foundWithIn"] = ja3[0]["foundWithIn"].ToString() + " ||| " + ja2[0]["foundWithIn"].ToString();
-                                ja3[0]["AllSearchFieldKeyword"] = ja3[0]["AllSearchFieldKeyword"].ToString() + " ||| " + ja2[0]["AllSearchFieldKeyword"].ToString();
-
-                                if (ja3[0]["Pageoutput"].ToString().EndsWith("."))
-                                    ja3[0]["Pageoutput"] = ja3[0]["Pageoutput"].ToString() + ja2[0]["Pageoutput"].ToString();
-                                else
-                                    ja3[0]["Pageoutput"] = ja3[0]["Pageoutput"].ToString() + ". " + ja2[0]["Pageoutput"].ToString();
-
-                                jaLibCheck.RemoveAll();
-                                jaLibCheck.Add(ja3[0]);
-                                gotValueForConfiguration = true;
-                                saveDataToFolder(ja3, folderPath);
-                                if (!OutputMatch.ContainsKey(connectorVal))
-                                    OutputMatch.Add(connectorVal, ja2[0]["Pageoutput"].ToString());
+                                outputSame = true;
+                                break;
                             }
                         }
-                    }
-                    if (connectorVal == 2 && outputFound == false && LibArr[0] != "")
-                    {
-                        if (pdfLibPara.Count() == 1 && gotValueForConfiguration == false)
+                        if (!OutputMatch.ContainsKey(connectorVal) && outputSame == false)
                         {
-                            var outputSame = false;
-                            foreach (var getOutputToCheck in OutputMatch)
-                            {
-                                if (getOutputToCheck.Value == pdfLibPara[0])
-                                {
-                                    outputSame = true;
-                                    break;
-                                }
-                            }
-                            if (!OutputMatch.ContainsKey(connectorVal) && outputSame == false)
-                            {
 
-                                OutputMatch.Add(connectorVal, pdfLibPara[0]);
-                                var getTheSectionValue = processing.SectionVal(savePageLib, pdfLibPageno[0], pdfLibParaNo[0]); // get the section value
-                                if (getTheSectionValue == "false")
-                                    getTheSectionValue = "?";
-                                var output = resultFormat.Replace("{{Document Name}}", "").Replace("{{Paragraph Number}}", "<b>" + getTheSectionValue + "</b>").Replace("{{result}}", pdfLibPara[0]).Replace("{{found text}}", "....");
-                                ja3[0]["output"] = ja3[0]["output"].ToString() + System.Environment.NewLine + output;
-                                ja3[0]["foundWithIn"] = ja3[0]["foundWithIn"].ToString() + " ||| Library";
-                                ja3[0]["AllSearchFieldKeyword"] = ja3[0]["AllSearchFieldKeyword"].ToString() + " ||| Library";
-                                ja3[0]["pageNo"] = ja3[0]["pageNo"].ToString() + " , " + pdfLibPageno[0];
-                                ja3[0]["score"] = ja3[0]["score"].ToString() + " ||| " + "Library";
-                                if (ja3[0]["Pageoutput"].ToString().EndsWith("."))
-                                    ja3[0]["Pageoutput"] = ja3[0]["Pageoutput"].ToString() + pdfLibPara[0];
-                                else
-                                    ja3[0]["Pageoutput"] = ja3[0]["Pageoutput"].ToString() + ". " + pdfLibPara[0];
-                                saveDataToFolder(ja3, folderPath);
+                            OutputMatch.Add(connectorVal, pdfLibPara[0]);
+                            var getTheSectionValue = processing.SectionVal(savePageLib, pdfLibPageno[0], pdfLibParaNo[0]); // get the section value
+                            if (getTheSectionValue == "false")
+                                getTheSectionValue = "?";
+                            var output = resultFormat.Replace("{{Document Name}}", "").Replace("{{Paragraph Number}}", "<b>" + getTheSectionValue + "</b>").Replace("{{result}}", pdfLibPara[0]).Replace("{{found text}}", "....");
+                            ja3[0]["output"] = ja3[0]["output"].ToString() + System.Environment.NewLine + output;
+                            ja3[0]["foundWithIn"] = ja3[0]["foundWithIn"].ToString() + " ||| Library";
+                            ja3[0]["AllSearchFieldKeyword"] = ja3[0]["AllSearchFieldKeyword"].ToString() + " ||| Library";
+                            ja3[0]["pageNo"] = ja3[0]["pageNo"].ToString() + " , " + pdfLibPageno[0];
+                            ja3[0]["score"] = ja3[0]["score"].ToString() + " ||| " + "Library";
+                            if (ja3[0]["Pageoutput"].ToString().EndsWith("."))
+                                ja3[0]["Pageoutput"] = ja3[0]["Pageoutput"].ToString() + pdfLibPara[0];
+                            else
+                                ja3[0]["Pageoutput"] = ja3[0]["Pageoutput"].ToString() + ". " + pdfLibPara[0];
+                            saveDataToFolder(ja3, folderPath);
 
-                                if (getCorrectSentances == "")
-                                    getCorrectSentances = getCorrectSentances + " <b> (" + (configurationVal + 1) + ")</b>  " + pdfLibPara[0];
-                            }
+                            if (getCorrectSentances == "")
+                                getCorrectSentances = getCorrectSentances + " <b> (" + (configurationVal + 1) + ")</b>  " + pdfLibPara[0];
                         }
                     }
                 }
+            }
 
-                    if (ja3.Count != 0)
-                        ja3[0]["correctString"] = getCorrectSentances;
+                if (ja3.Count != 0)
+                    ja3[0]["correctString"] = getCorrectSentances;
 
-                    if (ja3.Count == 0)
-                    {
-                        var ja4 = new JArray();
-                        var jo4 = new JObject();
-                        jo4["output"] = "Lease is silent";
-                        jo4["AllSearchFieldKeyword"] = "";
-                        jo4["fileName"] = "";
-                        jo4["pageNo"] = 0;
-                        jo4["score"] = 0;
-                        jo4["sectionVal"] = "";
-                        jo4["leaseName"] = LeaseName;
-                        jo4["foundWithIn"] = "";
-                        jo4["correctString"] = "";
-                        ja4.Add(jo4);
-                        ja3.Add(ja4[0]);
-                        saveDataToFolder(ja4, folderPath);
-                    }
+                if (ja3.Count == 0)
+                {
+                    var ja4 = new JArray();
+                    var jo4 = new JObject();
+                    jo4["output"] = "Lease is silent";
+                    jo4["AllSearchFieldKeyword"] = "";
+                    jo4["fileName"] = "";
+                    jo4["pageNo"] = 0;
+                    jo4["score"] = 0;
+                    jo4["sectionVal"] = "";
+                    jo4["leaseName"] = LeaseName;
+                    jo4["foundWithIn"] = "";
+                    jo4["correctString"] = "";
+                    ja4.Add(jo4);
+                    ja3.Add(ja4[0]);
+                    saveDataToFolder(ja4, folderPath);
+                }
 
-                    finalOutput.Add(ja3[0]);
-                    //---------------------------------------------------------------
+                finalOutput.Add(ja3[0]);
+                //---------------------------------------------------------------
                 
                
                 
                 //--------------------loop through all configuration------------
                 
+
 
             }
 
@@ -408,12 +417,9 @@ namespace ReboProject
 
                 for (var singleSF = 0; singleSF < librarySet.Count(); singleSF++)
                 {
-                    var matchData = Regex.Matches(outputConfig1, @"\b\s?" + rgx.Replace(librarySet[singleSF], "\\$1") + "(\\s|\\b)"); // search if library in para
-                    if (librarySet[singleSF].IndexOf("\"") == 0)
-                    {
-                        var searchVal = (rgx.Replace(librarySet[singleSF], "\\$1")).Replace("\"", "");
-                        matchData = Regex.Matches(outputConfig1, "[\"]" + searchVal + "[\"][^a-zA-Z0-9_]"); // find match
-                    }
+                    MatchCollection matchData;
+                    regexMatch(rgx, outputConfig1, librarySet[singleSF], out matchData); // function to match 
+
                     if (matchData.Count > 0)
                     {
                         outputFound = true; // library found 
@@ -476,12 +482,13 @@ namespace ReboProject
         
         //-----------------------------------------FOUND TEXT-----------------------------------------------------------------------------------
         // get all the searched data 
-        public void getAllFoundText(int exclusionCount, string fullFilePath, int SearchWithin, int resultSection, Dictionary<int, Dictionary<int, string>> savePage, string fileName, JToken logic, out JArray ja, out int totalScoreDenominatorVal, out Dictionary<string, int> searchFieldScore, out Dictionary<string, int> withInScore)
+        public void getAllFoundText(Dictionary<Dictionary<string, int>, int> getNode, int exclusionCount, string fullFilePath, int SearchWithin, int resultSection, Dictionary<int, Dictionary<int, string>> savePage, string fileName, JToken logic, out JArray ja, out int totalScoreDenominatorVal, out Dictionary<string, int> searchFieldScore, out Dictionary<string, int> withInScore)
         {
             withInScore = new Dictionary<string, int>();
             totalScoreDenominatorVal = 0;
             searchFieldScore = new Dictionary<string, int>();
             ja = new JArray();
+           
             var gotResult = 0; // not got
             for (var allLogic = 0; allLogic < logic.Count(); allLogic++)
             {
@@ -493,173 +500,210 @@ namespace ReboProject
                 if (gotResult == 0)// all condition under 'or' 
                 {
                     getTotalScore(getWithIn, getSearchFor, out totalScoreDenominatorVal, out searchFieldScore,out withInScore);
-
-                    for (var k = 0; k < getSearchFor.Count(); k++) // loop throuch all searchFor
+                    Regex rgx = new Regex("(['^$.|?*+()\\\\])");
+                    if (SearchWithin == 3)
                     {
-                        var AllSearchFieldKeyword = (getSearchFor[k]["keyword"]).ToString(); // get the search field
-                        Regex rgx = new Regex("(['^$.|?*+()\\\\])");
-                        var AllSearchFieldCaseCheck = (getSearchFor[k]["caseCheck"]).ToString().ToLower(); // get the search field op
-
-                        bool checkAfterSubCaseSearchFor = true;
-                        var pageCount = 0;
-                        foreach (KeyValuePair<int, Dictionary<int, string>> entry in savePage) // get the page
+                        for (var k = 0; k < getSearchFor.Count(); k++) // loop throuch all searchFor
                         {
-                            pageCount += 1;
-                            var searchFieldFound = new List<int>();
-                            // saves the lineText
-                            StringBuilder sb3 = new StringBuilder();
-                            var paraNumber = 0;
-                            foreach (var checkPage in entry.Value) // each page value
+                            var AllSearchFieldKeyword = (getSearchFor[k]["keyword"]).ToString(); // get the search field
+                            
+                            var AllSearchFieldCaseCheck = (getSearchFor[k]["caseCheck"]).ToString().ToLower(); // get the search field op
+
+                            bool checkAfterSubCaseSearchFor = true;
+                            var pageCount = 0;
+                            if (SearchWithin == 3)
                             {
-                                paraNumber += 1;
-                                var getLineText = checkPage.Value; // get the  line text
-                                
-                                var matchData = Regex.Matches(getLineText, @"\b\s?" + rgx.Replace(AllSearchFieldKeyword, "\\$1") + "(\\s|\\b)"); // find match
-                                if ((AllSearchFieldKeyword).IndexOf("\"") == 0)
+                                foreach (KeyValuePair<int, Dictionary<int, string>> entry in savePage) // get the page
                                 {
-                                    var searchVal = (rgx.Replace(AllSearchFieldKeyword, "\\$1")).Replace("\"", "");
-                                    matchData = Regex.Matches(getLineText, "[\"]" + searchVal + "[\"][^a-zA-Z0-9_]"); // find match
-                                }
-                                if (AllSearchFieldKeyword == "$")
-                                    matchData = Regex.Matches(getLineText, @"([$]+)"); // find match    
-                                if (AllSearchFieldKeyword == "%")
-                                    matchData = Regex.Matches(getLineText, @"(%)"); // find match
-
-                                if (matchData.Count > 0) // if match there
-                                {
-
-                                    // check for cases
-                                    if (AllSearchFieldCaseCheck == "yes")
-                                        subCaseSearch(getLineText, AllSearchFieldKeyword, getSubCase, out checkAfterSubCaseSearchFor);
-                                    else
-                                        checkAfterSubCaseSearchFor = true;
-
-                                    if (checkAfterSubCaseSearchFor == true)
+                                    pageCount += 1;
+                                    // saves the lineText
+                                    JArray ja1Val = new JArray();
+                                    StringBuilder sb3 = new StringBuilder();
+                                    var paraNumber = 0;
+                                    foreach (var checkPage in entry.Value) // each page value
                                     {
+                                        processSearchForAndwithInParagraph(paraNumber, checkPage, AllSearchFieldKeyword, rgx, AllSearchFieldCaseCheck, getSubCase, checkAfterSubCaseSearchFor, SearchWithin, resultSection, getWithIn, getExclusion, exclusionCount, gotResult, fileName, pageCount, fullFilePath, out ja1Val);
+                                        if (ja1Val.HasValues)
+                                            ja.Add(ja1Val[0]);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                        
+                    if (SearchWithin == 2) {
+                        foreach (var entry in getNode) // get the section
+                        {
+                            bool checkAfterSubCaseSearchFor = true;
+                            JArray ja1Val = new JArray();
+                            processSearchForAndwithInSection(getSearchFor,entry, rgx, getSubCase, checkAfterSubCaseSearchFor, SearchWithin, resultSection, getWithIn, getExclusion, exclusionCount, gotResult, fileName, fullFilePath, out ja1Val);
+                            if(ja1Val.HasValues)
+                            ja.Add(ja1Val[0]);
+                            }
+                                
+                    }
+                    
+                }
+            }
+        }
 
-                                        string foundTextFinal = "";
-                                        var SearchWithinText = "";
+        public void processSearchForAndwithInParagraph(int paraNumber,KeyValuePair<int,string> checkPage,string AllSearchFieldKeyword , Regex rgx, string AllSearchFieldCaseCheck, JToken getSubCase, bool checkAfterSubCaseSearchFor, int SearchWithin ,int resultSection ,JToken getWithIn,JToken getExclusion , int exclusionCount ,int gotResult, string fileName, int pageCount, string fullFilePath,out JArray ja) {
 
-                                        if (SearchWithin == 1) // page
+            ja = new JArray();
+            paraNumber += 1;
+            var completeSectionText = "";
+            var getLineText = checkPage.Value; // get the  line text
+            MatchCollection matchData;
+            regexMatch(rgx, getLineText, AllSearchFieldKeyword, out matchData);
+
+            if (matchData.Count > 0) // if match there
+            {
+                // check for cases
+                if (AllSearchFieldCaseCheck == "yes")
+                    subCaseSearch(getLineText, AllSearchFieldKeyword, getSubCase, out checkAfterSubCaseSearchFor);
+                else
+                    checkAfterSubCaseSearchFor = true;
+
+                if (checkAfterSubCaseSearchFor == true)
+                {
+                    string foundTextFinal = "";
+                    var SearchWithinText = "";
+                    SearchWithinText = getLineText;
+                    foundTextFinal = getLineText;
+                    
+                    // check if withIn values are there 
+                    if (getWithIn.Count() > 0)
+                    {
+                        var acceptParaWithIn = "";
+                        var checkExclusion = true;
+                        var countWithInInAPara = 0;
+                        for (var g = 0; g < getWithIn.Count(); g++) // search for within fields
+                        {
+                            bool checkAfterSubCaseWithIn = true;
+                            bool checkAfterSubCaseWithInExclusion = true;
+                            var withInIt = (getWithIn[g]["keyword"]).ToString();
+                            var withInCaseCheck = (getWithIn[g]["caseCheck"]).ToString().ToLower();
+                            MatchCollection matchDataWithInIt;
+                            // match function
+                            regexMatch(rgx, SearchWithinText, withInIt, out matchDataWithInIt);
+                            
+                            if (matchDataWithInIt.Count > 0) // if match there
+                            {
+                                if (withInCaseCheck == "yes")// check for cases
+                                    subCaseSearch(SearchWithinText, withInIt, getSubCase, out checkAfterSubCaseWithIn);
+                                if (checkAfterSubCaseWithIn == true)
+                                {
+                                    if (getExclusion.Count() > 0 && checkExclusion == true)
+                                        exclusionProcess(exclusionCount, getExclusion, SearchWithinText, out checkAfterSubCaseWithInExclusion);
+
+                                    checkExclusion = false;
+                                    if (checkAfterSubCaseWithInExclusion == true)
+                                    {
+                                        countWithInInAPara += 1;
+                                        acceptParaWithIn += (acceptParaWithIn == "") ? withInIt : "|" + withInIt;
+                                    }
+                                    else
+                                        break;
+                                }
+                            }
+                        }
+                        if (acceptParaWithIn != "")
+                        {
+                            gotResult = 1;
+                            jarrayEnter(completeSectionText, AllSearchFieldKeyword, fileName, pageCount, SearchWithinText,acceptParaWithIn, paraNumber, fullFilePath, out ja);
+                        }
+                    }
+
+                    else // if not withIn to search
+                    {
+                        var acceptParaWithIn = "";
+                        if (getExclusion.Count() != 0)
+                        {
+                            bool acceptFoundText = true;
+                            exclusionProcess(exclusionCount, getExclusion, SearchWithinText, out acceptFoundText);
+
+                            if (acceptFoundText == true)
+                            {
+                                gotResult = 1;
+                                jarrayEnter(completeSectionText, AllSearchFieldKeyword, fileName, pageCount, SearchWithinText, acceptParaWithIn, paraNumber, fullFilePath, out ja);
+                            }
+                        }
+                        else
+                        {
+                            gotResult = 1;
+                            jarrayEnter(completeSectionText, AllSearchFieldKeyword, fileName.Split('.')[0], pageCount, SearchWithinText, acceptParaWithIn, paraNumber, fullFilePath, out ja);
+                        }
+                    }
+                }
+            }
+        }
+
+        public void processSearchForAndwithInSection(JToken getSearchFor, KeyValuePair<Dictionary<string, int>, int> entry, Regex rgx, JToken getSubCase, bool checkAfterSubCaseSearchFor, int SearchWithin, int resultSection, JToken getWithIn, JToken getExclusion, int exclusionCount, int gotResult, string fileName, string fullFilePath, out JArray ja)
+        {
+            ja = new JArray();
+            var pageCount = entry.Value;
+            var AllSearchFieldKeyword = "";
+            var acceptParaWithIn = "";
+            List<string> saveAllPara = new List<string>();
+            List<string> saveAllwithin = new List<string>();
+            List<string> saveAllSearchFor = new List<string>();
+            var getLineText = "";
+            var paraNumber = 0;
+            var completeSectionText = "";
+            foreach (var item in entry.Key) {
+                completeSectionText = completeSectionText + item.Key + "|||";
+                if (paraNumber == 0)
+                    paraNumber = item.Value;
+
+                getLineText = item.Key; // get the  line text
+                for (var k = 0; k < getSearchFor.Count(); k++) {
+                    AllSearchFieldKeyword = (getSearchFor[k]["keyword"]).ToString(); // get the search field
+                    var AllSearchFieldCaseCheck = (getSearchFor[k]["caseCheck"]).ToString().ToLower(); // get the search field op
+                    MatchCollection matchData;
+                    regexMatch(rgx, getLineText, AllSearchFieldKeyword, out matchData);
+                    if (matchData.Count > 0) {
+                        if (AllSearchFieldCaseCheck == "yes")
+                            subCaseSearch(getLineText, AllSearchFieldKeyword, getSubCase, out checkAfterSubCaseSearchFor);
+                        else
+                            checkAfterSubCaseSearchFor = true;
+
+                        if (checkAfterSubCaseSearchFor == true) {
+                            var SearchWithinText = "";
+                            SearchWithinText = getLineText;
+                            if (getWithIn.Count() > 0)
+                            {
+                                var checkExclusion = true;
+                                for (var g = 0; g < getWithIn.Count(); g++) // search for within fields
+                                {
+                                    bool checkAfterSubCaseWithIn = true;
+                                    bool checkAfterSubCaseWithInExclusion = true;
+                                    var withInIt = (getWithIn[g]["keyword"]).ToString();
+                                    var withInCaseCheck = (getWithIn[g]["caseCheck"]).ToString().ToLower();
+                                    MatchCollection matchDataWithInIt;
+                                    // match function
+                                    regexMatch(rgx, SearchWithinText, withInIt, out matchDataWithInIt);
+
+                                    if (matchDataWithInIt.Count > 0) // if match there
+                                    {
+                                        if (withInCaseCheck == "yes")// check for cases
+                                            subCaseSearch(SearchWithinText, withInIt, getSubCase, out checkAfterSubCaseWithIn);
+                                        if (checkAfterSubCaseWithIn == true)
                                         {
-                                            foreach (var getAllPara in entry.Value)
+                                            if (getExclusion.Count() > 0 && checkExclusion == true)
+                                                exclusionProcess(exclusionCount, getExclusion, SearchWithinText, out checkAfterSubCaseWithInExclusion);
+
+                                            checkExclusion = false;
+                                            if (checkAfterSubCaseWithInExclusion == true)
                                             {
-                                                sb3.Append(getAllPara.Value); // get all lines in sb3 of single page
-                                                sb3.AppendLine();
+                                                if (!saveAllPara.Contains(SearchWithinText))
+                                                    saveAllPara.Add(SearchWithinText);
+                                                if (!saveAllwithin.Contains(withInIt))
+                                                    acceptParaWithIn += (acceptParaWithIn == "") ? withInIt : "|" + withInIt;
+                                                if (!saveAllSearchFor.Contains(AllSearchFieldKeyword))
+                                                    saveAllSearchFor.Add(AllSearchFieldKeyword);
                                             }
-                                            SearchWithinText = sb3.ToString();
-                                        }
-
-                                        if (SearchWithin == 2) // section  (current same as paragraph)
-                                            SearchWithinText = getLineText;
-
-                                        if (SearchWithin == 3) // paragraph
-                                            SearchWithinText = getLineText;
-
-
-                                        if (resultSection == 1) // sentence
-                                            foundTextSentence(AllSearchFieldKeyword, getLineText, out foundTextFinal); // get the accepted result
-
-                                        if (resultSection == 2) // paragraph
-                                            foundTextFinal = getLineText;
-
-                                        if (resultSection == 3) // section (current same as paragraph)
-                                            foundTextFinal = getLineText;
-                                        
-                                        // check if withIn values are there 
-                                        if (getWithIn.Count() > 0)
-                                        {
-                                            var acceptParaWithIn = "";
-                                            var checkExclusion = true;
-                                            var countWithInInAPara = 0;
-                                            for (var g = 0; g < getWithIn.Count(); g++) // search for within fields
-                                            {
-                                                bool checkAfterSubCaseWithIn = true;
-                                                bool checkAfterSubCaseWithInExclusion = true;
-                                                var withInIt = (getWithIn[g]["keyword"]).ToString();
-                                                var withInCaseCheck = (getWithIn[g]["caseCheck"]).ToString().ToLower();
-                                                var matchDataWithInIt = Regex.Matches(SearchWithinText, @"\b\s?" + rgx.Replace(withInIt, "\\$1") + "(\\s|\\b)");
-                                                if ((withInIt).IndexOf("\"") == 0)
-                                                {
-                                                    var searchVal = (rgx.Replace(withInIt, "\\$1")).Replace("\"", "");
-                                                    matchDataWithInIt = Regex.Matches(SearchWithinText, "[\"]" + searchVal + "[\"][^a-zA-Z0-9_]"); // find match
-                                                }
-                                                if (withInIt == "$")
-                                                    matchDataWithInIt = Regex.Matches(SearchWithinText, @"([$]+)"); // find match    
-                                                if (withInIt == "%")
-                                                    matchDataWithInIt = Regex.Matches(SearchWithinText, @"(%)"); // find match
-
-                                                if (matchDataWithInIt.Count > 0) // if match there
-                                                {
-                                                    if (withInCaseCheck == "yes")// check for cases
-                                                        subCaseSearch(SearchWithinText, withInIt, getSubCase, out checkAfterSubCaseWithIn);
-                                                    if (checkAfterSubCaseWithIn == true) {
-
-                                                        if (getExclusion.Count() > 0 && checkExclusion == true)
-                                                            exclusionProcess(exclusionCount, getExclusion, SearchWithinText, out checkAfterSubCaseWithInExclusion);
-
-                                                        checkExclusion = false;
-                                                        if (checkAfterSubCaseWithInExclusion == true)
-                                                        {
-                                                            countWithInInAPara += 1;
-                                                            gotResult = 1;
-                                                            acceptParaWithIn += (acceptParaWithIn == "") ? withInIt : "|" + withInIt;
-                                                        }
-                                                        else
-                                                            break;
-                                                    }
-                                                }
-                                            }
-                                            if (acceptParaWithIn != "")
-                                            {
-
-                                                var jo = new JObject();
-                                                jo["foundText"] = foundTextFinal;
-                                                jo["AllSearchFieldKeyword"] = AllSearchFieldKeyword;
-                                                jo["fileName"] = fileName.Split('.')[0];
-                                                jo["pageNo"] = pageCount;
-                                                jo["pageContent"] = SearchWithinText;
-                                                jo["foundWithIn"] = acceptParaWithIn;
-                                                jo["paraNumber"] = paraNumber; 
-                                                jo["completeFilePath"] = fullFilePath;
-                                                ja.Add(jo);
-                                            }
-                                        }
-
-                                        else // if not withIn to search
-                                        {
-                                            if (getExclusion.Count() != 0) {
-                                                bool acceptFoundText = true;
-                                                exclusionProcess(exclusionCount, getExclusion, SearchWithinText, out acceptFoundText);
-                                                
-                                                if(acceptFoundText== true)
-                                                {
-                                                    gotResult = 1;
-                                                    var jo = new JObject();
-                                                    jo["foundText"] = foundTextFinal;
-                                                    jo["AllSearchFieldKeyword"] = AllSearchFieldKeyword;
-                                                    jo["fileName"] = fileName.Split('.')[0];
-                                                    jo["pageNo"] = pageCount;
-                                                    jo["pageContent"] = SearchWithinText;
-                                                    jo["foundWithIn"] = "";
-                                                    jo["paraNumber"] = paraNumber;
-                                                    jo["completeFilePath"] = fullFilePath;
-                                                    ja.Add(jo);
-                                                }
-                                            }
-                                            else {
-                                                gotResult = 1;
-                                                var jo = new JObject();
-                                                jo["foundText"] = foundTextFinal;
-                                                jo["AllSearchFieldKeyword"] = AllSearchFieldKeyword;
-                                                jo["fileName"] = fileName.Split('.')[0];
-                                                jo["pageNo"] = pageCount;
-                                                jo["pageContent"] = SearchWithinText;
-                                                jo["foundWithIn"] = "";
-                                                jo["paraNumber"] = paraNumber;
-                                                jo["completeFilePath"] = fullFilePath;
-                                                ja.Add(jo);
-                                            }
+                                            else
+                                                break;
                                         }
                                     }
                                 }
@@ -668,10 +712,59 @@ namespace ReboProject
                     }
                 }
             }
+            if (acceptParaWithIn != "")
+            {
+                var finalPara = "";
+                for (int i = 0; i < saveAllPara.Count(); i++)
+                {
+                    finalPara = finalPara + saveAllPara[i] + "|||. ";
+                }
+                getLineText = finalPara;
+                gotResult = 1;
+                var AllSearchFieldKeywordVal = "";
+                foreach (var item in saveAllSearchFor)
+                {
+                    AllSearchFieldKeywordVal = AllSearchFieldKeywordVal + item + "|";
+                }
+                JArray ja1 = new JArray();
+                jarrayEnter(completeSectionText, AllSearchFieldKeywordVal, fileName, pageCount, getLineText, acceptParaWithIn, paraNumber, fullFilePath, out ja1);
+                ja.Add(ja1[0]);
+            }
         }
-        
+
+        // save data in jarray
+        public void jarrayEnter(string completeSectionText, string AllSearchFieldKeyword, string fileName,int pageCount,string getLineText, string acceptParaWithIn,int paraNumber,string fullFilePath, out JArray ja) {
+
+            ja =new JArray();
+            var jo = new JObject();
+            jo["foundText"] = getLineText;
+            jo["AllSearchFieldKeyword"] = AllSearchFieldKeyword;
+            jo["fileName"] = fileName;
+            jo["pageNo"] = pageCount;
+            jo["pageContent"] = completeSectionText;
+            jo["foundWithIn"] = acceptParaWithIn;
+            jo["paraNumber"] = paraNumber;
+            jo["completeFilePath"] = fullFilePath;
+            ja.Add(jo);
+        }
+
+        // to match regex condition for searchfor and within
+        public void regexMatch(Regex rgx,string sentence,string toSearch, out MatchCollection matchData) {
+
+            matchData = null;
+            matchData = Regex.Matches(sentence, @"\b\s?" + rgx.Replace(toSearch, "\\$1") + "(\\s|\\b)");
+            if ((toSearch).IndexOf("\"") == 0)
+            {
+                var searchVal = (rgx.Replace(toSearch, "\\$1")).Replace("\"", "");
+                matchData = Regex.Matches(sentence, "[\"]" + searchVal + "[\"][^a-zA-Z0-9_]"); // find match
+            }
+            if (toSearch == "$")
+                matchData = Regex.Matches(sentence, @"([$]+)"); // find match    
+            if (toSearch == "%")
+                matchData = Regex.Matches(sentence, @"(%)"); // find match
+        }
         //--------------------------------------------------------------------------------------------------------------------------------------
-        
+
         public void scoring(Dictionary<int, string> OutputMatch, string LeaseName, Dictionary<int, Dictionary<int, string>> savePage, string resultFormat, int totalScoreDenominatorVal, Dictionary<string, int> searchFieldScore, JArray ja, int multipleRead, out JArray ja1, out int accptedValThere, out float finalScore)
         {
             var onlyTopResult = true;
@@ -684,26 +777,16 @@ namespace ReboProject
             Regex rgx = new Regex("(['^$.|?*+()\\\\])");
             for (var l = 0; l < getAllAcceptedText.Count(); l++)
             {
-                var pageContent = getAllAcceptedText[l]["pageContent"].ToString(); // get the page value to search all search fileds
+                var pageContent = getAllAcceptedText[l]["foundText"].ToString(); // get the page value to search all search fileds
                 var scorePerSearch = 0;
                 double finalScorePerSearch = 0;
 
                 var setScoringKeyword = "";
                 foreach (KeyValuePair<string, int> singleSearchFieldScore in searchFieldScore)
                 { //  loop through all the search field
-                    
-                    var matchDataWithInIt = Regex.Matches(pageContent, @"\b\s?" + rgx.Replace(singleSearchFieldScore.Key, "\\$1") + "(\\s|\\b)"); // find match
-                    if ((singleSearchFieldScore.Key).IndexOf("\"") == 0)
-                    {
-                        var searchVal = (rgx.Replace(singleSearchFieldScore.Key, "\\$1")).Replace("\"", "");
-                        matchDataWithInIt = Regex.Matches(pageContent, "[\"]" + searchVal + "[\"][^a-zA-Z0-9_]"); // find match
-                    }
-                    if (singleSearchFieldScore.Key == "$")
-                        matchDataWithInIt = Regex.Matches(pageContent, @"([$]+)"); // find match    
-                    if (singleSearchFieldScore.Key == "%")
-                        matchDataWithInIt = Regex.Matches(pageContent, @"(%)"); // find match
-                    
-                    
+
+                    MatchCollection matchDataWithInIt;
+                    regexMatch(rgx, pageContent, singleSearchFieldScore.Key, out matchDataWithInIt); // function to match
 
                     if (matchDataWithInIt.Count > 0) // if found the match
                     {
@@ -726,7 +809,7 @@ namespace ReboProject
                 foreach (KeyValuePair<int, float> entry in accurateVal)
                 { // loop to get all the highest value
                     var outputSame = false;
-                    var pageContent = getAllAcceptedText[entry.Key]["pageContent"].ToString();
+                    var pageContent = getAllAcceptedText[entry.Key]["foundText"].ToString();
                     foreach (var getOutputToCheck in OutputMatch) // check for duplicate... if the same sentance is already an output
                     {
                         if (getOutputToCheck.Value == pageContent)
@@ -745,7 +828,8 @@ namespace ReboProject
                         var withInValFound = getAllAcceptedText[entry.Key]["foundWithIn"];
                         finalScore = entry.Value;
                         Dictionary<int, string>.ValueCollection entry1 = savePage[pageNo].Values;
-                        var getTheSectionValue = processing.SectionVal(savePage, pageNo, paraNumber); // get the section value
+                        //var getTheSectionValue = processing.SectionVal(savePage, pageNo, paraNumber); // get the section value
+                        var getTheSectionValue = "false";
                         if (getTheSectionValue == "false")
                             getTheSectionValue = "?";
 
@@ -820,13 +904,11 @@ namespace ReboProject
                         //var librarySetVal = librarySet[datapoint.ToLower()];
                         for (var i = 0; i < librarySet.Count(); i++)
                         {
+                            
                             var singleLibVAl = librarySet[i];
-                            var matchData = Regex.Matches(para, @"\b\s?" + rgx.Replace(singleLibVAl, "\\$1") + "(\\s|\\b)"); // search if library in para
-                            if ((singleLibVAl).IndexOf("\"") == 0)
-                            {
-                                var searchVal = (rgx.Replace(singleLibVAl, "\\$1")).Replace("\"", "");
-                                matchData = Regex.Matches(para, "[\"]" + searchVal + "[\"][^a-zA-Z0-9_]"); // find match
-                            }
+                            MatchCollection matchData;
+                            regexMatch(rgx, para, singleLibVAl, out matchData); // function to match 
+
                             if (matchData.Count > 0)
                             {
                                 exclusionProcess(exclusionCount, getExclusion, para, out checkAfterSubCaseWithInExclusion); // exclusion 
@@ -857,16 +939,9 @@ namespace ReboProject
             var count = 0;
             for (var i = 0; i < getExclusion.Count(); i++) // loop through all the exclusion
             {
-                var matchExclusion = Regex.Matches(SearchWithinText, @"\b\s?" + rgx.Replace(getExclusion[i]["keyword"].ToString(), "\\$1") + "(\\s|\\b)"); // find match
-                if ((getExclusion[i]["keyword"].ToString()).IndexOf("\"") == 0)
-                {
-                    var searchVal = (rgx.Replace(getExclusion[i]["keyword"].ToString(), "\\$1")).Replace("\"", "");
-                    matchExclusion = Regex.Matches(SearchWithinText, "[\"]" + searchVal + "[\"][^a-zA-Z0-9_]"); // find match
-                }
-                if (getExclusion[i]["keyword"].ToString() == "$")
-                    matchExclusion = Regex.Matches(SearchWithinText, @"([$]+)"); // find match    
-                if (getExclusion[i]["keyword"].ToString() == "%")
-                    matchExclusion = Regex.Matches(SearchWithinText, @"(%)"); // find match
+                MatchCollection matchExclusion;
+                regexMatch(rgx, SearchWithinText, getExclusion[i]["keyword"].ToString(), out matchExclusion); // function to match
+                
                 if (matchExclusion.Count > 0)
                     count += 1;
             }
@@ -893,18 +968,9 @@ namespace ReboProject
                 {
                     foreach (var withIn in allWithIn) // loop through all the within
                     {
-                        //var withInScoreVal = withInScore[withIn];
-                        var matchData = Regex.Matches(sentanceVal, @"\b\s?" + rgx.Replace(withIn, "\\$1") + "\\b"); // find match
-                        if ((withIn).IndexOf("\"") == 0)
-                        {
-                            var searchVal = (rgx.Replace(withIn, "\\$1")).Replace("\"", "");
-                            matchData = Regex.Matches(sentanceVal, "[\"]" + searchVal + "[\"][^a-zA-Z0-9_]"); // find match
-                        }
-                        if (withIn == "$")
-                            matchData = Regex.Matches(sentanceVal, @"([$]+)"); // find match    
-                        if (withIn == "%")
-                            matchData = Regex.Matches(sentanceVal, @"(\d+%)"); // find match
-
+                        MatchCollection matchData;
+                        regexMatch(rgx, sentanceVal, withIn, out matchData); // function to match
+                        
                         if (matchData.Count > 0) // if found add the score of that within
                         {
                             evenNumbers.Add(sentanceVal);
