@@ -729,6 +729,12 @@ namespace ReboProject
             }
             if (formattedString.Count() == 0)
                 getMultipleTextualPercent(html, out formattedString);
+            for (var i=0; i< formattedString.Count(); i++) {
+                if (formattedString[i].IndexOf('.') == 0)
+                {
+                    formattedString[i] = "0" + formattedString[i];
+                }
+            }
             return formattedString;
         }
         

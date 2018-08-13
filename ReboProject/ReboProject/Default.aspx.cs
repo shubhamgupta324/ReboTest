@@ -794,7 +794,7 @@ namespace ReboProject
                                 {
                                     var nextParaSection = allParaSection.Value.ElementAt(nextPara);
                                     paraNumber = paraNumber + 1;
-                                    processSearchForAndwithInParagraph(nextParaSection, paraNumber, checkPage, AllSearchFieldKeyword, rgx, AllSearchFieldCaseCheck, getSubCase, checkAfterSubCaseSearchFor, SearchWithin, getWithIn, getExclusion, exclusionCount, gotResult, fileName, pageCount, fullFilePath, out ja1Val);
+                                    processSearchForAndwithInParagraph(savePage, entry, nextParaSection,paraNumber, checkPage, AllSearchFieldKeyword, rgx, AllSearchFieldCaseCheck, getSubCase,checkAfterSubCaseSearchFor, SearchWithin, getWithIn, getExclusion, exclusionCount, gotResult, fileName,pageCount, fullFilePath, out ja1Val);
                                     if (ja1Val.HasValues)
                                         ja.Add(ja1Val[0]);
                                     nextPara++;
@@ -819,10 +819,11 @@ namespace ReboProject
             }
         }
 
-        public void processSearchForAndwithInParagraph(KeyValuePair<int, string> nextParaSection, int paraNumber, KeyValuePair<int, string> checkPage, string AllSearchFieldKeyword, Regex rgx, string AllSearchFieldCaseCheck, JToken getSubCase, bool checkAfterSubCaseSearchFor, int SearchWithin, JToken getWithIn, JToken getExclusion, int exclusionCount, int gotResult, string fileName, int pageCount, string fullFilePath, out JArray ja)
-        {
+        public void processSearchForAndwithInParagraph(Dictionary<int, Dictionary<int, string>> savePage,KeyValuePair<int, Dictionary<int, string>> entry, KeyValuePair<int, string> nextParaSection, int paraNumber,KeyValuePair<int, string> checkPage, string AllSearchFieldKeyword, Regex rgx, string AllSearchFieldCaseCheck, JToken getSubCase, bool checkAfterSubCaseSearchFor, int SearchWithin, JToken getWithIn, JToken getExclusion, int exclusionCount, int gotResult, string fileName, int pageCount, string fullFilePath, out JArray ja)
+        { 
             ja = new JArray();
             //paraNumber += 1;
+            var getCurrentParaScore = 0;
             var completeSectionText = "";
             var getLineText = checkPage.Value; // get the  line text
             var getSectionForPara = nextParaSection.Value;
@@ -879,11 +880,88 @@ namespace ReboProject
                                         break;
                                 }
                             }
+                            else if (g + 1 == getWithIn.Count())
+                            {
+                                //checkNextPageForWithIn(rgx, paraNumber, getWithIn, pageCount, savePage, entry, getLineText);
+                                if (entry.Value.Count > paraNumber && entry.Value[paraNumber + 1].Length >50)
+                                {
+                                    var getNextParaToCheck = entry.Value[paraNumber + 1];
+                                    for (var h = 0; h < getWithIn.Count(); h++)
+                                    {
+                                        bool checkAfterSubCaseWithIn2 = true;
+                                        bool checkAfterSubCaseWithInExclusion2 = true;
+                                        var withInIt2 = (getWithIn[h]["keyword"]).ToString();
+                                        var withInCaseCheck2 = (getWithIn[h]["caseCheck"]).ToString().ToLower();
+                                        // match function
+                                        regexMatch(rgx, getNextParaToCheck, withInIt2, out matchDataWithInIt);
+
+                                        if (matchDataWithInIt.Count > 0) // if match there
+                                        {
+                                            if (withInCaseCheck2 == "yes")// check for cases
+                                                subCaseSearch(getNextParaToCheck, withInIt2, getSubCase, out checkAfterSubCaseWithIn2);
+                                            if (checkAfterSubCaseWithIn2 == true)
+                                            {
+                                                if (getExclusion.Count() > 0 && checkExclusion == true)
+                                                    exclusionProcess(exclusionCount, getExclusion, getNextParaToCheck, out checkAfterSubCaseWithInExclusion2);
+
+                                                checkExclusion = false;
+                                                if (checkAfterSubCaseWithInExclusion2 == true)
+                                                {
+                                                    countWithInInAPara += 1;
+                                                    acceptParaWithIn += (acceptParaWithIn == "") ? withInIt2 : "|" + withInIt2;
+                                                    paraNumber = paraNumber + 1;
+                                                    getCurrentParaScore = 0;
+                                                    SearchWithinText = getNextParaToCheck;
+                                                }
+                                                else
+                                                    break;
+                                            }
+                                        }
+                                    }
+                                }
+                                else if(entry.Value.Count == paraNumber+1 && savePage.Count() > pageCount) {
+                                    var getNextParaToCheck = savePage[pageCount+1][1];
+                                    for (var h = 0; h < getWithIn.Count(); h++)
+                                    {
+                                        bool checkAfterSubCaseWithIn2 = true;
+                                        bool checkAfterSubCaseWithInExclusion2 = true;
+                                        var withInIt2 = (getWithIn[h]["keyword"]).ToString();
+                                        var withInCaseCheck2 = (getWithIn[h]["caseCheck"]).ToString().ToLower();
+                                        // match function
+                                        regexMatch(rgx, getNextParaToCheck, withInIt2, out matchDataWithInIt);
+                                        var foundWithIn = false;
+                                        if (matchDataWithInIt.Count > 0) // if match there
+                                        {
+                                            if (withInCaseCheck2 == "yes")// check for cases
+                                                subCaseSearch(getNextParaToCheck, withInIt2, getSubCase, out checkAfterSubCaseWithIn2);
+                                            if (checkAfterSubCaseWithIn2 == true)
+                                            {
+                                                if (getExclusion.Count() > 0 && checkExclusion == true)
+                                                    exclusionProcess(exclusionCount, getExclusion, getNextParaToCheck, out checkAfterSubCaseWithInExclusion2);
+
+                                                checkExclusion = false;
+                                                if (checkAfterSubCaseWithInExclusion2 == true)
+                                                {
+                                                    countWithInInAPara += 1;
+                                                    acceptParaWithIn += (acceptParaWithIn == "") ? withInIt2 : "|" + withInIt2;
+                                                    paraNumber = 1;
+                                                    getCurrentParaScore = 0;
+                                                    SearchWithinText = getNextParaToCheck;
+                                                }
+                                                else
+                                                    break;
+                                            }
+                                        }
+                                        if(foundWithIn == true)
+                                            pageCount = pageCount + 1;
+                                    }
+                                }
+                            }
                         }
                         if (acceptParaWithIn != "")
                         {
                             gotResult = 1;
-                            jarrayEnter(getSectionForPara, completeSectionText, AllSearchFieldKeyword, fileName, pageCount, SearchWithinText, acceptParaWithIn, paraNumber, fullFilePath, out ja);
+                            jarrayEnter(getCurrentParaScore, getSectionForPara, completeSectionText, AllSearchFieldKeyword, fileName, pageCount, SearchWithinText, acceptParaWithIn, paraNumber, fullFilePath, out ja);
                         }
                     }
 
@@ -898,15 +976,36 @@ namespace ReboProject
                             if (acceptFoundText == true)
                             {
                                 gotResult = 1;
-                                jarrayEnter(getSectionForPara, completeSectionText, AllSearchFieldKeyword, fileName, pageCount, SearchWithinText, acceptParaWithIn, paraNumber, fullFilePath, out ja);
+                                jarrayEnter(getCurrentParaScore, getSectionForPara, completeSectionText, AllSearchFieldKeyword, fileName, pageCount, SearchWithinText, acceptParaWithIn, paraNumber, fullFilePath, out ja);
                             }
                         }
                         else
                         {
                             gotResult = 1;
-                            jarrayEnter(getSectionForPara, completeSectionText, AllSearchFieldKeyword, fileName.Split('.')[0], pageCount, SearchWithinText, acceptParaWithIn, paraNumber, fullFilePath, out ja);
+                            jarrayEnter(getCurrentParaScore, getSectionForPara, completeSectionText, AllSearchFieldKeyword, fileName.Split('.')[0], pageCount, SearchWithinText, acceptParaWithIn, paraNumber, fullFilePath, out ja);
                         }
                     }
+                }
+            }
+        }
+
+        // get data from next para
+        public void checkNextPageForWithIn(int getCurrentParaScore, Regex rgx, int paraNumber, JToken getWithIn, int pageCount, Dictionary<int, Dictionary<int, string>> savePage, KeyValuePair<int, Dictionary<int, string>> entry, string getLineText)
+        {
+            var getPageData = savePage[pageCount];
+            if (entry.Value.Count > pageCount)
+            {
+                var getNextParaToCheck = entry.Value[pageCount + 1];
+                for (var g = 0; g < getWithIn.Count(); g++)
+                {
+                    bool checkAfterSubCaseWithIn = true;
+                    bool checkAfterSubCaseWithInExclusion = true;
+                    var withInIt = (getWithIn[g]["keyword"]).ToString();
+                    var withInCaseCheck = (getWithIn[g]["caseCheck"]).ToString().ToLower();
+                    MatchCollection matchDataWithInIt;
+                    // match function
+                    regexMatch(rgx, getNextParaToCheck, withInIt, out matchDataWithInIt);
+
                 }
             }
         }
@@ -914,6 +1013,7 @@ namespace ReboProject
         public void processSearchForAndwithInSection(int startPageVal, int endPageVal, JToken getSearchFor, KeyValuePair<Dictionary<string, int>, int> entry, Regex rgx, JToken getSubCase, bool checkAfterSubCaseSearchFor, int SearchWithin, JToken getWithIn, JToken getExclusion, int exclusionCount, int gotResult, string fileName, string fullFilePath, out JArray ja)
         {
             ja = new JArray();
+            var getCurrentParaScore = 0;
             var pageCount = entry.Value;
             var AllSearchFieldKeyword = "";
             var acceptParaWithIn = "";
@@ -1006,13 +1106,13 @@ namespace ReboProject
                 }
                 JArray ja1 = new JArray();
                 string getSectionForPara = "";
-                jarrayEnter(getSectionForPara, completeSectionText, AllSearchFieldKeywordVal, fileName, pageCount, getLineText, acceptParaWithIn, paraNumber, fullFilePath, out ja1);
+                jarrayEnter(getCurrentParaScore, getSectionForPara, completeSectionText, AllSearchFieldKeywordVal, fileName, pageCount, getLineText, acceptParaWithIn, paraNumber, fullFilePath, out ja1);
                 ja.Add(ja1[0]);
             }
         }
 
         // save data in jarray
-        public void jarrayEnter(string getSectionForPara, string completeSectionText, string AllSearchFieldKeyword, string fileName, int pageCount, string getLineText, string acceptParaWithIn, int paraNumber, string fullFilePath, out JArray ja)
+        public void jarrayEnter(int getCurrentParaScore, string getSectionForPara, string completeSectionText, string AllSearchFieldKeyword, string fileName, int pageCount, string getLineText, string acceptParaWithIn, int paraNumber, string fullFilePath, out JArray ja)
         {
 
             ja = new JArray();
@@ -1575,7 +1675,7 @@ namespace ReboProject
                                 }
                                 else
                                 {
-                                    if (searchFormat.IndexOf(sentenceAsOutput) == -1 && duplicateFound == false)
+                                    if (searchFormat.IndexOf(finalOutputSentence) == -1 && duplicateFound == false)
                                     {
                                         stringOutput.Add(finalOutputSentence);
                                         searchFormat = searchFormat.Replace("{{" + andConditionId + "}}", finalOutputSentence);
