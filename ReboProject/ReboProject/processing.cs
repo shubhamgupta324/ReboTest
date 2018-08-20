@@ -82,7 +82,7 @@ namespace ReboProject
             return sectiongot;
         }
 
-        public static string getCompleteParaSection(JArray ja2, Dictionary<int, Dictionary<int, string>> saveSectionNoAllFiles, Dictionary<Dictionary<int, string>, int> saveAllSection, string outputPara, string DefaultSectionName, JToken SectionName)
+        public static string getCompleteParaSection(string SectionNoCount, JArray ja2, Dictionary<int, Dictionary<int, string>> saveSectionNoAllFiles, Dictionary<Dictionary<int, string>, int> saveAllSection, string outputPara, string DefaultSectionName, JToken SectionName)
         {
             var jarrayVal = ja2;
             var pageNo = (int)ja2[0]["pageNo"]; // get the pageno of output
@@ -108,7 +108,7 @@ namespace ReboProject
                     {
                         getFirstLine = sectionDictionary.Values.ElementAt(0).ToString().Trim();
                         allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
-                        finalSectionOutput =SectionValParagraph(allPara, sectionDictionary.Values.ElementAt(j).ToString());
+                        finalSectionOutput =SectionValParagraph(SectionNoCount, allPara, sectionDictionary.Values.ElementAt(j).ToString());
                         checkNextSection = false;
                         break;
                     }
@@ -119,10 +119,11 @@ namespace ReboProject
 
             var toSearch = "";
             Dictionary<int, string> regexDictionary = new Dictionary<int, string>();
-            regexDictionary.Add(1, "[\\s]*([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}[\\s]|\\d{0,2}[\\s])"); //    1.
-            regexDictionary.Add(3, "[\\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[\\s]?"); //    1.1 
+            regexDictionary.Add(1, "[\\s]*([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}[\\s]*|\\d{0,2}[\\s]*)$"); //    1.
             regexDictionary.Add(2, "[\\s]*([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}|\\d{0,2})$"); //    1.1 
-            if (!String.IsNullOrEmpty(finalSectionOutput)) {
+            regexDictionary.Add(3, "[\\s]*[\"]([a-zA-Z]{1}[\\s]*|\\d{0,2}[\\s]*)[\"]$"); //    1.1 
+            regexDictionary.Add(4, "[\\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[\\s]?"); //    1.1 
+            //if (!String.IsNullOrEmpty(finalSectionOutput)) {
                 var foundSectionName = false;
                 foreach (var item in SectionName)
                 {
@@ -143,11 +144,11 @@ namespace ReboProject
                 }
                 if(foundSectionName == false)
                     finalSectionOutput = DefaultSectionName + " " + finalSectionOutput;
-            }
+           // }
             return finalSectionOutput;
         }
 
-        public static string SectionValParagraph(List<string> allPara, string ouputPara)
+        public static string SectionValParagraph(string SectionNoCount, List<string> allPara, string ouputPara)
         {
             List<string> sectionList = new List<string>();
             Dictionary<string, string> getTopVal = new Dictionary<string, string>();
@@ -340,9 +341,9 @@ namespace ReboProject
                                             var getValueFromConnectionInPara = connections[keyToFindConnectionInPara];
                                             if (getValueFromConnectionInPara != "")
                                             {
-                                                if (getTopVal[getValueFromConnectionInPara].ToString() == matchForNextSection.Value.Trim())
+                                                if (getTopVal[getValueFromConnectionInPara].ToString() == sectionGotInParaVal.Trim())
                                                 {
-                                                    checkNextSectionInPara = false;
+                                                    checkNextSectionInPara = true;
                                                     regexToSearchNext = "";
                                                     nextToSearchVal = "";
                                                     nextNotationtionToSearchVal = "";
@@ -353,6 +354,7 @@ namespace ReboProject
                                                 }
                                                 else
                                                 {
+                                                    checkNextSectionInPara = true;
                                                     regexToSearchNext = regexValForNextSection;
                                                     nextToSearchVal = getTopVal[getValueFromConnectionInPara].ToString();
                                                     nextNotationtionToSearchVal = notationGotInParaVal;
@@ -445,14 +447,49 @@ namespace ReboProject
                     }
                 }
             }
-            var finalSectionOutput = "";
-            for (int i = sectionList.Count-1; i >= 0; i--)
+
+            var sectionListCount = 0;
+            List<int> dataToRemove = new List<int>();
+            foreach (var item in sectionList)
             {
-                if(finalSectionOutput != "")
+                Regex regex = new Regex("^(?i)article$");
+                var match = regex.Match(item); // check if match found
+                if (match.Success)
+                    dataToRemove.Add(sectionListCount);
+                else{
+                    Regex regex1 = new Regex("^(?i)section$");
+                    var match1 = regex1.Match(item); // check if match found
+                    if (match1.Success)
+                        dataToRemove.Add(sectionListCount);
+                }
+                sectionListCount++;
+            }
+            foreach (var item in dataToRemove)
+            {
+                sectionList.RemoveAt(item);
+            }
+            var finalSectionOutput = "";
+            var sectionCount = 0;
+            if (Int32.Parse(SectionNoCount) == 0)
+                sectionCount = sectionList.Count;
+            else if (Int32.Parse(SectionNoCount) <= sectionList.Count)
+                sectionCount = Int32.Parse(SectionNoCount);
+            else
+                sectionCount = sectionList.Count;
+
+            var sectionCountVal = 0;
+            for (int i = sectionList.Count - 1; i >= 0; i--)
+            {
+                sectionCountVal++;
+               
+                if (finalSectionOutput != "")
                     finalSectionOutput = finalSectionOutput + "," + sectionList[i];
                 else
                     finalSectionOutput = sectionList[i];
+                if (sectionCountVal == sectionCount)
+                    break;
             }
+
             return finalSectionOutput;
         }
 
@@ -751,7 +788,7 @@ namespace ReboProject
         public static List<string> extractPercentage(string html)
         {
             List<string> formattedString = new List<string>();
-            foreach (Match m in Regex.Matches(html, @"(\d{1,3})?(\.(\d(?:\d+\.?)*)?)?[\s]*(\%|\s\bpercent\b)"))
+            foreach (Match m in Regex.Matches(html, @"(\d{1,3})(\.(\d(?:\d+\.?)*)?)?[\s]*(\%|\s\bpercent\b)"))
             {
                 formattedString.Add(m.Value);
             }
