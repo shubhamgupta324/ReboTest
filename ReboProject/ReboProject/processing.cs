@@ -5,6 +5,7 @@ using System.Web;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json.Linq;
 using System.Text;
+using System.Web.Configuration;
 
 namespace ReboProject
 {
@@ -91,6 +92,7 @@ namespace ReboProject
             var jarrayVal = ja2;
             var pageNo = (int)ja2[0]["pageNo"]; // get the pageno of output
             var paraNo = (int)ja2[0]["paraNo"]; // 
+            var readNextPara = (int)ja2[0]["readNextPara"]; // 
             var sectionNo = ja2[0]["sectionVal"].ToString();
             var foundPara = "";
             if (outputPara == "")
@@ -108,16 +110,46 @@ namespace ReboProject
                 var sectionDictionary = saveAllSection.Keys.ElementAt(i);
                 for (int j = 0; j < sectionDictionary.Count; j++)
                 {
-                    if (sectionDictionary.Values.ElementAt(j).ToString().Trim() == foundPara.Trim())
+                    //(sectionDictionary.Values.ElementAt(j).ToString().Trim() == foundPara.Trim())
+                    if (readNextPara == 1)
                     {
-                        getFirstLine = sectionDictionary.Values.ElementAt(0).ToString().Trim();
-                        allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
-                        finalSectionOutput =SectionValParagraph(SectionNoCount, allPara, sectionDictionary.Values.ElementAt(j).ToString());
-                        checkNextSection = false;
-                        break;
+                        if (foundPara.IndexOf(sectionDictionary.Values.ElementAt(j).ToString()) != -1)
+                        {
+                            if (sectionDictionary.Values.ElementAt(j+1).ToString().Trim().Length >= Int32.Parse(WebConfigurationManager.AppSettings["StringLength"]))
+                            {
+                                if ((sectionDictionary.Values.ElementAt(j).ToString() + sectionDictionary.Values.ElementAt(j+1).ToString()).Trim() == foundPara.Trim()) {
+                                    getFirstLine = sectionDictionary.Values.ElementAt(0).ToString().Trim();
+                                    allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
+                                    finalSectionOutput = SectionValParagraph(SectionNoCount, allPara, sectionDictionary.Values.ElementAt(j).ToString());
+                                    checkNextSection = false;
+                                    break;
+                                }
+                            }
+                            else {
+                                if ((sectionDictionary.Values.ElementAt(j).ToString() + sectionDictionary.Values.ElementAt(j + 2).ToString()).Trim() == foundPara.Trim()) {
+                                    getFirstLine = sectionDictionary.Values.ElementAt(0).ToString().Trim();
+                                    allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
+                                    finalSectionOutput = SectionValParagraph(SectionNoCount, allPara, sectionDictionary.Values.ElementAt(j).ToString());
+                                    checkNextSection = false;
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                            allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
                     }
-                    else
-                        allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
+                    else {
+                        if (sectionDictionary.Values.ElementAt(j).ToString().Trim().Contains(foundPara.Trim()))
+                        {
+                            getFirstLine = sectionDictionary.Values.ElementAt(0).ToString().Trim();
+                            allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
+                            finalSectionOutput = SectionValParagraph(SectionNoCount, allPara, sectionDictionary.Values.ElementAt(j).ToString());
+                            checkNextSection = false;
+                            break;
+                        }
+                        else
+                            allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
+                    }
                 }
             }
 

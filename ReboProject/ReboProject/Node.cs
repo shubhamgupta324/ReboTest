@@ -217,7 +217,7 @@ namespace ReboProject
                 var parentRegex = "";
                 var parentIndex = 0;
                 var parentFound = false;
-                for (int i = index - 1; i > 0; i--)
+                for (int i = index - 1; i >= 0; i--)
                 {
                     parentSentence = entry.ElementAt(i).Key;
                     parentRegex = sectionRegex.ElementAt(i).Key;
