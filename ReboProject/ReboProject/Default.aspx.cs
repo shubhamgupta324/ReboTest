@@ -297,7 +297,7 @@ namespace ReboProject
                                 if (SearchWithin == 2) // section
                                 {
                                     var getCompleteSection = ja2[0]["output"].ToString();
-                                    ja2[0]["sectionVal"] = processing.sectionValSection(getCompleteSection);
+                                    ja2[0]["sectionVal"] = DefaultSectionName + processing.sectionValSection(getCompleteSection);
                                 }
 
                                 if (!getParaForSentence.Contains(ja2[0]["Pageoutput"].ToString()))
@@ -1267,7 +1267,7 @@ namespace ReboProject
                     var pageContent = getAllAcceptedText[entry.Key]["foundText"].ToString();
                     foreach (var getOutputToCheck in OutputMatch) // check for duplicate... if the same sentance is already an output
                     {
-                        if (getOutputToCheck.Value.Trim() == pageContent.Trim())
+                        if (getOutputToCheck.Value.Trim() == pageContent.Trim() || getOutputToCheck.Value.Trim().IndexOf(pageContent.Trim()) != -1)
                             outputSame = true; // if true dont take that as output  and select the next output
                     }
                     // save the output for the file
