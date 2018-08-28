@@ -421,11 +421,11 @@ namespace ReboProject
                         //saveDataToFolder(ja4, folderPath);
                     }
                     finalOutput.Add(ja3[0]);
-                    //if (ja3[0]["output"].ToString() != "Lease is silent" && ja3[0]["output"].ToString() != "lease is silent")
-                    //    highlightPdf(ja3[0]["output"].ToString(), ja3[0]["pageNo"].ToString(), ja3[0]["completeFilePath"].ToString(), ja3[0]["dataPointName"].ToString());
-                    
-                    
-                    
+                    if (ja3[0]["output"].ToString() != "Lease is silent" && ja3[0]["output"].ToString() != "lease is silent")
+                        highlightPdf(ja3[0]["output"].ToString(), ja3[0]["pageNo"].ToString(), ja3[0]["completeFilePath"].ToString(), ja3[0]["dataPointName"].ToString(), ja3[0]["sectionPageNos"].ToString(), ja3[0]["fileName"].ToString()); 
+
+
+
                     //---------------------------------------------------------------
 
                 }
@@ -933,6 +933,7 @@ namespace ReboProject
                                             }
                                             if (foundWithIn == true)
                                             {
+                                                sectionPageNos = pageCount + "|" + pageCount + 1;
                                                 pageCount = pageCount + 1;
                                                 //getCurrentParaScore = Int32.Parse(AllSearchFieldscore);
                                             }
@@ -1284,6 +1285,7 @@ namespace ReboProject
                         var completeFilePathVal = getAllAcceptedText[entry.Key]["completeFilePath"];
                         var withInValFound = getAllAcceptedText[entry.Key]["foundWithIn"];
                         var readNextPara = getAllAcceptedText[entry.Key]["readNextPara"];
+                        var sectionPageNos = getAllAcceptedText[entry.Key]["sectionPageNos"];
                         finalScore = entry.Value;
 
                         var jo1 = new JObject();
@@ -1301,6 +1303,7 @@ namespace ReboProject
                         jo1["sectionVal"] = sectionVal;
                         jo1["dataPointName"] = datapointName;
                         jo1["readNextPara"] = readNextPara;
+                        jo1["sectionPageNos"] = sectionPageNos;
                         ja1.Add(jo1);
                         onlyTopResult = false;
                     }
@@ -2057,86 +2060,185 @@ namespace ReboProject
                 output = tocheck;
         }
 
-        //public void highlightPdf(string output, string pageNo, string filePath, string dataPointName)
-        //{
-        //    var fileName = "";
-        //    var folderName = "";
-        //    string[] getFolder = filePath.Split(new string[] { "\\" }, StringSplitOptions.None);
-        //    fileName = getFolder[getFolder.Length - 1];
-        //    folderName = getFolder[getFolder.Length - 2];
-        //    getFolder = getFolder.Take(getFolder.Count() - 1).ToArray();
-        //    getFolder = getFolder.Take(getFolder.Count() - 1).ToArray();
+        public void highlightPdf(string output, string pageNo, string filePath, string dataPointName , string sectionPageNos, string allFiles)
+        {
+            Dictionary<string, string> savePageAndPara = new Dictionary<string, string>();
+            List<string> saveFileName = new List<string>();
+            var fileName = "";
+            var folderName = "";
+            string[] getFolder = filePath.Split(new string[] { "\\" }, StringSplitOptions.None);
+            fileName = getFolder[getFolder.Length - 1];
+            folderName = getFolder[getFolder.Length - 2];
+            getFolder = getFolder.Take(getFolder.Count() - 1).ToArray();
+            var initialPathArray = getFolder;
+            var initialPath = "";
+            List<string> initialPathList = initialPathArray.ToList<string>();
+            initialPathList.RemoveAll(p => string.IsNullOrEmpty(p));
+            foreach (var item in initialPathList)
+            {
+                if(initialPath =="")
+                    initialPath = initialPath + item;
+                else
+                    initialPath = initialPath + "\\" + item;
+            }
+            getFolder = getFolder.Take(getFolder.Count() - 1).ToArray();
 
-        //    List<string> y = getFolder.ToList<string>();
-        //    y.RemoveAll(p => string.IsNullOrEmpty(p));
-        //    getFolder = y.ToArray();
-        //    var newPath = "";
-        //    foreach (var item in getFolder)
-        //    {
-        //        //if (newPath != "")
-        //        //    newPath = newPath + "\\" + item;
-        //        //else
-        //            newPath = newPath + item;
-        //        break;
-        //    }
-        //    var hightlightFolder = newPath + "\\highlight";
-        //    if (!Directory.Exists(hightlightFolder))//if output folder not exist
-        //        Directory.CreateDirectory(hightlightFolder);//create folder
-        //    if (!Directory.Exists(hightlightFolder + "\\" + folderName))//if output folder not exist
-        //        Directory.CreateDirectory(hightlightFolder + "\\" + folderName);//create folder
+            List<string> y = getFolder.ToList<string>();
+            y.RemoveAll(p => string.IsNullOrEmpty(p));
+            getFolder = y.ToArray();
+            var highlightPathName = getFolder[1];
+            var newPath = "";
+            foreach (var item in getFolder)
+            {
+                newPath = newPath + item;
+                break;
+            }
+            var hightlightFolder = newPath + "\\highlight_" + highlightPathName;
+            if (!Directory.Exists(hightlightFolder))//if output folder not exist
+                Directory.CreateDirectory(hightlightFolder);//create folder
+            if (!Directory.Exists(hightlightFolder + "\\" + folderName))//if output folder not exist
+                Directory.CreateDirectory(hightlightFolder + "\\" + folderName);//create folder
+            
+            var splitFile = allFiles.Split(new string[] { ", " }, StringSplitOptions.None);
+            for (int i = 0; i < splitFile.Count(); i++)
+            {
+                splitFile[i] = splitFile[i].Trim();
+            }
+            string[] singlePageNo = pageNo.Split(',');
+            List<string> splitFilesplitMultiplePageList = new List<string>(splitFile);
+            var list = splitFilesplitMultiplePageList.Distinct().ToList();
+            Dictionary<string, string> savePageNo = new Dictionary<string, string>();
+            for (int j = 0; j < list.Count; j++)
+            {
+                var allPageNoForFile = "";
+                for (int i = 0; i < splitFilesplitMultiplePageList.Count; i++)
+                {
+                    if (list.ElementAt(j) == splitFilesplitMultiplePageList.ElementAt(i))
+                    {
+                        if (allPageNoForFile == "")
+                            allPageNoForFile = allPageNoForFile + singlePageNo[i];
+                        else
+                            allPageNoForFile = allPageNoForFile + "," + singlePageNo[i];
+                    }
+                }
+                savePageNo.Add(list.ElementAt(j), allPageNoForFile);
+            }
 
+            string[] singlePara = output.Split(new string[] { "###" }, StringSplitOptions.None);
+            for (int i = 0; i < singlePara.Count(); i++)
+            {
+                savePageAndPara.Add(singlePara[i], singlePageNo[i].Trim());
+                saveFileName.Add(splitFile[i]);
+            }
+            for (int l = 0; l < savePageNo.Count; l++)
+            {
+                List<string> splitMultiplePageList = new List<string>();
+                if (sectionPageNos != "")
+                {
+                    string[] splitMultiplePage = sectionPageNos.Split('|');
+                    splitMultiplePageList = new List<string>(splitMultiplePage);
+                }
+                using (Doc doc = new Doc())
+                {
+                    doc.Read(initialPath +"\\"+ savePageNo.ElementAt(l).Key +".pdf");
+                    if (File.Exists(hightlightFolder + "\\" + folderName + "\\" + dataPointName + "-" + savePageNo.ElementAt(l).Key + ".pdf"))
+                    {
+                        File.Delete(hightlightFolder + "\\" + folderName + "\\" + dataPointName + "-" + savePageNo.ElementAt(l).Key + ".pdf");
+                    }
+                    var newFilePath = hightlightFolder + "\\" + folderName + "\\" + dataPointName + "-" + savePageNo.ElementAt(l).Key + ".pdf";
+                    singlePageNo = savePageNo.ElementAt(l).Value.Split(',');
+                    for (int i = 0; i < singlePageNo.Count(); i++)
+                    {
+                        var PageNo = singlePageNo[i].Trim();
+                        var getPara = "";
+                        if (savePageAndPara.Values.ToList().IndexOf(PageNo) == saveFileName.IndexOf(savePageNo.ElementAt(l).Key)) {
+                            getPara = savePageAndPara.FirstOrDefault(x => x.Value == PageNo).Key;
+                        }
+                        if (splitMultiplePageList.Count > 0 && splitMultiplePageList.ElementAt(0).Trim() == PageNo)
+                        {
+                            foreach (var item in splitMultiplePageList)
+                            {
+                                PageNo = item;
 
-
-        //    if (File.Exists(hightlightFolder + "\\" + folderName + "\\" + dataPointName + "-" + fileName))
-        //    {
-        //        File.Delete(hightlightFolder + "\\" + folderName + "\\" + dataPointName + "-" + fileName);
-        //    }
-        //    var newFilePath = hightlightFolder + "\\" + folderName + "\\" + dataPointName + "-" + fileName;
-
-        //    string[] singlePageNo = pageNo.Split(',');
-        //    string[] singlePara = output.Split(new string[] { "###" }, StringSplitOptions.None);
-        //    using (Doc doc = new Doc())
-        //    {
-        //        doc.Read(filePath);
-        //        for (int i = 0; i < singlePageNo.Count(); i++)
-        //        {
-        //            TextOperation op = new TextOperation(doc);
-        //            XRect _xrect1 = new XRect();
-        //            _xrect1.String = "0 0 612 1000";//default to A4 size
-        //            XRect[] _xrect = new XRect[] { };
-        //            op.PageContents.AddPages(Int32.Parse(singlePageNo[i].Trim()));
-        //            string[] test = op.GetText(_xrect1, Int32.Parse(singlePageNo[i].Trim())).Split(new string[] { "\r\n" }, StringSplitOptions.None);
-        //            var _text = replaceSplChar(op.GetText(_xrect1, Int32.Parse(singlePageNo[i].Trim())));
-        //            for (int j = 0; j < test.Count(); j++)
-        //            {
-        //                int pos = 0;
-        //                if (singlePara[i].IndexOf(test[j].Trim()) != -1)
-        //                {
-        //                    var searchText = replaceSplChar(test[j]);
-        //                    var pattern = searchText.Trim().Replace(" ", "[\\s]{1,}"); //replace all spaces;
-        //                    var matches = System.Text.RegularExpressions.Regex.Matches(_text, pattern, RegexOptions.None, TimeSpan.FromSeconds(1));  // matches found text with the page
-        //                    //if (pos != 0) {
-        //                        pos = matches[0].Captures[0].Index; // get index of matched found text
-        //                        IList<TextFragment> theSelection = op.Select(pos, test[j].Trim().Length);
-        //                        IList<TextGroup> theGroups = op.Group(theSelection);
-        //                        theSelection = op.Select(pos, searchText.Length + ((theGroups.Count - 1) * 2));//add the new lines in the length of the string
-        //                        theGroups = op.Group(theSelection);//get the groups again...
-        //                        foreach (TextGroup theGroup in theGroups)
-        //                        {
-        //                            if (string.IsNullOrEmpty(theGroup.Text.Trim()))
-        //                                continue;
-        //                            doc.Rect.String = theGroup.Rect.String;
-        //                            doc.Color.String = "255 255 0";
-        //                            doc.Color.Alpha = 100;// change shade for found text
-        //                            doc.FillRect();
-        //                        }
-        //                    //}
-        //                }
-        //            }
-        //        }
-        //        doc.Save(newFilePath);
-        //    }
-        //}
+                                TextOperation op = new TextOperation(doc);
+                                XRect _xrect1 = new XRect();
+                                _xrect1.String = "0 0 612 1000";//default to A4 size
+                                XRect[] _xrect = new XRect[] { };
+                                op.PageContents.AddPages(Int32.Parse(PageNo));
+                                string[] test = op.GetText(_xrect1, Int32.Parse(PageNo)).Split(new string[] { "\r\n" }, StringSplitOptions.None);
+                                var _text = replaceSplChar(op.GetText(_xrect1, Int32.Parse(PageNo)));
+                                for (int j = 0; j < test.Count(); j++)
+                                {
+                                    int pos = 0;
+                                    if (singlePara[i].IndexOf(test[j].Trim()) != -1)
+                                    {
+                                        var searchText = replaceSplChar(test[j]);
+                                        var pattern = searchText.Trim().Replace(" ", "[\\s]{1,}"); //replace all spaces;
+                                        var matches = System.Text.RegularExpressions.Regex.Matches(_text, pattern, RegexOptions.None, TimeSpan.FromSeconds(1));  // matches found text with the page
+                                                                                                                                                                 //if (pos != 0) {
+                                        pos = matches[0].Captures[0].Index; // get index of matched found text
+                                        IList<TextFragment> theSelection = op.Select(pos, test[j].Trim().Length);
+                                        IList<TextGroup> theGroups = op.Group(theSelection);
+                                        theSelection = op.Select(pos, searchText.Length + ((theGroups.Count - 1) * 2));//add the new lines in the length of the string
+                                        theGroups = op.Group(theSelection);//get the groups again...
+                                        foreach (TextGroup theGroup in theGroups)
+                                        {
+                                            if (string.IsNullOrEmpty(theGroup.Text.Trim()))
+                                                continue;
+                                            doc.Rect.String = theGroup.Rect.String;
+                                            doc.Color.String = "255 255 0";
+                                            doc.Color.Alpha = 100;// change shade for found text
+                                            doc.FillRect();
+                                        }
+                                        //}
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            TextOperation op = new TextOperation(doc);
+                            XRect _xrect1 = new XRect();
+                            _xrect1.String = "0 0 612 1000";//default to A4 size
+                            XRect[] _xrect = new XRect[] { };
+                            op.PageContents.AddPages(Int32.Parse(PageNo));
+                            string[] test = op.GetText(_xrect1, Int32.Parse(PageNo)).Split(new string[] { "\r\n" }, StringSplitOptions.None);
+                            var _text = replaceSplChar(op.GetText(_xrect1, Int32.Parse(PageNo)));
+                            for (int j = 0; j < test.Count(); j++)
+                            {
+                                int pos = 0;
+                                if (getPara.IndexOf(test[j].Trim()) != -1)
+                                {
+                                    var searchText = replaceSplChar(test[j]);
+                                    var pattern = searchText.Trim().Replace(" ", "[\\s]{1,}"); //replace all spaces;
+                                    var matches = System.Text.RegularExpressions.Regex.Matches(_text, pattern, RegexOptions.None, TimeSpan.FromSeconds(1));  // matches found text with the page
+                                                                                                                                                             //if (pos != 0) {
+                                    pos = matches[0].Captures[0].Index; // get index of matched found text
+                                    IList<TextFragment> theSelection = op.Select(pos, test[j].Trim().Length);
+                                    IList<TextGroup> theGroups = op.Group(theSelection);
+                                    theSelection = op.Select(pos, searchText.Length + ((theGroups.Count - 1) * 2));//add the new lines in the length of the string
+                                    theGroups = op.Group(theSelection);//get the groups again...
+                                    foreach (TextGroup theGroup in theGroups)
+                                    {
+                                        if (string.IsNullOrEmpty(theGroup.Text.Trim()))
+                                            continue;
+                                        doc.Rect.String = theGroup.Rect.String;
+                                        doc.Color.String = "255 255 0";
+                                        doc.Color.Alpha = 100;// change shade for found text
+                                        doc.FillRect();
+                                    }
+                                    //}
+                                }
+                            }
+                            saveFileName.RemoveAt(saveFileName.IndexOf(savePageNo.ElementAt(l).Key));
+                            savePageAndPara.Remove(getPara);
+                        }
+                    }
+                    doc.Save(newFilePath);
+                }
+            }
+           
+        }
         private string replaceSplChar(string text)
         {
             var specialChar = "(,),*,\",^,#,$,!,@,%,~,{,},[,],\\,_,`,:,;,+,=,-,>,/";// get specail chars from web config
