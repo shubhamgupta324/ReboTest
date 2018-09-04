@@ -323,17 +323,10 @@ namespace ReboProject
             notations.Add(7, "section");
             notations.Add(8, "article");
 
-            //Dictionary<int, string> matchRegexNumericSection = new Dictionary<int, string>();
-            //matchRegexNumericSection.Add(4, @"^[\s]*((?i)(section)\s\d+\.\d(?:\d+\.?)*)"); //    section 1.1 
-            //matchRegexNumericSection.Add(2, @"^(\d{1,3}\.\d(?:\d+\.?)*)"); //    1.1 
-            //matchRegexNumericSection.Add(3, @"^[\s]*((?i)(section)\s\d+\.(:\d+\.?)*)\s"); //    section 1.
-            //matchRegexNumericSection.Add(5, @"^[\s]*((?i)(article)\s\d)"); //   article 1,
-            //matchRegexNumericSection.Add(6, @"^[\s]*((?i)(article)\s\d+\.(?:\d+\.?)*)"); //  article 1.1 
-
             Dictionary<int, string> matchRegexNumeric = new Dictionary<int, string>();
             // NUMBERS
-            matchRegexNumeric.Add(1, @"^([1-9]{1,3}\.(:\d+\.?)*)[\s]?([(|\[]?([a-zA-Z]{1}|\d{0,3}|(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4})[\]|)|:|.])?(?!\S)"); //    1./ 1. a)
-            matchRegexNumeric.Add(2, @"^([1-9]{1,3}\.\d(?:\d+\.?)*)[\s]?([(|\[]?([a-zA-Z]{1}|\d{0,3}|(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4})[]|)|:|.])?(?!\S)"); //    1.1  / 1.1 a)
+            matchRegexNumeric.Add(1, @"^(\d{1,3}\.(:\d+\.?)*)[\s]?([(|\[]?([a-zA-Z]{1}|\d{0,3}|(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4})[\]|)|:|.])?(?!\S)"); //    1./ 1. a)
+            matchRegexNumeric.Add(2, @"^(\d{1,3}\.\d(?:\d+\.?)*)[\s]?([(|\[]?([a-zA-Z]{1}|\d{0,3}|(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4})[]|)|:|.])?(?!\S)"); //    1.1  / 1.1 a)
             matchRegexNumeric.Add(3, @"^[\s]*((?i)(section)\s\d+\.(:\d+\.?)*)(?!\S)"); //    section 1.
             matchRegexNumeric.Add(4, @"^[\s]*((?i)(section)\s\d+\.(?:\d+\.?)*)(?!\S)"); //    section 1.1 
             matchRegexNumeric.Add(5, @"^[\s]*((?i)(article)\s\d)"); //   article 1,
