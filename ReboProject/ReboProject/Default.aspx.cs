@@ -862,7 +862,8 @@ namespace ReboProject
             var getSectionForPara = nextParaSection.Value;
             MatchCollection matchData;
             regexMatch(rgx, getLineText, AllSearchFieldKeyword, out matchData);
-
+            var getStringLength = Int32.Parse(WebConfigurationManager.AppSettings["StringLength"]); // get the access to d ;
+            var headingLength = Int32.Parse(WebConfigurationManager.AppSettings["headingLength"]);
             if (matchData.Count > 0) // if match there
             {
                 // check for cases
@@ -886,6 +887,7 @@ namespace ReboProject
                         var countWithInInAPara = 0;
                         var getInSamePara = false;
                         var checkNextWithIn = true;
+                        var addNextPara = false;
                         for (var g = 0; g < getWithIn.Count(); g++) // search for within fields
                         {
                             if (checkNextWithIn == false)
@@ -912,6 +914,7 @@ namespace ReboProject
                                     if (checkAfterSubCaseWithInExclusion == true)
                                     {
                                         countWithInInAPara += 1;
+                                        addNextPara = true;
                                         acceptParaWithIn += (acceptParaWithIn == "") ? withInIt : "|" + withInIt;
                                     }
                                     else
@@ -920,8 +923,6 @@ namespace ReboProject
                             }
                             else if (g + 1 == getWithIn.Count() && getInSamePara == false)
                             {
-                                var getStringLength = Int32.Parse(WebConfigurationManager.AppSettings["StringLength"]); // get the access to d ;
-                                var headingLength = Int32.Parse(WebConfigurationManager.AppSettings["headingLength"]);
                                 if (entry.Value.Count > paraNumber && entry.Value[paraNumber + 1].Length > getStringLength && SearchWithinText.Length <= headingLength)
                                 {
                                     var getNextParaToCheck = SearchWithinText + entry.Value[paraNumber + 1];
@@ -1002,12 +1003,43 @@ namespace ReboProject
                                             }
                                             if (foundWithIn == true)
                                             {
-                                                pageCount = pageCount + 1;
-                                                //getCurrentParaScore = Int32.Parse(AllSearchFieldscore);
+                                                sectionPageNos= pageCount +"|"+ pageCount + 1;
                                             }
                                         }
                                     }
                                     
+                                }
+                            }
+                        }
+                        // take next sentence 
+                        if (addNextPara == true)
+                        {
+                            if (paraNumber == entry.Value.Count - 1 && entry.Value[paraNumber + 1].Length > getStringLength) {
+                                var hasSectionNo = Program.checkHasSectionNo(savePage[pageCount + 1][1]);
+                                if (hasSectionNo == false)
+                                {
+                                    SearchWithinText = SearchWithinText + savePage[pageCount + 1][1];
+                                    sectionPageNos = pageCount + "|" + pageCount + 1;
+                                }
+                            }
+                            else if (paraNumber == 1) {
+                                var hasSectionNo = Program.checkHasSectionNo(SearchWithinText);
+                                if (hasSectionNo == false)
+                                {
+                                    if (savePage[pageCount - 1][savePage[pageCount - 1].Count()].Length > getStringLength)
+                                    {
+                                        SearchWithinText =savePage[pageCount - 1][savePage[pageCount - 1].Count()] + SearchWithinText;
+                                        sectionPageNos = pageCount-1 + "|" + pageCount;
+                                        pageCount = pageCount - 1;
+                                        paraNumber =savePage[pageCount].Count();
+                                    }
+                                    else
+                                    {
+                                       SearchWithinText = savePage[pageCount - 1][savePage[pageCount - 1].Count() - 1] + SearchWithinText;
+                                        sectionPageNos = pageCount-1 + "|" + pageCount;
+                                        pageCount = pageCount -1;
+                                        paraNumber =savePage[pageCount].Count() -1;
+                                    }
                                 }
                             }
                         }
@@ -1336,7 +1368,7 @@ namespace ReboProject
                     var pageContent = getAllAcceptedText[entry.Key]["foundText"].ToString();
                     foreach (var getOutputToCheck in OutputMatch) // check for duplicate... if the same sentance is already an output
                     {
-                        if (getOutputToCheck.Value.Trim() == pageContent.Trim() || getOutputToCheck.Value.Trim().IndexOf(pageContent.Trim()) != -1)
+                        if (getOutputToCheck.Value.Trim() == pageContent.Trim() | getOutputToCheck.Value.Trim().IndexOf(pageContent.Trim()) != -1 | pageContent.Trim().IndexOf(getOutputToCheck.Value.Trim()) != -1)
                             outputSame = true; // if true dont take that as output  and select the next output
                     }
                     // save the output for the file
