@@ -651,7 +651,7 @@ namespace ReboProject
                         saveSectionNo.Add(i, sectionNoCheck[0]);
                         saveSectionNoRegex.Add(i, sectionNoCheck[1]);
                     }
-                    else
+                    else if(saveLines.Count() > saveSectionNo.Count())
                     {
                         saveSectionNo.Add(i + 1, sectionNoCheck[0]);
                         saveSectionNoRegex.Add(i + 1, sectionNoCheck[1]);
