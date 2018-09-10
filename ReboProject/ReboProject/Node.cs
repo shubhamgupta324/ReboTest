@@ -8,6 +8,7 @@ namespace ReboProject
 {
     class Program
     {
+        // for Only section
         public static List<Dictionary<Dictionary<string, int>, int>> getSectionVal(int startPageVal,int endPageVal, Dictionary<int, Dictionary<int, string>> savePage, Dictionary<int, Dictionary<int, string>> savePageSectionRegex)
         {
             List<Dictionary<Dictionary<string, int>, int>> dataSet = new List<Dictionary<Dictionary<string, int>, int>>();
@@ -146,6 +147,7 @@ namespace ReboProject
             return dataSet;
         }
         
+        // get the section page number
         public static List<string> completeSection(int sectionPageNo, Dictionary<int, Dictionary<int, string>> savePage, Dictionary<string, int> sectionRegex, Dictionary<string, int> entry, string getLineText, string myRegex)
         {
             List<string> sectionData = new List<string>();
@@ -307,6 +309,7 @@ namespace ReboProject
             return sectionData;
         }
 
+        // get section para
         public static void getNotationType(string Sentence, int sectionPageNo, Dictionary<int, Dictionary<int, string>> savePage, out int pageNoVal, out int paraNoVal)
         {
             pageNoVal = 0;
@@ -330,59 +333,59 @@ namespace ReboProject
 
         }
 
+        // check if the para has section number or not for paragraph
         public static bool checkHasSectionNo(string sentence) {
             var hasSectionNo = false;
 
             Dictionary<int, string> matchRegexNumeric = new Dictionary<int, string>();
             // NUMBERS
-            matchRegexNumeric.Add(1, @"^(\d{1,3}\.(:\d+\.?)*)\s"); //    1.
-            matchRegexNumeric.Add(2, @"^(\d{1,3}\.\d(?:\d+\.?)*)"); //    1.1 
-            matchRegexNumeric.Add(3, @"^[\s]*((?i)(section)\s\d+\.(:\d+\.?)*)\s"); //    section 1.
-            matchRegexNumeric.Add(4, @"^[\s]*((?i)(section)\s\d+\.\d(?:\d+\.?)*)"); //    section 1.1 
-            matchRegexNumeric.Add(5, @"^[\s]*((?i)(article)\s\d{0,3})"); //   article 1,
-            matchRegexNumeric.Add(6, @"^[\s]*((?i)(article)\s\d+\.(?:\d+\.?)*)"); //  article 1.1 
-            matchRegexNumeric.Add(7, @"^[\s]*(\d{1,3}[:])\s"); //   1:
-            matchRegexNumeric.Add(8, @"^[\s]*(\d{1,3}[)])\s"); //   1)
-            matchRegexNumeric.Add(9, @"^[\s]*(\d{1,3}[]])\s"); //   1]
-            matchRegexNumeric.Add(10, @"^[\s]*([[]+\d+[]])\s"); //   [1]
-            matchRegexNumeric.Add(11, @"^[\s]*([[(]+\d+[)])\s"); //   (1)
-
-            matchRegexNumeric.Add(12, @"^[\s]*[(](?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[)]\s"); //    (xvii)
-            matchRegexNumeric.Add(13, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}\s"); //    xvii
-            matchRegexNumeric.Add(14, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[)]\s"); //    xvii)
-            matchRegexNumeric.Add(15, @"^[\s]*[[](?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[]]\s"); //    [xvii]
-            matchRegexNumeric.Add(16, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[]]\s"); //    xvii]
-            matchRegexNumeric.Add(17, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[:]\s"); //    xvii:
-            matchRegexNumeric.Add(18, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[.]\s"); //    xvii.
-            matchRegexNumeric.Add(19, @"^[\s]*((?i)(section))[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}"); //    section xvii
-            matchRegexNumeric.Add(20, @"^[\s]*((?i)(article))[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}"); //    article xvii
-
-            matchRegexNumeric.Add(21, @"^[\s]*[(](?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[)]\s"); //    (XVII)
-            matchRegexNumeric.Add(22, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[.]\s"); // XVII.
-            matchRegexNumeric.Add(23, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[)]\s"); //    XVII)
-            matchRegexNumeric.Add(24, @"^[\s]*[[](?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[]]\s"); //    [XVII]
-            matchRegexNumeric.Add(25, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[]]\s"); //    XVII]
-            matchRegexNumeric.Add(26, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[:]\s"); //    XVII:
-            matchRegexNumeric.Add(27, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[.]\s"); //    XVII.
-            matchRegexNumeric.Add(28, @"^[\s]*((?i)(section))[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}"); //    section XVII
-            matchRegexNumeric.Add(29, @"^[\s]*((?i)(article))[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}"); //    article XVII
-
-            matchRegexNumeric.Add(30, @"^[\s]*([a-z][.])\s");  //  a.
-            matchRegexNumeric.Add(31, @"^[\s]*([a-z][:])\s");  //  a:
-            matchRegexNumeric.Add(32, @"^[\s]*([(][a-z][)])\s");  //    (a)
-            matchRegexNumeric.Add(33, @"^[\s]*([a-z][)])\s");  // a)
-            matchRegexNumeric.Add(34, @"^[\s]*([[][a-z][]])\s");  //   a]
-            matchRegexNumeric.Add(35, @"^[\s]*([a-z][]])\s");  //     [a]
-            matchRegexNumeric.Add(36, @"^[\s]*(((?i)(section))[\s]*[a-z])");  //      section a
-            matchRegexNumeric.Add(37, @"^[\s]*(((?i)(article))[\s]*[a-z])");  //      article a
-            matchRegexNumeric.Add(38, @"^[\s]*([A-Z][.])\s");  // A.
-            matchRegexNumeric.Add(39, @"^[\s]*([A-Z][:])\s");  // A:
-            matchRegexNumeric.Add(40, @"^[\s]*([(][A-Z][)])\s");  // (A)
-            matchRegexNumeric.Add(41, @"^[\s]*([A-Z][)])\s");  // A)
-            matchRegexNumeric.Add(42, @"^[\s]*([[][A-Z][]])\s");  // A]
-            matchRegexNumeric.Add(43, @"^[\s]*([A-Z][]])\s");  // [A]
-            matchRegexNumeric.Add(44, @"^[\s]*(((?i)(section))[\s]*[A-Z])\s");  // section A
-            matchRegexNumeric.Add(45, @"^[\s]*(((?i)(ARTICLE))[\s]*[A-Z])");  // ARTICLE A  
+            matchRegexNumeric.Add(1, @"^(\d{1,3}\.(:\d+\.?)*)[\s]?([(|\[]?([a-zA-Z]{1}|\d{0,3}|(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4})[\]|)|:|.])?(?!\S)"); //    1./ 1. a)
+            matchRegexNumeric.Add(2, @"^(\d{1,3}\.\d(?:\d+\.?)*)[\s]?([(|\[]?([a-zA-Z]{1}|\d{0,3}|(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4})[]|)|:|.])?(?!\S)"); //    1.1  / 1.1 a)
+            matchRegexNumeric.Add(3, @"^[\s]*((?i)(section)\s\d*)(?!\S)"); //    section 1
+            matchRegexNumeric.Add(4, @"^[\s]*((?i)(section)\s\d+\.(?:\d+\.?)*)(?!\S)"); //    section 1.1 
+            matchRegexNumeric.Add(5, @"^[\s]*((?i)(article)\s\d*)(?!\S)"); //   article 1
+            matchRegexNumeric.Add(6, @"^[\s]*((?i)(article)\s\d+\.(?:\d+\.?)*)(?!\S)"); //  article 1.1 
+            matchRegexNumeric.Add(7, @"^[\s]*([1-9]{1,3}[:])(?!\S)"); //   1:
+            matchRegexNumeric.Add(8, @"^[\s]*([1-9]{1,3}[)])(?!\S)"); //   1)
+            matchRegexNumeric.Add(9, @"^[\s]*([1-9]{1,3}[]])(?!\S)"); //   1]
+            matchRegexNumeric.Add(10, @"^[\s]*([[]+[1-9]+[]])(?!\S)"); //   [1]
+            matchRegexNumeric.Add(11, @"^[\s]*([[(]+[1-9]+[)])(?!\S)"); //   (1)
+            
+            matchRegexNumeric.Add(12, @"^[\s]*[(](?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[)](?!\S)"); //    (xvii)
+            matchRegexNumeric.Add(13, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[)](?!\S)"); //    xvii)
+            matchRegexNumeric.Add(14, @"^[\s]*[[](?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[]](?!\S)"); //    [xvii]
+            matchRegexNumeric.Add(15, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[]](?!\S)"); //    xvii]
+            matchRegexNumeric.Add(16, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[:](?!\S)"); //    xvii:
+            matchRegexNumeric.Add(17, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[.](?!\S)"); //    xvii.
+            matchRegexNumeric.Add(18, @"^[\s]*(?i)(section)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[.]?(?!\S)"); //    section xvii
+            matchRegexNumeric.Add(19, @"^[\s]*(?i)(article)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[.]?(?!\S)"); //    article xvii
+            
+            matchRegexNumeric.Add(20, @"^[\s]*[(](?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[)](?!\S)"); //    (XVII)
+            matchRegexNumeric.Add(21, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[)](?!\S)"); //    XVII)
+            matchRegexNumeric.Add(22, @"^[\s]*[[](?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[]](?!\S)"); //    [XVII]
+            matchRegexNumeric.Add(23, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[]](?!\S)"); //    XVII]
+            matchRegexNumeric.Add(24, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[:](?!\S)"); //    XVII:
+            matchRegexNumeric.Add(25, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[.](?!\S)"); //    XVII.
+            matchRegexNumeric.Add(26, @"^[\s]*(?i)(section)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[.]?(?!\S)"); //    section XVII
+            matchRegexNumeric.Add(27, @"^[\s]*(?i)(article)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[.]?(?!\S)"); //    article XVII
+            
+            matchRegexNumeric.Add(28, @"^[\s]*([a-z][.])(?!\S)");  //  a.
+            matchRegexNumeric.Add(29, @"^[\s]*([a-z][:])(?!\S)");  //  a:
+            matchRegexNumeric.Add(30, @"^[\s]*([(][a-z][)])(?!\S)");  //    (a)
+            matchRegexNumeric.Add(31, @"^[\s]*([a-z][)])(?!\S)");  // a)
+            matchRegexNumeric.Add(32, @"^[\s]*([[][a-z][]])(?!\S)");  //   a]
+            matchRegexNumeric.Add(33, @"^[\s]*([a-z][]])(?!\S)");  //     [a]
+            matchRegexNumeric.Add(34, @"^[\s]*((?i)(section)[\s]*[a-z])[.]?(?!\S)");  //      section a
+            matchRegexNumeric.Add(35, @"^[\s]*((?i)(article)[\s]*[a-z])[.]?(?!\S)");  //      article a
+            
+            matchRegexNumeric.Add(36, @"^[\s]*([A-Z][.])(?!\S)");  // A.
+            matchRegexNumeric.Add(37, @"^[\s]*([A-Z][:])(?!\S)");  // A:
+            matchRegexNumeric.Add(38, @"^[\s]*([(][A-Z][)])(?!\S)");  // (A)
+            matchRegexNumeric.Add(39, @"^[\s]*([A-Z][)])(?!\S)");  // A)
+            matchRegexNumeric.Add(40, @"^[\s]*([[][A-Z][]])(?!\S)");  // A]
+            matchRegexNumeric.Add(41, @"^[\s]*([A-Z][]])(?!\S)");  // [A]
+            matchRegexNumeric.Add(42, @"^[\s]*((?i)(section)[\s]*[A-Z])[.]?(?!\S)");  // section A
+            matchRegexNumeric.Add(43, @"^[\s]*((?i)(ARTICLE)[\s]*[A-Z])[.]?(?!\S)");  // ARTICLE A
 
             foreach (var item in matchRegexNumeric)
             {

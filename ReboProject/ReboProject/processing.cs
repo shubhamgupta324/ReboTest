@@ -32,6 +32,11 @@ namespace ReboProject
             checkWordBefore.Add(13, "of");
             checkWordBefore.Add(14, "reflected on");
             checkWordBefore.Add(15, "reference as");
+            checkWordBefore.Add(16, "year");
+            checkWordBefore.Add(17, "years");
+            checkWordBefore.Add(18, "and");
+            checkWordBefore.Add(19, "or");
+            checkWordBefore.Add(20, ",");
 
             Dictionary<int, string> afterCheckWord = new Dictionary<int, string>(); // check the words after section number
 
@@ -56,11 +61,11 @@ namespace ReboProject
                     var sentenceWithoutSection = paraCopy.Remove(0, sectionLength).Trim(); // remove section number from 
                     if (sentenceWithoutSection != "") {
                         var firsTChar = sentenceWithoutSection[0];
-                        if (firsTChar.ToString() == char.ToUpper(firsTChar).ToString())
+                        if (firsTChar.ToString() == char.ToUpper(firsTChar).ToString()) // check first word starts with uppercase 
                         {
-                            if (lastLine.EndsWith(".") || lastLine.EndsWith(";") || lastLine.EndsWith(","))
+                            if (lastLine.EndsWith(".") || lastLine.EndsWith(";") || lastLine.EndsWith(",")) // check if last sentence ends with full stop or not
                             {
-                                foreach (var item in afterCheckWord)
+                                foreach (var item in afterCheckWord) // ckeck words after section nuber
                                 {
                                     if (sentenceWithoutSection.IndexOf(item.Value) == 0)
                                     {
@@ -74,7 +79,7 @@ namespace ReboProject
                             else
                             {
                                 var checkBeforeWords = true;
-                                foreach (var item in afterCheckWord)
+                                foreach (var item in afterCheckWord)// ckeck words after section nuber
                                 {
                                     if (sentenceWithoutSection.IndexOf(item.Value) == 0)
                                     {
@@ -87,9 +92,9 @@ namespace ReboProject
                                 }
                                 if (checkBeforeWords == true)
                                 {
-                                    foreach (var item in checkWordBefore)
+                                    foreach (var item in checkWordBefore) // ckeck words before section nuber
                                     {
-                                        if (lastLine.EndsWith(item.Value))
+                                        if (lastLine.ToLower().Trim().EndsWith(item.Value))
                                         {
                                             sectiongot = new List<string>();
                                             sectiongot.Add(null);
@@ -99,20 +104,16 @@ namespace ReboProject
                                     }
                                 }
                             }
-
                         }
-                        else
+                        else // if not upper case then section not found
                         {
                             sectiongot = new List<string>();
                             sectiongot.Add(null);
                             sectiongot.Add(null);
                         }
                     }
-                    
                 }
             }
-            
-
             return sectiongot; // return section number and regex
         }
 
@@ -187,8 +188,7 @@ namespace ReboProject
                 sectiongot.Add(null);
                 sectiongot.Add(null);
             }
-
-
+            
             return sectiongot;
         }
         
@@ -197,8 +197,8 @@ namespace ReboProject
         {
             var jarrayVal = ja2;
             var pageNo = (int)ja2[0]["pageNo"]; // get the pageno of output
-            var paraNo = (int)ja2[0]["paraNo"]; // 
-            var readNextPara = (int)ja2[0]["readNextPara"]; // 
+            var paraNo = (int)ja2[0]["paraNo"]; //  get the para number
+            var readNextPara = (int)ja2[0]["readNextPara"]; // get para
             var sectionNo = ja2[0]["sectionVal"].ToString();
             var foundPara = "";
             if (outputPara == "")
@@ -208,24 +208,31 @@ namespace ReboProject
             var finalSectionOutput = "";
             var checkNextSection = true;
             var getFirstLine = "";
-            for (int i = 0; i < saveAllSection.Count; i++)
+            for (int i = 0; i < saveAllSection.Count; i++) // loop through all the section 
             {
                 List<string> allPara = new List<string>();
                 if (checkNextSection == false)
                     break;
                 var sectionDictionary = saveAllSection.Keys.ElementAt(i);
-                for (int j = 0; j < sectionDictionary.Count; j++)
+                for (int j = 0; j < sectionDictionary.Count; j++) // get the para
                 {
-                    //(sectionDictionary.Values.ElementAt(j).ToString().Trim() == foundPara.Trim())
-                    if (readNextPara == 1)
+                    if (readNextPara == 1) // multiple para joined
                     {
-                        if (foundPara.IndexOf(sectionDictionary.Values.ElementAt(j).ToString()) != -1)
+                        if (foundPara.IndexOf(sectionDictionary.Values.ElementAt(j).ToString().Trim()) != -1) // if the multiple para contains single para
                         {
-                            if (j < sectionDictionary.Count-1)
+                            if (j < sectionDictionary.Count-1) 
                             {
-                                if (sectionDictionary.Values.ElementAt(j + 1).ToString().Trim().Length >= Int32.Parse(WebConfigurationManager.AppSettings["StringLength"]))
+                                if (sectionDictionary.Values.ElementAt(j + 1).ToString().Trim().Length >= Int32.Parse(WebConfigurationManager.AppSettings["StringLength"])) // check next line is not not a footer
                                 {
-                                    if ((sectionDictionary.Values.ElementAt(j).ToString() + sectionDictionary.Values.ElementAt(j + 1).ToString()).Trim() == foundPara.Trim())
+                                    var firstSentence = sectionDictionary.Values.ElementAt(j).ToString();
+                                    if (firstSentence.Length <= Int32.Parse(WebConfigurationManager.AppSettings["headingLength"])) // add full stop after heading
+                                    {
+                                        if (firstSentence.Trim().EndsWith("."))
+                                            firstSentence = firstSentence.Trim() + " ";
+                                        else
+                                            firstSentence = firstSentence.Trim() + ". ";
+                                    }
+                                    if (foundPara.Trim().IndexOf((firstSentence + sectionDictionary.Values.ElementAt(j + 1).ToString()).Trim()) != -1)
                                     {
                                         getFirstLine = sectionDictionary.Values.ElementAt(0).ToString().Trim();
                                         allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
@@ -235,10 +242,18 @@ namespace ReboProject
                                         break;
                                     }
                                 }
-                                else
+                                else // else add next line 
                                 {
-                                    if (j < sectionDictionary.Count - 2) {
-                                        if ((sectionDictionary.Values.ElementAt(j).ToString() + sectionDictionary.Values.ElementAt(j + 2).ToString()).Trim() == foundPara.Trim())
+                                    if (j < sectionDictionary.Count - 2)
+                                    {
+                                        var firstSentence = sectionDictionary.Values.ElementAt(j).ToString();
+                                        if (firstSentence.Length <= Int32.Parse(WebConfigurationManager.AppSettings["headingLength"])) {
+                                            if (firstSentence.Trim().EndsWith("."))
+                                                firstSentence = firstSentence.Trim() + " ";
+                                            else
+                                                firstSentence = firstSentence.Trim() + ". ";
+                                        }
+                                        if (foundPara.Trim().IndexOf((firstSentence + sectionDictionary.Values.ElementAt(j + 2).ToString()).Trim()) != -1)
                                         {
                                             getFirstLine = sectionDictionary.Values.ElementAt(0).ToString().Trim();
                                             allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
@@ -253,9 +268,9 @@ namespace ReboProject
                             }
                         }
                         else
-                            allPara.Add(sectionDictionary.Values.ElementAt(j).ToString());
+                            allPara.Add(sectionDictionary.Values.ElementAt(j).ToString()); // add para for section number 
                     }
-                    else {
+                    else { // if single para
                         if (sectionDictionary.Values.ElementAt(j).ToString().Trim().Contains(foundPara.Trim()) && sectionDictionary.Values.ElementAt(j).ToString().Trim().Length == foundPara.Trim().Length)
                         {
                             getFirstLine = sectionDictionary.Values.ElementAt(0).ToString().Trim();
@@ -270,15 +285,17 @@ namespace ReboProject
                 }
             }
 
+            // get the main section heading 
+
             var toSearch = "";
             Dictionary<int, string> regexDictionary = new Dictionary<int, string>();
-            regexDictionary.Add(1, "[\\s]*([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}[\\s]*|\\d{0,2}[\\s]*)$"); //    1.
-            regexDictionary.Add(2, "[\\s]*[\"]([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}[\\s]*|\\d{0,2}[\\s]*)[\"]$"); //    1.1 
-            regexDictionary.Add(3, "[\\s]*([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}|\\d{0,2})$"); //    1.1 
-            regexDictionary.Add(4, "[\\s]*[\"]([a-zA-Z]{1}[\\s]*|\\d{0,2}[\\s]*)[\"]$"); //    1.1 
-            regexDictionary.Add(5, "[\\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[\\s]?"); //    1.1             //if (!String.IsNullOrEmpty(finalSectionOutput)) {
+            regexDictionary.Add(1, "[\\s]*([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}[\\s]*|\\d{0,2}[\\s]*)$"); //
+            regexDictionary.Add(2, "[\\s]*[\"]([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}[\\s]*|\\d{0,2}[\\s]*)[\"]$"); //
+            regexDictionary.Add(3, "[\\s]*([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}|\\d{0,2})$"); //
+            regexDictionary.Add(4, "[\\s]*[\"]([a-zA-Z]{1}[\\s]*|\\d{0,2}[\\s]*)[\"]$"); //
+            regexDictionary.Add(5, "[\\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[\\s]?"); //
             var foundSectionName = false;
-            foreach (var item in SectionName)
+            foreach (var item in SectionName) // loop through all the main head sections 
             {
                 if (foundSectionName == false) {
                     foreach (var regexVal in regexDictionary)
@@ -478,7 +495,12 @@ namespace ReboProject
                                         if (matchForNextSection.Success) // if found
                                         {
                                             lastRegexVal = regexValForNextSection;
-                                            sectionList.Add(matchForNextSection.Value.Trim());
+                                            var saveSectionVal = "";
+                                            if (matchForNextSection.Value.EndsWith("."))
+                                                saveSectionVal = matchForNextSection.Value.TrimEnd('.');
+                                            else
+                                                saveSectionVal = matchForNextSection.Value;
+                                            sectionList.Add(saveSectionVal.Trim());
                                             var sectionGotInParaVal = "";
                                             var notationGotInParaVal = "";
                                             getNotationType(notations, matchForNextSection.Value.Trim(), out sectionGotInParaVal, out notationGotInParaVal); 
@@ -551,7 +573,12 @@ namespace ReboProject
                             {
                                 lastRegexVal = regexVal;
                                 foundFirstMatch = true;
-                                sectionList.Add(match.Value.Trim());
+                                var saveSectionVal = "";
+                                if (match.Value.EndsWith("."))
+                                    saveSectionVal = match.Value.TrimEnd('.');
+                                else
+                                    saveSectionVal = match.Value;
+                                sectionList.Add(saveSectionVal.Trim());
                                 
                                 var sectionGot = "";
                                 var sectionFound = match.Value.Trim();
@@ -744,9 +771,8 @@ namespace ReboProject
 
             return sectionVal;
         }
-
-
-        // --------------------------------------------financial------------------------------------------------------------------
+        
+        // ------------------------------------------------------------------FINANCIAL--------------------------------------------------------------------------------------------
 
         //-------------------------------------complete date------------------------------------------------------
         // get complete date

@@ -651,7 +651,7 @@ namespace ReboProject
                         saveSectionNo.Add(i, sectionNoCheck[0]);
                         saveSectionNoRegex.Add(i, sectionNoCheck[1]);
                     }
-                    else
+                    else if(saveLines.Count() > saveSectionNo.Count())
                     {
                         saveSectionNo.Add(i + 1, sectionNoCheck[0]);
                         saveSectionNoRegex.Add(i + 1, sectionNoCheck[1]);
@@ -862,7 +862,8 @@ namespace ReboProject
             var getSectionForPara = nextParaSection.Value;
             MatchCollection matchData;
             regexMatch(rgx, getLineText, AllSearchFieldKeyword, out matchData);
-
+            var getStringLength = Int32.Parse(WebConfigurationManager.AppSettings["StringLength"]); // get the access to d ;
+            var headingLength = Int32.Parse(WebConfigurationManager.AppSettings["headingLength"]);
             if (matchData.Count > 0) // if match there
             {
                 // check for cases
@@ -886,6 +887,8 @@ namespace ReboProject
                         var countWithInInAPara = 0;
                         var getInSamePara = false;
                         var checkNextWithIn = true;
+                        var addNextPara = false;
+                        var addNextParacheck = false;
                         for (var g = 0; g < getWithIn.Count(); g++) // search for within fields
                         {
                             if (checkNextWithIn == false)
@@ -912,6 +915,7 @@ namespace ReboProject
                                     if (checkAfterSubCaseWithInExclusion == true)
                                     {
                                         countWithInInAPara += 1;
+                                        addNextPara = true;
                                         acceptParaWithIn += (acceptParaWithIn == "") ? withInIt : "|" + withInIt;
                                     }
                                     else
@@ -920,11 +924,13 @@ namespace ReboProject
                             }
                             else if (g + 1 == getWithIn.Count() && getInSamePara == false)
                             {
-                                var getStringLength = Int32.Parse(WebConfigurationManager.AppSettings["StringLength"]); // get the access to d ;
-                                var headingLength = Int32.Parse(WebConfigurationManager.AppSettings["headingLength"]);
                                 if (entry.Value.Count > paraNumber && entry.Value[paraNumber + 1].Length > getStringLength && SearchWithinText.Length <= headingLength)
                                 {
-                                    var getNextParaToCheck = SearchWithinText + entry.Value[paraNumber + 1];
+                                    var getNextParaToCheck = "";
+                                    if (SearchWithinText.Trim().EndsWith("."))
+                                        getNextParaToCheck = SearchWithinText.Trim() + " " +entry.Value[paraNumber + 1];
+                                    else
+                                        getNextParaToCheck = SearchWithinText.Trim() + ". " + entry.Value[paraNumber + 1];
                                     //var getNextParaToCheck = SearchWithinText + entry.Value[paraNumber + 1];
                                     for (var h = 0; h < getWithIn.Count(); h++)
                                     {
@@ -954,6 +960,7 @@ namespace ReboProject
                                                     SearchWithinText = getNextParaToCheck;
                                                     checkNextWithIn = false;
                                                     readNextPara = 1;
+                                                    addNextParacheck = true;
                                                     //getCurrentParaSearchFor = AllSearchFieldKeyword;
                                                 }
                                                 else
@@ -962,7 +969,8 @@ namespace ReboProject
                                         }
                                     }
                                 }
-                                else if(entry.Value.Count == paraNumber+1 && savePage.Count() > pageCount && getInSamePara == false) {
+                                else if(entry.Value.Count == paraNumber+1 && savePage.Count() > pageCount && getInSamePara == false)
+                                {
                                     var hasSectionNo = Program.checkHasSectionNo(savePage[pageCount + 1][1]);
                                     if (hasSectionNo == false) {
                                         var getNextParaToCheck = SearchWithinText + savePage[pageCount + 1][1];
@@ -1002,12 +1010,69 @@ namespace ReboProject
                                             }
                                             if (foundWithIn == true)
                                             {
-                                                pageCount = pageCount + 1;
-                                                //getCurrentParaScore = Int32.Parse(AllSearchFieldscore);
+                                                sectionPageNos= pageCount +"|"+ pageCount + 1;
                                             }
                                         }
                                     }
                                     
+                                }
+                            }
+                        }
+                        // take next sentence 
+                        if (addNextPara == true | addNextParacheck == true)
+                        {
+                            var paraNoCopy = paraNumber;
+                            if (addNextParacheck == true)
+                                paraNoCopy = paraNumber + 1;
+                            if (paraNoCopy + 1 <= entry.Value.Count())
+                            {
+                                if (paraNoCopy == entry.Value.Count - 1 & entry.Value[paraNoCopy + 1].Length < getStringLength & pageCount + 1 <= savePage.Count())
+                                {
+                                    var hasSectionNo = Program.checkHasSectionNo(savePage[pageCount + 1][1]);
+                                    if (hasSectionNo == false)
+                                    {
+                                        SearchWithinText = SearchWithinText + savePage[pageCount + 1][1];
+                                        sectionPageNos = pageCount + "|" + pageCount + 1;
+                                        readNextPara = 1;
+                                    }
+                                }
+                            }
+                            else if (paraNoCopy == 1 && addNextParacheck == false) {
+                                var hasSectionNo = Program.checkHasSectionNo(SearchWithinText);
+                                if (hasSectionNo == false)
+                                {
+                                    if (savePage[pageCount - 1][savePage[pageCount - 1].Count()].Length > getStringLength)
+                                    {
+                                        var firstSentence = savePage[pageCount - 1][savePage[pageCount - 1].Count()];
+                                        if (firstSentence.Length <= Int32.Parse(WebConfigurationManager.AppSettings["headingLength"]))
+                                        {
+                                            if (firstSentence.Trim().EndsWith("."))
+                                                firstSentence = firstSentence.Trim() + " ";
+                                            else
+                                                firstSentence = firstSentence.Trim() + ". ";
+                                        }
+                                        SearchWithinText = firstSentence + SearchWithinText;
+                                        sectionPageNos = pageCount-1 + "|" + pageCount;
+                                        pageCount = pageCount - 1;
+                                        paraNumber =savePage[pageCount].Count();
+                                        readNextPara = 1;
+                                    }
+                                    else
+                                    {
+                                        var firstSentence = savePage[pageCount - 1][savePage[pageCount - 1].Count()-1];
+                                        if (firstSentence.Length <= Int32.Parse(WebConfigurationManager.AppSettings["headingLength"]))
+                                        {
+                                            if (firstSentence.Trim().EndsWith("."))
+                                                firstSentence = firstSentence.Trim() + " ";
+                                            else
+                                                firstSentence = firstSentence.Trim() + ". ";
+                                        }
+                                        SearchWithinText = firstSentence + SearchWithinText;
+                                        sectionPageNos = pageCount-1 + "|" + pageCount;
+                                        pageCount = pageCount -1;
+                                        paraNumber =savePage[pageCount].Count() -1;
+                                        readNextPara = 1;
+                                    }
                                 }
                             }
                         }
@@ -1336,7 +1401,7 @@ namespace ReboProject
                     var pageContent = getAllAcceptedText[entry.Key]["foundText"].ToString();
                     foreach (var getOutputToCheck in OutputMatch) // check for duplicate... if the same sentance is already an output
                     {
-                        if (getOutputToCheck.Value.Trim() == pageContent.Trim() || getOutputToCheck.Value.Trim().IndexOf(pageContent.Trim()) != -1)
+                        if (getOutputToCheck.Value.Trim() == pageContent.Trim() | getOutputToCheck.Value.Trim().IndexOf(pageContent.Trim()) != -1 | pageContent.Trim().IndexOf(getOutputToCheck.Value.Trim()) != -1)
                             outputSame = true; // if true dont take that as output  and select the next output
                     }
                     // save the output for the file
@@ -2055,6 +2120,7 @@ namespace ReboProject
 
         }
         
+        //bulid the final format
         public void buildFormat(string outputNotFoundMessage, JArray jaCompleteData, string finalOutputData, string resultOutputFormat, out string format)
         {
             format = "";
@@ -2069,10 +2135,70 @@ namespace ReboProject
                 fileNme.Add(jaCompleteData[i]["fileName"].ToString());
                 fileNmeCopy.Add(jaCompleteData[i]["fileName"].ToString());
             }
+            
+            List<string> finalFormatList = new List<string>();
+            var finalFormat = "";
+            List<string> onlySection = new List<string>();
+            List<string>  onlyFileName = new List<string>();
+            formatDesign(fileNme, fileNmeCopy, jaCompleteData, out finalFormatList, out onlySection, out onlyFileName);
+            if (resultOutputFormat.IndexOf("({{DocumentName}} {{Paragraph Number}})") != -1)
+            {
+                foreach (var item in finalFormatList)
+                {
+                    if (finalFormat == "")
+                        finalFormat = finalFormat + item;
+                    else
+                        finalFormat = finalFormat + " & " + item;
+                }
+            }
+
+            else if(resultOutputFormat.IndexOf("{{DocumentName}}") != -1 | resultOutputFormat.IndexOf("{{Paragraph Number}}") != -1)
+            {
+                foreach (var item in onlyFileName)
+                {
+                    if (item.ToLower().IndexOf("lease") != 0) {
+                        if (DocumentName == "")
+                            DocumentName = DocumentName + item;
+                        else
+                            DocumentName = DocumentName + "," + item;
+                    }
+                }
+                foreach (var item in onlySection)
+                {
+                    if (finalFormat == "")
+                        finalFormat = finalFormat + item;
+                    else
+                        finalFormat = finalFormat + "," + item;
+                }
+            }
+
+            for (int i = 0; i < jaCompleteData.Count; i++)
+            {
+                if (!SearchFor.Contains(jaCompleteData[i]["search"].ToString()))
+                {
+                    if (SearchFor == "")
+                        SearchFor = SearchFor + jaCompleteData[i]["search"].ToString();
+                    else
+                        SearchFor = SearchFor + " and " + jaCompleteData[i]["search"].ToString();
+                }
+            }
+            FoundText = finalOutputData;
+            
+            if (FoundText == "" & finalFormat == "")
+                format = outputNotFoundMessage;
+            else
+                format = resultOutputFormat.Replace("{{searchFor}}", SearchFor).Replace("{{found text}}", FoundText).Replace("({{DocumentName}} {{Paragraph Number}})", finalFormat).Replace("{{Paragraph Number}}", finalFormat).Replace("{{DocumentName}}", DocumentName);
+        }
+
+        // complete format for ({{DocumentName}} {{Paragraph Number}})
+        public void formatDesign(List<string>  fileNme, List<string> fileNmeCopy, JArray jaCompleteData, out List<string> finalFormatList, out List<string> onlySection, out List<string> onlyFileName)
+        {
+            finalFormatList = new List<string>();
+            onlySection = new List<string>();
+            onlyFileName = new List<string>();
             List<string> allSection = new List<string>();
             List<string> allSectionName = new List<string>();
             List<string> allSectionNameSplit = new List<string>();
-            
             for (int i = 0; i < jaCompleteData.Count; i++)
             {
                 var sectionVal = jaCompleteData[i]["sectionNo"].ToString();
@@ -2098,11 +2224,10 @@ namespace ReboProject
                 allSection.Add(sectionVal.Trim());
             }
             fileNmeCopy = fileNmeCopy.Distinct().ToList();
-
-            List<string> finalFormatList = new List<string>();
+            
             List<string> commonFile = new List<string>();
             List<string> commonSectionname = new List<string>();
-            var finalFormat = "";
+
             for (int p = 0; p < fileNmeCopy.Count(); p++)
             {
                 Dictionary<string, string[]> saveSectionVal = new Dictionary<string, string[]>();
@@ -2113,12 +2238,15 @@ namespace ReboProject
                 var fileToCheck = fileNmeCopy.ElementAt(p).Trim();
                 for (int f = 0; f < fileNme.Count(); f++)
                 {
-                    if (fileToCheck == fileNme.ElementAt(f).Trim()) {
-                        if (!saveSectionVal.ContainsKey(allSection.ElementAt(f))) {
+                    if (fileToCheck == fileNme.ElementAt(f).Trim())
+                    {
+                        if (!saveSectionVal.ContainsKey(allSection.ElementAt(f)))
+                        {
                             var allSectionNameCopy = allSectionName.ElementAt(f).Trim().Split(' ');
                             allSectionNameCopy = allSectionNameCopy.Where(x => !string.IsNullOrEmpty(x)).ToArray();
                             allSectionNameCopy = allSectionNameCopy.Skip(1).ToArray();
-                            if (allSectionNameCopy.Count() > 0) {
+                            if (allSectionNameCopy.Count() > 0)
+                            {
                                 saveSectionVal.Add(allSection.ElementAt(f), allSectionNameCopy);
                                 saveArtAndSection.Add(allSection.ElementAt(f), allSectionNameSplit.ElementAt(f));
                                 savesectionAndFile.Add(allSection.ElementAt(f), fileNme.ElementAt(f).Trim());
@@ -2130,7 +2258,8 @@ namespace ReboProject
                 var sectionCount = 0;
                 var sectionName = "";
                 Dictionary<string, string> secondCommonSet = new Dictionary<string, string>();
-                if (saveSectionVal.Values.Count() > 0) {
+                if (saveSectionVal.Values.Count() > 0)
+                {
                     var loopup = saveSectionVal.ToLookup(x => x.Value.ElementAt(0), x => x.Key).Where(x => x.Count() > 1);
                     foreach (var item in loopup)
                     {
@@ -2140,6 +2269,7 @@ namespace ReboProject
                             var KeyVal = item.Aggregate("", (s, v) => s + "," + v);
                             var splitSection = KeyVal.Split(',');
                             splitSection = splitSection.Skip(1).ToArray();
+
                             for (int i = 0; i < splitSection.Count(); i++)
                             {
                                 var sectionString = splitSection[i];
@@ -2152,6 +2282,15 @@ namespace ReboProject
                                 if (seconditem.Key != "")
                                     commonData = seconditem.Key;
                             }
+                            var addNextVal = new List<string>();
+                            foreach (var checkNext in splitSection)
+                            {
+                                var check = checkNext.Replace(commonData, "");
+                                if (check != "")
+                                    addNextVal.Add(check);
+                            }
+                            if (addNextVal.Count != 0 & addNextVal.Count() != splitSection.Count())
+                                break;
                             var sectionSaveFormat = "";
                             sectionName = "";
                             for (int i = 0; i < splitSection.Count(); i++)
@@ -2181,20 +2320,23 @@ namespace ReboProject
                 if (sectionCount == 0)
                 {
                     List<string> leaseNameThere = new List<string>();
-                    foreach (var item in saveSectionVal)
+                    var sortedDectionary = saveArtAndSection.OrderByDescending(pair => pair.Value);
+                    foreach (var item in sortedDectionary)
                     {
-                        if (item.Key != "") {
+                        if (item.Key != "")
+                        {
                             var sectionNameVal = saveArtAndSection[item.Key];
-                            
+
                             if (!finalSections.Contains(item.Key))
                             {
                                 if (leaseNameThere.Contains(sectionNameVal))
                                     finalSections.Add(item.Key);
-                                else {
-                                    finalSections.Add(sectionNameVal +" "+ item.Key);
+                                else
+                                {
+                                    finalSections.Add(sectionNameVal + " " + item.Key);
                                     leaseNameThere.Add(sectionNameVal);
                                 }
-                                    
+
                             }
                         }
                     }
@@ -2203,11 +2345,11 @@ namespace ReboProject
                 {
                     foreach (var item in saveSectionVal)
                     {
-                        if (!saveResult.Contains(item.Key) & item.Key !="")
+                        if (!saveResult.Contains(item.Key) & item.Key != "")
                         {
                             var sectionNameVal = saveArtAndSection[item.Key];
-                            var fileNameval =savesectionAndFile[item.Key];
-                           
+                            var fileNameval = savesectionAndFile[item.Key];
+
                             if (!finalSections.Contains(item.Key))
                             {
                                 if (commonSectionname.Contains(fileNameval))
@@ -2218,7 +2360,7 @@ namespace ReboProject
                         }
                     }
                 }
-                
+
                 foreach (var item in finalSections)
                 {
                     if (singleFormat == "")
@@ -2232,46 +2374,18 @@ namespace ReboProject
                 {
                     fileNameToDisplay = "";
                     finalFormatList.Add((fileNameToDisplay + " " + singleFormat).Trim());
-                } 
+                }
                 else
                 {
                     fileNameToDisplay = fileToCheck;
                     finalFormatList.Add((fileNameToDisplay + " " + singleFormat).Trim());
                 }
+                onlySection.Add(singleFormat);
+                onlyFileName.Add(fileNameToDisplay);
             }
-            foreach (var item in finalFormatList)
-            {
-                if (finalFormat == "")
-                    finalFormat = finalFormat + item;
-                else
-                    finalFormat = finalFormat + " & " +item;
-            }
-            
-
-            //-----------------------------------------------------
-
-            for (int i = 0; i < jaCompleteData.Count; i++)
-            {
-                if (!SearchFor.Contains(jaCompleteData[i]["search"].ToString()))
-                {
-                    if (SearchFor == "")
-                        SearchFor = SearchFor + jaCompleteData[i]["search"].ToString();
-                    else
-                        SearchFor = SearchFor + " and " + jaCompleteData[i]["search"].ToString();
-                }
-            }
-            FoundText = finalOutputData;
-            if (DocumentName == "")
-            {
-                var indexVal = resultOutputFormat.IndexOf(",");
-                resultOutputFormat = resultOutputFormat.Remove(indexVal, 1);
-            }
-            if (FoundText == "" & finalFormat == "")
-                format = outputNotFoundMessage;
-            else
-                format = resultOutputFormat.Replace("{{DocumentName}}", DocumentName).Replace("{{searchFor}}", SearchFor).Replace("{{found text}}", FoundText).Replace("{{Paragraph Number}}", finalFormat);
         }
 
+        // cut the sentence on start word and end word 
         public void startToEnd(List<string> sentenceStartList, List<string> sentenceEndList, string tocheck, out string output)
         {
             output = "";
@@ -2407,12 +2521,13 @@ namespace ReboProject
             return text;
         }
 
+        // check abbreviation and replace
         public void abbreviationReplace(Dictionary<string,string> AbbreviationData,string format, out string finalFormat)
         {
             finalFormat = "";
-            foreach (var item in AbbreviationData)
+            foreach (var item in AbbreviationData) // loop through all the abbreviation 
             {
-                format = Regex.Replace(format, "(?i)" + item.Key + "(?!\\S)", item.Value, RegexOptions.IgnoreCase);
+                format = Regex.Replace(format, "(?i)" + item.Key + "(?!\\S)", item.Value, RegexOptions.IgnoreCase); // replace all the occurance of the abbreviation 
             }
             finalFormat = format;
         }
