@@ -24,12 +24,12 @@ namespace ReboProject
             var watch = new System.Diagnostics.Stopwatch(); // get the time
             watch.Start();
             
-            string backEndVal = backEndData.Text; // get the value from front end
-            string abbreviationVal = LibVal.Text.ToString(); // get the value from front end
+            string backEndVal = backEndData.Text; // get the json from front end
+            string abbreviationVal = LibVal.Text.ToString(); // get the json from front end abbreviation
             if (backEndVal == "") // check if it has value else return
                 return;
             var backendObject = JObject.Parse(backEndVal.ToString()); // complete  json
-            var abbreviationObject = JObject.Parse(abbreviationVal);
+            var abbreviationObject = JObject.Parse(abbreviationVal); // complete json abbreviation
             var multipleDatapointJson = backendObject["Datapoint"]; // get json for all datapoints
             var sectionLib = backendObject["sectionLib"]; // section library
             var collectSectionLib = "";
@@ -40,7 +40,7 @@ namespace ReboProject
                 else
                     collectSectionLib = collectSectionLib + "|" + item;
             }
-            Dictionary<string, string> AbbreviationData = new Dictionary<string, string>();
+            Dictionary<string, string> AbbreviationData = new Dictionary<string, string>(); // save all the abbreviation in dictionary
             for (var i=0; i< abbreviationObject["Abbreviation"].Count(); i++)
             {
                 if (!AbbreviationData.ContainsKey(abbreviationObject["Abbreviation"][i]["keyword"].ToString()))
@@ -62,7 +62,8 @@ namespace ReboProject
             Dictionary<string, Dictionary<int, Dictionary<int, string>>> saveSectionNoAllFiles = new Dictionary<string, Dictionary<int, Dictionary<int, string>>>();  // save section for each page
             Dictionary<string, Dictionary<Dictionary<int, string>, int>> saveAllSection = new Dictionary<string, Dictionary<Dictionary<int, string>, int>>();  // save section for each page
             Dictionary<string, Dictionary<int, Dictionary<int, string>>> saveAllSectionRegex = new Dictionary<string, Dictionary<int, Dictionary<int, string>>>();  // save section for each page
-            for (var folderval = 0; folderval < subdirectoryEntries.Length; folderval++)
+
+            for (var folderval = 0; folderval < subdirectoryEntries.Length; folderval++) // loop through all the lease
             {
                 folderPath = subdirectoryEntries[folderval]; // get the first folder
                 var fornotAbstractedLease = folderPath.Split('\\');
@@ -73,8 +74,8 @@ namespace ReboProject
                 {
                     Dictionary<int, Dictionary<int, string>> savePageSingleFile = new Dictionary<int, Dictionary<int, string>>();  // save pagenumber and the para
                     Dictionary<int, Dictionary<int, string>> saveSectionNo = new Dictionary<int, Dictionary<int, string>>();  // save section for each para 
-                    Dictionary<Dictionary<int, string>, int> saveSection = new Dictionary<Dictionary<int, string>, int>();  // save section for each para 
-                    Dictionary<int, Dictionary<int, string>> savePageSectionRegex = new Dictionary<int, Dictionary<int, string>>();
+                    Dictionary<Dictionary<int, string>, int> saveSection = new Dictionary<Dictionary<int, string>, int>();  // save section 
+                    Dictionary<int, Dictionary<int, string>> savePageSectionRegex = new Dictionary<int, Dictionary<int, string>>(); // save section regex
                     filepath = folderPath + "\\" + fileNameVal; // full path of file
                     fileFullPath.Add(filepath); // save the path of pdf read
                     pdfRead(collectSectionLib, filepath, out savePageSingleFile, out saveSectionNo, out saveSection, out savePageSectionRegex); // read pdf
@@ -88,24 +89,24 @@ namespace ReboProject
 
             var finalOutput = new JArray();// save all output in it for frontend display
 
-            for (var folderval = 0; folderval < subdirectoryEntries.Length; folderval++)
+            for (var folderval = 0; folderval < subdirectoryEntries.Length; folderval++) // loop through all the leases
             {
                 foreach (var singleDp in multipleDatapointJson) // loop through all the datapoints
                 {
                     
-                    var resultSearch = singleDp["result"][0]["search"];// eg: {{filename}}; {{result}}: {{pagenumber}}
-                    var sentenceStart = singleDp["result"][0]["startData"];// set all the sentences from all output configuration
-                    var sentenceEnd = singleDp["result"][0]["endData"];// set all the sentences from all output configuration
-                    var checkNextLine = singleDp["result"][0]["checkNextLine"].ToString();// set all the sentences from all output configuration
-                    var SentenceResultOutputFormat = singleDp["result"][0]["SentenceoutputFormat"].ToString();// set all the sentences from all output configuration
-                    var SentenceResultOutputFormatCondition = singleDp["result"][0]["FinalformatCondition"];// set all the sentences from all output configuration
-                    var andConditionCheck = singleDp["result"][0]["andConditionCheck"];// set all the sentences from all output configuration
-                    var resultOutputFormat = singleDp["result"][0]["outputFormat"].ToString();// eg: final output format
-                    var outputNotFoundMessage = singleDp["result"][0]["outputNotFoundMessage"].ToString();// eg: final output format
+                    var resultSearch = singleDp["result"][0]["search"];// get all andCondition for output
+                    var sentenceStart = singleDp["result"][0]["startData"];// list of start word for output
+                    var sentenceEnd = singleDp["result"][0]["endData"];// list of end word for output
+                    var checkNextLine = singleDp["result"][0]["checkNextLine"].ToString();// check duplicate line or not for output
+                    var SentenceResultOutputFormat = singleDp["result"][0]["SentenceoutputFormat"].ToString();// output format for combining all andCOndition
+                    var SentenceResultOutputFormatCondition = singleDp["result"][0]["FinalformatCondition"];// condition for output format
+                    var andConditionCheck = singleDp["result"][0]["andConditionCheck"];// condition for andCondition 
+                    var resultOutputFormat = singleDp["result"][0]["outputFormat"].ToString();// final output format
+                    var outputNotFoundMessage = singleDp["result"][0]["outputNotFoundMessage"].ToString();// output message if no output found
                     var resultAllKeyword = singleDp["result"][0]["allKeyword"];// list of all keywords used
-                    var financialSelect = singleDp["result"][0]["financialSelect"];// list of all keywords used
-                    var SectionNoCount = singleDp["SectionNoCount"].ToString();// list of all keywords used
-                    var paraBreakCondition = singleDp["paraBreakCondition"].ToString();// list of all keywords used
+                    var financialSelect = singleDp["result"][0]["financialSelect"];// list of all financial
+                    var SectionNoCount = singleDp["SectionNoCount"].ToString();// section number count
+                    var paraBreakCondition = singleDp["paraBreakCondition"].ToString();// set of all para break condition for output
                     var libraryVal = ""; // get all the library value
                     if ((singleDp["library"].ToString()) != "")
                         libraryVal = singleDp["library"].ToString();
@@ -125,9 +126,9 @@ namespace ReboProject
                     var LeaseName = ""; // get lease name
 
                     Dictionary<int, Dictionary<int, string>> savePage = new Dictionary<int, Dictionary<int, string>>();  // save pagenumber and the lines in it
-                    Dictionary<int, Dictionary<int, string>> savePageSection = new Dictionary<int, Dictionary<int, string>>();  // save pagenumber and the lines in it
-                    Dictionary<int, Dictionary<int, string>> savePageSectionRegex = new Dictionary<int, Dictionary<int, string>>();  // save pagenumber and the lines in it
-                    Dictionary<Dictionary<int, string>, int> getSaveSection = new Dictionary<Dictionary<int, string>, int>();  // save pagenumber and the lines in it
+                    Dictionary<int, Dictionary<int, string>> savePageSection = new Dictionary<int, Dictionary<int, string>>();  // save section if connectior value is 2 (library)
+                    Dictionary<int, Dictionary<int, string>> savePageSectionRegex = new Dictionary<int, Dictionary<int, string>>();  // save regex for line
+                    Dictionary<Dictionary<int, string>, int> getSaveSection = new Dictionary<Dictionary<int, string>, int>();  // save section
                     Dictionary<int, Dictionary<int, string>> savePageLib = new Dictionary<int, Dictionary<int, string>>();  // duplicate of savePage
                     Dictionary<int, string> OutputMatch = new Dictionary<int, string>();
                     Dictionary<int, string> PageNoMatch = new Dictionary<int, string>();
@@ -215,8 +216,8 @@ namespace ReboProject
                             var startPageVal = 0;
                             var endPageVal = 0;
 
-                            Dictionary<string, int> searchFieldScore = new Dictionary<string, int>(); // saves the foundtext
-                            Dictionary<string, int> withInScore = new Dictionary<string, int>(); // saves the foundtext
+                            Dictionary<string, int> searchFieldScore = new Dictionary<string, int>(); // search filed score
+                            Dictionary<string, int> withInScore = new Dictionary<string, int>(); // withinScore
                             var totalScoreDenominatorVal = 0; // get the total score of all the search field
                             var ja1 = new JArray();
                             var ja2 = new JArray();
@@ -456,7 +457,7 @@ namespace ReboProject
         }
 
 
-        // get the score and the field to search
+        // get the score (within and searchFor) and the field to search 
         public void getTotalScore(JToken withIn, JToken searchFor, out int totalScoreDenominatorVal, out Dictionary<string, int> searchFieldScore, out Dictionary<string, int> withInScore)
         {
             totalScoreDenominatorVal = 0;
@@ -490,6 +491,7 @@ namespace ReboProject
             }
         }
 
+        //get all the files to read
         public void fileToRead(Dictionary<string, string[]> folder_fileName, int mainLeaseRead, string folderPath, int sort, int type, out ArrayList fileDetails)
         {
             fileDetails = new ArrayList();
@@ -529,6 +531,7 @@ namespace ReboProject
                 }
             }
         }
+        
         // get the paragraph lines
         public void pdfRead(string collectSectionLib, string filepath, out Dictionary<int, Dictionary<int, string>> savePage, out Dictionary<int, Dictionary<int, string>> savePageSection, out Dictionary<Dictionary<int, string>, int> saveSection, out Dictionary<int, Dictionary<int, string>> savePageSectionRegex)
         {
@@ -675,7 +678,7 @@ namespace ReboProject
             }
         }
 
-        // check section value
+        // check the section dictionary
         public void checkSection(string collectSectionLib, string para, out bool section)
         {
             section = false;
@@ -753,33 +756,7 @@ namespace ReboProject
                 }
             }
         }
-
-        // -----------------get the sentence------------------------
-        public void foundTextSentence(string AllSearchFieldKeyword, string getLineText, out string foundTextFinal)
-        {
-            foundTextFinal = "";
-            var textLength = getLineText.Length;
-            var AllSearchFieldKeywordLength = AllSearchFieldKeyword.Length;
-            StringBuilder sb = new StringBuilder();
-            var foundtextBefore = "";
-            var foundtextAfter = "";
-            var startIndex = getLineText.IndexOf(AllSearchFieldKeyword); // get the index of search field
-            var getTheTextBeforeWord = getLineText.Substring(0, startIndex); // get the string before word to find the full stop
-            var getTheFullStopBeforeWord = getTheTextBeforeWord.LastIndexOf('.'); // get the index of the full stop
-            if (getTheFullStopBeforeWord == -1)
-                foundtextBefore = getTheTextBeforeWord;
-            else
-                foundtextBefore = getLineText.Substring(getTheFullStopBeforeWord, startIndex - getTheFullStopBeforeWord);
-            var getTheTextAfterWord = getLineText.Substring(startIndex, textLength - startIndex); // get the string before word to find the full stop
-            var getTheFullStopAfterWord = getTheTextAfterWord.IndexOf('.'); // get the index of the full stop
-            if (getTheFullStopAfterWord == -1)
-                foundtextAfter = getTheTextAfterWord;
-            else
-                foundtextAfter = getLineText.Substring(startIndex, getTheFullStopAfterWord + 1);
-
-            foundTextFinal = foundtextBefore + foundtextAfter; // final foundtext
-        }
-
+        
         //-----------------------------------------FOUND TEXT-----------------------------------------------------------------------------------
         public void getAllFoundText(Dictionary<Dictionary<string, int>, int> getNodeRegex, Dictionary<int, Dictionary<int, string>> savePageSection, int startPageVal, int endPageVal, Dictionary<Dictionary<string, int>, int> getNode, int exclusionCount, string fullFilePath, int SearchWithin, Dictionary<int, Dictionary<int, string>> savePage, string fileName, JToken logic, out JArray ja, out int totalScoreDenominatorVal, out Dictionary<string, int> searchFieldScore, out Dictionary<string, int> withInScore)
         {
@@ -1359,6 +1336,7 @@ namespace ReboProject
         }
         //--------------------------------------------------------------------------------------------------------------------------------------
 
+            // scoring para
         public void scoring(string readDuplicate, Dictionary<int, string>  PageNoMatch, string datapointName, Dictionary<int, string> OutputMatch, string LeaseName, Dictionary<int, Dictionary<int, string>> savePage, int totalScoreDenominatorVal, Dictionary<string, int> searchFieldScore, JArray ja, int multipleRead, out JArray ja1, out float finalScore)
         {
             var onlyTopResult = true;
