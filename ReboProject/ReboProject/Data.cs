@@ -13,6 +13,9 @@ namespace ReboProject
         public double XAxis { get; set; }
 
         public double TextLength { get; set; }
+        public Data()
+            {
+            }
 
         public Data(string word, double yAxis, double xAxis, double textLength)
         {

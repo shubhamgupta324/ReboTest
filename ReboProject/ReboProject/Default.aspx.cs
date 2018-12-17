@@ -1,4 +1,5 @@
 ﻿//using Microsoft.Office.Interop.Excel;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections;
@@ -21,9 +22,9 @@ namespace ReboProject
         protected void Page_Load(object sender, EventArgs e) 
         {
         }
-
+        processing processing = new processing();
         #region  -----------------------------------------financial list -------------------------------------------------
-        
+
         static List<string> year = new List<string> { "per year", "Per Annum", "Annual Base Rent" };
 
         static List<string> month = new List<string> { "per month", "Monthly Base Rent", "Monthly Rent" };
@@ -58,20 +59,24 @@ namespace ReboProject
 
             #region ------------get all the section library and save --------------------------
 
-            var collectSectionLib = "";
-            foreach (var item in CompleteSectionLib) // loop through all the section library and save in collectSectionLib
-            {
-                if (String.IsNullOrEmpty(collectSectionLib))
-                    collectSectionLib = collectSectionLib + item;
-                else
-                    collectSectionLib = collectSectionLib + "|" + item;
-            }
+            var collectSectionLib = string.Join("|",CompleteSectionLib);
+            
+            //foreach (var item in CompleteSectionLib) // loop through all the section library and save in collectSectionLib
+            //{
+            //    if (String.IsNullOrEmpty(collectSectionLib))
+            //        collectSectionLib = collectSectionLib + item;
+            //    else
+            //        collectSectionLib = collectSectionLib + "|" + item;
+            //}
             #endregion
 
             #region---------------save all the abbreviation in dictionary-----------------
 
             Dictionary<string, string> AbbreviationData = new Dictionary<string, string>();
-            for (var i=0; i< abbreviationObject["Abbreviation"].Count(); i++) // save the abbreviation in dictionary 
+            //Dictionary<string, string> AbbreviationData = abbreviationObject["Abbreviation"].ToDictionary(s=>new Dictionary<string, string> { {s["keyword"].ToString(),s["replace"].ToString() } });
+
+            //var abbreviationlist = abbreviationObject["Abbreviation"].Select(s=>new Dictionary<string, string> { { s["keyword"].ToString(), s["Abbreviation"].ToString() } } ).Distinct();
+            for (var i = 0; i < abbreviationObject["Abbreviation"].Count(); i++) // save the abbreviation in dictionary 
             {
                 if (!AbbreviationData.ContainsKey(abbreviationObject["Abbreviation"][i]["keyword"].ToString())) // dont save duplicate
                     AbbreviationData.Add(abbreviationObject["Abbreviation"][i]["keyword"].ToString(), abbreviationObject["Abbreviation"][i]["replace"].ToString());
@@ -275,8 +280,7 @@ namespace ReboProject
                             var DefaultSectionName = configuration[myKey - 1]["DefaultSectionName"].ToString(); // default section name
                             var sort = (int)configuration[myKey - 1]["FileOrder"]["sort"]; // asc or desc
                             var type = (int)configuration[myKey - 1]["FileOrder"]["type"]; // Single File Search or All File Search
-                            var multipleRead = (int)configuration[myKey - 1]["MultipleRead"];  // to get score of multiple occurance
-                            
+                            var multipleRead = (int)configuration[myKey - 1]["MultipleRead"];  // to get score of multiple occurance                            
                             var mainLeaseRead = (int)configuration[myKey - 1]["MainLeaseRead"];// skip main lease read
                             var pageNoRange = configuration[myKey - 1]["PageNoRange"];// page number range
                             var startPage = pageNoRange[0]["startRange"].ToString();// start range
@@ -311,10 +315,11 @@ namespace ReboProject
                                 if (readNextFile == 1) // check to read next file 
                                 {
                                     var ja = new JArray();
-                                    var getTheIndividualFileName = fullFilePath.Split('\\');
-                                    fileName = getTheIndividualFileName[getTheIndividualFileName.Length - 1]; // get the file name
-                                    int index = fileName.LastIndexOf(".");
-                                    fileName = fileName.Substring(0, index);
+                                    fileName = System.IO.Path.GetFileNameWithoutExtension(fullFilePath);
+                                    //var getTheIndividualFileName = fullFilePath.Split('\\');
+                                    //fileName = getTheIndividualFileName[getTheIndividualFileName.Length - 1]; // get the file name
+                                    //int index = fileName.LastIndexOf(".");
+                                    //fileName = fileName.Substring(0, index);
                                     //read the file
 
                                     // get all the data for that pdf
@@ -348,7 +353,33 @@ namespace ReboProject
 
                                     scoring(readDuplicate, PageNoMatch, datapointName, OutputMatch, LeaseName, savePage, totalScoreDenominatorVal, searchFieldScore, ja, multipleRead, out ja1, out finalScore);
                                     //-------------------------------------------------------------------------------------------------------------------
-                                    
+
+                                    // -----------------------financial CHeck-----------------------------------------------------
+                                    var financialInTable = 1;
+                                    //if financial datapoint
+                                    //if(FinancialData == 1)
+                                    //{
+                                        var maxColumn = 0;
+                                        string[][] financial = new string[50][];
+                                        getTheFinancialValFromPage(ja1, savePage, fullFilePath, out financial, out maxColumn); // get the financial column
+
+                                        if (financialInTable == 1)
+                                        {
+                                            for (int i = 0; i < maxColumn; i++) // 
+                                            {
+                                                List<string> coulmnData = new List<string>();
+                                                foreach (var item in financial)
+                                                {
+                                                    coulmnData.Add(item[i]);
+                                                }
+                                                saveFinancialCount++;
+                                                saveFinancial.Add(coulmnData.ToArray(), saveFinancialCount.ToString());
+                                            }
+                                            findColumnHead(saveFinancial, financialLibrary, out saveFinancialCopy); // check the heading of the data 
+                                        }
+                                    //}
+                                    //------------------------------------------------------------------------------------------------
+
 
                                     for (int i = 0; i < ja1.Count; i++)// get only one highest score value
                                     {
@@ -486,7 +517,7 @@ namespace ReboProject
                         nextVal++;
                     }
 
-                    #region --------------------------------get complete output from multiple para ---------------------------------------------------
+                    #region --------------------------------get complete output from multiple para (SUMMARIZATION)---------------------------------------------------
 
                     if (getSectionAndFileNameAndSearchJA.HasValues)
                     {
@@ -538,6 +569,26 @@ namespace ReboProject
                         ja3.Add(ja4[0]);
                     }
                     #endregion
+
+                    // check if financial datapoint
+                    //if (FinancialData == 1)
+                    //{
+                        List<string> finalFinancialValues = new List<string>();
+                    if (saveFinancialCopy.Count() > 0)
+                    {
+                        processing.getCurrencyAmountFinancial(saveFinancialCopy.ElementAt(0).Value.ToList(), out finalFinancialValues);
+                        ja3[0]["financialData"] = true;
+                        ja3[0]["financialValue"] = saveFinancialCopy.ElementAt(0).Key;
+                        var financialContent = JsonConvert.SerializeObject(finalFinancialValues);
+                        ja3[0]["financialContent"] = financialContent;
+                    }
+                    //}
+                    //else
+                    //{
+                    //    ja3[0]["financialData"] = false;
+                    //    ja3[0]["financialValue"] = "";
+                    //    ja3[0]["financialContent"] = "";
+                    //}
 
                     finalOutput.Add(ja3[0]); // saves output of all the datapoint-lease (is used to save data for all the leases and send to front end)
                     saveLeaseDataForExcel.Add(ja3[0]); // save data for single lease (lease has multiple pdfs) (used to save data in excel)
@@ -612,6 +663,7 @@ namespace ReboProject
         public void readPdfForFinancial(string fullFilePath, int pageNoToProcess, Doc doc , out List<Data> readedValues)
         {
             TextOperation op = new TextOperation(doc);
+            
             op.PageContents.AddPages(pageNoToProcess);
             string theText = op.GetText();
 
@@ -636,15 +688,17 @@ namespace ReboProject
             List<double> xAxis = new List<double>();
             List<double> textLength = new List<double>();
             List<string> word = new List<string>();
-
             foreach (var item in document.Root.Descendants())
             {
+                
                 var nodeName = item.Name.LocalName;
                 if (nodeName == "text")
                 {
-                    xAxis.Add((int)(double.Parse(item.Attribute("x").Value)));
-                    yAxis.Add((int)(double.Parse(item.Attribute("y").Value)));
-                    word.Add(item.Value);
+                   
+                     xAxis.Add((int)(double.Parse(item.Attribute("x").Value)));
+                     yAxis.Add((int)(double.Parse(item.Attribute("y").Value)));
+                  
+                     word.Add(item.Value);
                     if (item.Attribute("textLength") == null)
                         textLength.Add(0);
                     else
@@ -694,8 +748,8 @@ namespace ReboProject
             //    toFindList = squareFoot;
             //if (toFInd == "duration")
             //    toFindList = duration;
-
-
+            if (ja.Count()==0)
+                return;
             using (Doc doc = new Doc())
             {
                 doc.Read(fullFilePath);
@@ -720,33 +774,32 @@ namespace ReboProject
                     List<string> saveColumnData = new List<string>();
                     List<int> saveColumnIndex = new List<int>();
                     List<int> saveColumnTextLength = new List<int>();
-                    foreach (var item in readedValues) // get data to process
-                    {
-                        var xVAl = item.XAxis;
-                        var yVAl = item.YAxis;
-                        var wordVal = item.Word;
-                        var textLengthVal = item.TextLength;
+                    List<Rebo.Model.Table.Table> tableList = new List<Rebo.Model.Table.Table>();
+                    var readedValuesCopy = new List<Data>();
+                    var dd = readedValues.Where(s => s.YAxis >= 500 && s.YAxis <= 585).OrderBy(x=>x.XAxis).ToList();
+                    readedValuesCopy.AddRange(dd);
 
-                        if (yVAl >= 500 & yVAl <= 585) // get all the content of the table
-                        //if (yVAl >= 929 & yVAl <= 953)
-                        // (yVAl >= 152 & yVAl <= 319)
-                        {
-                            dummyXAxis.Add(xVAl);
-                            dummyYAxis.Add(yVAl);
-                            dummyTextLength.Add(textLengthVal);
-                            dummyWord.Add(wordVal);
-                        }
-                    }
+
+                    //foreach (var item in readedValues) // get data to process
+                    //{
+                    //    if (item.YAxis >= 500 & item.YAxis <= 585)
+                    //    {
+                    //        readedValuesCopy.Add(new Data {YAxis=item.YAxis,XAxis=item.XAxis,Word=item.Word,TextLength=item.TextLength });
+
+                    //        readedValuesCopy = readedValuesCopy.OrderBy(x => x.XAxis).ThenBy(x => x.YAxis).ToList();
+                    //    }
+                           
+                    //}
 
                     // sort the data on x axis and y axis
 
-                    var readedValuesCopy = new List<Data>();
-                    for (int j = 0; j < dummyXAxis.Count(); j++)
-                    {
-                        readedValuesCopy.Add(new Data(dummyWord.ElementAt(j).Trim(), dummyYAxis.ElementAt(j), dummyXAxis.ElementAt(j), dummyTextLength.ElementAt(j)));
+                 
+                    //for (int j = 0; j < dummyXAxis.Count(); j++)
+                    //{
+                    //    readedValuesCopy.Add(new Data(dummyWord.ElementAt(j).Trim(), dummyYAxis.ElementAt(j), dummyXAxis.ElementAt(j), dummyTextLength.ElementAt(j)));
 
-                        readedValuesCopy = readedValuesCopy.OrderBy(x => x.XAxis).ThenBy(x =>x.YAxis).ToList();
-                    }
+                    //    readedValuesCopy = readedValuesCopy.OrderBy(x => x.XAxis).ThenBy(x =>x.YAxis).ToList();
+                    //}
 
                     int[][] jaggedArrayXAxis = new int[50][];
                     int[][] jaggedArrayTextLength = new int[50][];
@@ -990,7 +1043,10 @@ namespace ReboProject
                                             lastText = lastText.Replace(matchVal.Value, "").Trim();
                                             var completeWord = lastText + " " + firstXCoordinate.Key;
                                             combineRowDataCopy.Remove(combineRowDataCopy.Last().Key);
-                                            combineRowDataCopyCoordinate.Remove(combineRowDataCopy.Last().Key);
+                                            if (combineRowDataCopy.Count > 0)
+                                            {
+                                                combineRowDataCopyCoordinate.Remove(combineRowDataCopy.Last().Key);
+                                            }
                                             combineRowDataCopyCoordinate.Add(completeWord, lastTextLength + combineRowDataTextLength.ElementAt(t).Value);
                                             combineRowDataCopy.Add(completeWord, lastVal);
                                         }
@@ -1243,6 +1299,8 @@ namespace ReboProject
             searchFieldScore = new Dictionary<string, int>();
             withInScore = new Dictionary<string, int>();
             // searchFor
+
+            //Directory<string, int> result = searchFor.Select(s => new Directory<string, int> {s["keyword"].ToString(),int.Parse(s["score"]) } )
             for (var k = 0; k < searchFor.Count(); k++) // loop throuch all searchFor
             {
                 var AllSearchFieldKeyword = (searchFor[k]["keyword"]).ToString(); // get the search field
@@ -3256,7 +3314,7 @@ namespace ReboProject
                                 if (CheckGetKeywordCount == getKeyword.Count() & orConditionCondition == 1) {
                                     foreach (var item in saveSentenceForDuplicate)
                                     {
-                                        if (singleSentence.Key.Trim() == item && checkNextLineVal == "1")
+                                        if (singleSentence.Key.Trim() == item.Trim() && checkNextLineVal == "1")
                                         {
                                             checkNextLIne = true;
                                             break;
