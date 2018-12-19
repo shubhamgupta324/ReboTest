@@ -17,7 +17,7 @@ namespace ReboProject
     public class processing
     {
         #region -------------------------------------- Global Intialization ----------------------------------------------------------------
-
+        
         //List<string> uppercaseAlpha = new List<string> { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
 
         //List<string> lowercaseAlpha = new List<string> { "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z" };
@@ -137,6 +137,10 @@ namespace ReboProject
         #region------------get the complete section once for the first tree structure-----------------
         public List<string> getSectionForPara(int lineNumber, string para, string lastLine, bool nextPara)
         {
+            try
+            {
+
+           
             List<string> sectionFoundData = new List<string>(); // save the section number and regex...
 
             #region commented code
@@ -266,12 +270,22 @@ namespace ReboProject
                 }
             }
             return sectionFoundData; // return section number and regex
+            }
+            catch (Exception ex)
+            {
+                _Default.LogError("getSectionForPara", "", ex);
+                throw;
+            }
         }
         #endregion
 
         #region ---------------------------loop through all the regex to get the section----------------------------------
         public List<string> regexLoop(string para)
         {
+            try
+            {
+
+           
             #region commented
             //Dictionary<string, string> regexCorrectionRegex = new Dictionary<string, string>();
             //regexCorrectionRegex.Add(@"^((?i)(section|article))?[\s]*((\d{1,2}|(I|l)(\d{1,1})|(\d{1,1})(I|l|O))[\s]{0,1}\.[\s]{0,1}(\d{1,2}|(I|l|O))([\s]{0,1}(I|l|O)|[\s]{0,1}[(?:\d+\.?)]*))[\s]?([(|\[]?([a-zA-Z]{1}|\d{0,3}|(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4})[\]|)|:|.|•|-])?(?!\S)", @"^((?i)(section|article))?[\s]*(\d{1,2}\.\d[(?:\d+\.?)]*)[\s]?([(|\[]?([a-zA-Z]{1}|\d{0,3}|x{0,2}){1,2}(ix|iv|v?i{0,3})|(X{0,2}){1,2}(IX|IV|V?I{0,3})[\]|)|:|.|•|-])?(?!\S)");
@@ -403,161 +417,53 @@ namespace ReboProject
                 sectiongot.Add(null);
             }
             return sectiongot;
+            }
+            catch (Exception ex)
+            {
+                _Default.LogError("regexLoop", "", ex);
+                throw;
+            }
         }
         #endregion
 
         #region ---------------loop through tree to check para and its section number-----------------
         public void checkParaToFindSection(Dictionary<string, string> sectionList, string sectionNoreadAllParaData, JToken subChild, out List<string> sectionListCopy, out bool foundSection, out bool readSection)
         {
-            foundSection = false;
-            readSection = true;
-            sectionListCopy = new List<string>();
-            foreach (var item in subChild)
+            try
             {
+
+                foundSection = false;
+                readSection = true;
                 sectionListCopy = new List<string>();
-                var child = item["children"];
-                var sectioNo = item["section"].ToString();
-                var paraData = item["para"];
-                var parentCheck = (int)item["parentCheck"];
-
-                for (int j = 0; j < paraData.Count(); j++)
+                foreach (var item in subChild)
                 {
-                    var paraVal = paraData[j].ToString().Trim();
-
-                    if ((paraVal.EndsWith(sectionNoreadAllParaData.Trim()) | sectionNoreadAllParaData.Trim().EndsWith(paraVal) | paraVal.StartsWith(sectionNoreadAllParaData.Trim()) | sectionNoreadAllParaData.Trim().StartsWith(paraVal)) & paraVal.Length > 10)
-                    {
-                        if (!sectionListCopy.Contains(sectioNo) & !sectionList.ContainsKey(sectioNo))
-                        {
-                            sectionList.Add(sectioNo, "sectionNo");
-                            foundSection = true;
-                            if (parentCheck == 1)
-                            {
-                                readSection = false;
-                                break;
-                            }
-                        }
-                    }
-                }
-                if (child.Count() > 0 & foundSection == false)
-                {
-                    checkParaToFindSection(sectionList, sectionNoreadAllParaData, child, out sectionListCopy, out foundSection, out readSection);
-                    if (sectionListCopy.Count > 0 & foundSection == true)
-                    {
-                        List<string> sectionListCopyList = new List<string>();
-                        foreach (var sectionData in sectionListCopy)
-                        {
-                            sectionListCopyList.Add(sectionData);
-                        }
-                        if (readSection == true)
-                            sectionListCopyList.Add(sectioNo);
-                        if (parentCheck == 1)
-                            readSection = false;
-                        sectionListCopy = new List<string>();
-                        sectionListCopy = sectionListCopyList;
-                        foundSection = true;
-                        break;
-                    }
-                }
-                else if (foundSection == true)
-                {
-                    sectionListCopy.Add(sectioNo);
-                }
-                if (foundSection == true)
-                    break;
-            }
-        }
-        #endregion
-
-        // get the complete section for the para
-        public string getCompleteParaSection(string SectionNoCount, JArray ja2, Dictionary<int, Dictionary<int, string>> saveSectionNoAllFiles, Dictionary<Dictionary<int, string>, int> saveAllSection, string outputPara, string DefaultSectionName, JToken SectionName, string singleFileSectionTree)
-        {
-            var jarrayVal = ja2;
-            var pageNo = (int)ja2[0]["pageNo"]; // get the pageno of output
-            var paraNo = (int)ja2[0]["paraNo"]; //  get the para number
-            var readNextPara = (int)ja2[0]["readNextPara"]; // get para
-            var sectionNo = ja2[0]["sectionVal"].ToString();
-            var sentenceMergeCount = (int)ja2[0]["sentenceMergeCount"];
-            var sectionNoreadPara = ja2[0]["sectionNoreadPara"].ToString();
-            var sectionNoreadAllPara = sectionNoreadPara.Split('|');
-
-            var sectionNoreadAllParaData = "";
-            var list = new List<string>(sectionNoreadAllPara);
-            if (sectionNoreadAllPara.Count() == 3)
-            {
-                sectionNoreadAllParaData = list.ElementAt(1);
-            }
-            else if (sectionNoreadAllPara.Count() == 2)
-            {
-                if (list.ElementAt(0).Length < 80)
-                    sectionNoreadAllParaData = list.ElementAt(1);
-                else
-                    sectionNoreadAllParaData = list.ElementAt(0);
-            }
-            else
-                sectionNoreadAllParaData = list.ElementAt(0);
-
-            var foundPara = "";
-            if (outputPara == "")
-                foundPara = ja2[0]["output"].ToString();
-            else
-                foundPara = outputPara;
-            var finalSectionOutput = "";
-            var getFirstLine = "";
-
-             var completeTree = JObject.Parse(singleFileSectionTree.ToString())["children"];
-           
-            Dictionary<string, string> sectionList = new Dictionary<string, string>();
-            List<string> sectionListCopy = new List<string>();
-
-            //----------get section data---------------
-
-            var toFInd = foundPara.Trim();
-            var CheckNextChild = true;
-            for (int i = 0; i < completeTree.Count(); i++) // loop through complete tree
-            {
-                var child = completeTree[i]["children"]; // get the children
-                var childSection = completeTree[i]["section"].ToString(); // get the section no
-                var SectionNameData = "";
-                if (completeTree[i]["SectionName"].ToString() != "")
-                    SectionNameData = completeTree[i]["SectionName"].ToString(); // get the section name
-                else
-                    SectionNameData = null;
-                var childCount = child.Count();
-
-                CheckNextChild = true;
-
-                foreach (var item in child) // loop through all the children of the section
-                {
-                    var subChild = item["children"];
+                    sectionListCopy = new List<string>();
+                    var child = item["children"];
                     var sectioNo = item["section"].ToString();
-                    var subChildCount = subChild.Count();
                     var paraData = item["para"];
                     var parentCheck = (int)item["parentCheck"];
-                    var readSection = true;
 
                     for (int j = 0; j < paraData.Count(); j++)
                     {
                         var paraVal = paraData[j].ToString().Trim();
 
-                        if ((paraVal.StartsWith(sectionNoreadAllParaData.Trim()) | sectionNoreadAllParaData.Trim().StartsWith(paraVal) | paraVal.EndsWith(sectionNoreadAllParaData.Trim()) | sectionNoreadAllParaData.Trim().EndsWith(paraVal)) & paraVal.Length > 20)
+                        if ((paraVal.EndsWith(sectionNoreadAllParaData.Trim()) | sectionNoreadAllParaData.Trim().EndsWith(paraVal) | paraVal.StartsWith(sectionNoreadAllParaData.Trim()) | sectionNoreadAllParaData.Trim().StartsWith(paraVal)) & paraVal.Length > 10)
                         {
-                            if (!sectionListCopy.Contains(sectioNo) & readSection == true & !sectionList.ContainsKey(sectioNo))
+                            if (!sectionListCopy.Contains(sectioNo) & !sectionList.ContainsKey(sectioNo))
                             {
                                 sectionList.Add(sectioNo, "sectionNo");
+                                foundSection = true;
                                 if (parentCheck == 1)
                                 {
-                                    CheckNextChild = false;
+                                    readSection = false;
                                     break;
                                 }
-                                break;
                             }
                         }
                     }
-                    if (subChildCount > 0 & CheckNextChild == true)
+                    if (child.Count() > 0 & foundSection == false)
                     {
-                        var sectionNoReturn = new List<string>();
-                        var foundSection = false;
-                        checkParaToFindSection(sectionList, sectionNoreadAllParaData, subChild, out sectionListCopy, out foundSection, out readSection);
+                        checkParaToFindSection(sectionList, sectionNoreadAllParaData, child, out sectionListCopy, out foundSection, out readSection);
                         if (sectionListCopy.Count > 0 & foundSection == true)
                         {
                             List<string> sectionListCopyList = new List<string>();
@@ -567,1173 +473,1287 @@ namespace ReboProject
                             }
                             if (readSection == true)
                                 sectionListCopyList.Add(sectioNo);
+                            if (parentCheck == 1)
+                                readSection = false;
                             sectionListCopy = new List<string>();
                             sectionListCopy = sectionListCopyList;
                             foundSection = true;
-                            CheckNextChild = false;
+                            break;
                         }
                     }
-                    if (sectionListCopy.Count() > 0 & CheckNextChild == false)
+                    else if (foundSection == true)
                     {
-                        sectionList = new Dictionary<string, string>();
-                        foreach (var sectionData in sectionListCopy)
-                        {
-                            if (!sectionList.ContainsKey(sectionData))
-                                sectionList.Add(sectionData, "SectionNo");
-                        }
-                        if (SectionNameData != null)
-                            sectionList.Add(SectionNameData, "sectionParent");
-                        break;
+                        sectionListCopy.Add(sectioNo);
                     }
-                    else if (sectionList.Count() > 0)
-                    {
-                        if (SectionNameData != null)
-                            sectionList.Add(SectionNameData, "sectionParent");
-                        CheckNextChild = false;
+                    if (foundSection == true)
                         break;
-                    }
                 }
-                if (CheckNextChild == false)
-                    break;
             }
-
-            var finalSectionVal = new Dictionary<string, string>();
-            finalSectionVal = sectionList;
-            if (finalSectionVal.Count > 0)
+            catch (Exception ex)
             {
-                if ((finalSectionVal.ElementAt(finalSectionVal.Count - 1).Key != null | finalSectionVal.ElementAt(finalSectionVal.Count - 1).Key != "") & finalSectionVal.ElementAt(finalSectionVal.Count - 1).Value == "sectionParent")
-                {
-                    getFirstLine = finalSectionVal.ElementAt(finalSectionVal.Count - 1).Key;
-                    finalSectionVal.Remove(getFirstLine);
-                }
-                else
-                    getFirstLine = null;
+                _Default.LogError("checkParaToFindSection", "", ex);
+                throw;
+            }
+        }
+            #endregion
 
-                var totalSectionShow = 0;
-                if (SectionNoCount == "0")
-                    totalSectionShow = finalSectionVal.Count;
-                else
-                    totalSectionShow = Int32.Parse(SectionNoCount);
-                var sectionCount = 0;
-                for (int i = finalSectionVal.Count - 1; i >= 0; i--)
+            // get the complete section for the para
+            public string getCompleteParaSection(string SectionNoCount, JArray ja2, Dictionary<int, Dictionary<int, string>> saveSectionNoAllFiles, Dictionary<Dictionary<int, string>, int> saveAllSection, string outputPara, string DefaultSectionName, JToken SectionName, string singleFileSectionTree)
+            {
+                try
                 {
-                    sectionCount++;
-                    if (finalSectionVal.ElementAt(i).Key != null)
+                    var jarrayVal = ja2;
+                    var pageNo = (int)ja2[0]["pageNo"]; // get the pageno of output
+                    var paraNo = (int)ja2[0]["paraNo"]; //  get the para number
+                    var readNextPara = (int)ja2[0]["readNextPara"]; // get para
+                    var sectionNo = ja2[0]["sectionVal"].ToString();
+                    var sentenceMergeCount = (int)ja2[0]["sentenceMergeCount"];
+                    var sectionNoreadPara = ja2[0]["sectionNoreadPara"].ToString();
+                    var sectionNoreadAllPara = sectionNoreadPara.Split('|');
+
+                    var sectionNoreadAllParaData = "";
+                    var list = new List<string>(sectionNoreadAllPara);
+                    if (sectionNoreadAllPara.Count() == 3)
                     {
-                        var sectionNoVal = finalSectionVal.ElementAt(i).Key.Trim();
-                        if (finalSectionOutput == "")
-                            finalSectionOutput = sectionNoVal;
+                        sectionNoreadAllParaData = list.ElementAt(1);
+                    }
+                    else if (sectionNoreadAllPara.Count() == 2)
+                    {
+                        if (list.ElementAt(0).Length < 80)
+                            sectionNoreadAllParaData = list.ElementAt(1);
                         else
-                            finalSectionOutput = finalSectionOutput + " " + sectionNoVal;
+                            sectionNoreadAllParaData = list.ElementAt(0);
                     }
-                    if (sectionCount == totalSectionShow)
-                        break;
-                }
-            }
-            else
-                getFirstLine = null;
+                    else
+                        sectionNoreadAllParaData = list.ElementAt(0);
 
-            var foundSectionName = false;
-            if (getFirstLine != null)
-            {
-                var toSearch = "";
-                Dictionary<int, string> regexDictionary = new Dictionary<int, string>();
-                regexDictionary.Add(1, "[\\s]*([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}[\\s]*|\\d{0,2}[\\s]*)$"); //
-                regexDictionary.Add(2, "[\\s]*[\"]([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}[\\s]*|\\d{0,2}[\\s]*)[\"]$"); //
-                regexDictionary.Add(3, "[\\s]*([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}|\\d{0,2})$"); //
-                regexDictionary.Add(4, "[\\s]*[\"]([a-zA-Z]{1}[\\s]*|\\d{0,2}[\\s]*)[\"]$"); //
-                regexDictionary.Add(5, "[\\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[\\s]?"); //
+                    var foundPara = "";
+                    if (outputPara == "")
+                        foundPara = ja2[0]["output"].ToString();
+                    else
+                        foundPara = outputPara;
+                    var finalSectionOutput = "";
+                    var getFirstLine = "";
 
-                foreach (var SecName in SectionName) // loop through all the main head sections 
-                {
-                    if (foundSectionName == false)
+                    var completeTree = JObject.Parse(singleFileSectionTree.ToString())["children"];
+
+                    Dictionary<string, string> sectionList = new Dictionary<string, string>();
+                    List<string> sectionListCopy = new List<string>();
+
+                    //----------get section data---------------
+
+                    var toFInd = foundPara.Trim();
+                    var CheckNextChild = true;
+                    for (int i = 0; i < completeTree.Count(); i++) // loop through complete tree
                     {
-                        foreach (var regexVal in regexDictionary)
+                        var child = completeTree[i]["children"]; // get the children
+                        var childSection = completeTree[i]["section"].ToString(); // get the section no
+                        var SectionNameData = "";
+                        if (completeTree[i]["SectionName"].ToString() != "")
+                            SectionNameData = completeTree[i]["SectionName"].ToString(); // get the section name
+                        else
+                            SectionNameData = null;
+                        var childCount = child.Count();
+
+                        CheckNextChild = true;
+
+                        foreach (var item in child) // loop through all the children of the section
                         {
-                            toSearch = SecName["keyword"].ToString();
-                            Regex regex = new Regex("^(?i)" + toSearch + regexVal.Value);
-                            var match = regex.Match(getFirstLine); // check if match found
-                            if (match.Success)
+                            var subChild = item["children"];
+                            var sectioNo = item["section"].ToString();
+                            var subChildCount = subChild.Count();
+                            var paraData = item["para"];
+                            var parentCheck = (int)item["parentCheck"];
+                            var readSection = true;
+
+                            for (int j = 0; j < paraData.Count(); j++)
                             {
-                                Regex regex1 = new Regex("^(?i)" + toSearch);
-                                var match1 = regex1.Match(getFirstLine); // check if match found
-                                var removeHeadSectionName = match.Value.Replace(match1.Value, "").Trim();
-                                var finalHeadSectionName = match1.Value + " " + removeHeadSectionName;
-                                foundSectionName = true;
-                                finalSectionOutput = finalHeadSectionName.Trim() + " " + finalSectionOutput;
+                                var paraVal = paraData[j].ToString().Trim();
+
+                                if ((paraVal.StartsWith(sectionNoreadAllParaData.Trim()) | sectionNoreadAllParaData.Trim().StartsWith(paraVal) | paraVal.EndsWith(sectionNoreadAllParaData.Trim()) | sectionNoreadAllParaData.Trim().EndsWith(paraVal)) & paraVal.Length > 20)
+                                {
+                                    if (!sectionListCopy.Contains(sectioNo) & readSection == true & !sectionList.ContainsKey(sectioNo))
+                                    {
+                                        sectionList.Add(sectioNo, "sectionNo");
+                                        if (parentCheck == 1)
+                                        {
+                                            CheckNextChild = false;
+                                            break;
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                            if (subChildCount > 0 & CheckNextChild == true)
+                            {
+                                var sectionNoReturn = new List<string>();
+                                var foundSection = false;
+                                checkParaToFindSection(sectionList, sectionNoreadAllParaData, subChild, out sectionListCopy, out foundSection, out readSection);
+                                if (sectionListCopy.Count > 0 & foundSection == true)
+                                {
+                                    List<string> sectionListCopyList = new List<string>();
+                                    foreach (var sectionData in sectionListCopy)
+                                    {
+                                        sectionListCopyList.Add(sectionData);
+                                    }
+                                    if (readSection == true)
+                                        sectionListCopyList.Add(sectioNo);
+                                    sectionListCopy = new List<string>();
+                                    sectionListCopy = sectionListCopyList;
+                                    foundSection = true;
+                                    CheckNextChild = false;
+                                }
+                            }
+                            if (sectionListCopy.Count() > 0 & CheckNextChild == false)
+                            {
+                                sectionList = new Dictionary<string, string>();
+                                foreach (var sectionData in sectionListCopy)
+                                {
+                                    if (!sectionList.ContainsKey(sectionData))
+                                        sectionList.Add(sectionData, "SectionNo");
+                                }
+                                if (SectionNameData != null)
+                                    sectionList.Add(SectionNameData, "sectionParent");
+                                break;
+                            }
+                            else if (sectionList.Count() > 0)
+                            {
+                                if (SectionNameData != null)
+                                    sectionList.Add(SectionNameData, "sectionParent");
+                                CheckNextChild = false;
                                 break;
                             }
                         }
+                        if (CheckNextChild == false)
+                            break;
                     }
-                }
-            }
-            if (foundSectionName == false)
-                finalSectionOutput = DefaultSectionName + " " + finalSectionOutput;
-            return finalSectionOutput;
-        }
 
-        #region -------------------get the section no for SECTION(multiple paragraph)   (PENDING) ------------------------------------------------------
-        //// get the complete section number for SECTION......
-        public string sectionValSection(string section)
-        {
-            var sectionVal = "";
-            Dictionary<int, string> regexDictionary = new Dictionary<int, string>();
-
-            regexDictionary.Add(1, @"^[\s]*(((?i)section)\s\d+\.(:\d+\.?)*)\s"); //    section 1.
-            regexDictionary.Add(2, @"^[\s]*(((?i)sectionss)\s\d+\.\d(?:\d+\.?)*)"); //    section 1.1 
-            regexDictionary.Add(3, @"^[\s]*((?i)section)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}"); //    section xvii
-            regexDictionary.Add(4, @"^[\s]*((?i)section)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}"); //    section XVII
-            regexDictionary.Add(5, @"^[\s]*(((?i)section)[\s]*[A-Z])\s");  // section A
-            regexDictionary.Add(6, @"^[\s]*(((?i)section)[\s]*[a-z])");  //      section a
-            regexDictionary.Add(7, @"^[\s]*(((?i)article)[\s]*[a-z])");  //      article a
-            regexDictionary.Add(8, @"^[\s]*(((?i)ARTICLE)[\s]*[A-Z])");  // ARTICLE A  
-            regexDictionary.Add(9, @"^[\s]*((?i)article)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}"); //    article XVII
-            regexDictionary.Add(10, @"^[\s]*((?i)article)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}"); //    article xvii
-            regexDictionary.Add(11, @"^[\s]*(((?i)article)\s\d)"); //   article 1,
-            regexDictionary.Add(12, @"^[\s]*(((?i)article)\s\d+\.(?:\d+\.?)*)"); //  article 1.1
-            regexDictionary.Add(13, @"^(\d{1,2}\.(:\d+\.?)*)\s"); //    1.
-            regexDictionary.Add(14, @"^(\d{1,2}\.\d(?:\d+\.?)*)"); //    1.1 
-            regexDictionary.Add(15, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}\s"); //    xvii
-            regexDictionary.Add(16, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[.]\s"); //    xvii.
-            regexDictionary.Add(17, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}\s"); //    XVII
-            regexDictionary.Add(18, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[\s]{0,1}[.]\s"); //    XVII.
-            regexDictionary.Add(19, @"^[\s]*([A-Z][\s]{0,1}[.])\s");  // A.
-
-            for (int i = 0; i < regexDictionary.Count(); i++)
-            {
-                Regex regexForNextSection = new Regex(regexDictionary[i + 1]);
-                var matchForNextSection = regexForNextSection.Match(section); // check if match found
-                if (matchForNextSection.Success)
-                {
-                    sectionVal = matchForNextSection.Value;
-                    break;
-                }
-            }
-
-            return sectionVal;
-        }
-        #endregion
-
-        //---------------------------------------------------------Tree structure ----------------------------------------------------------------
-
-        #region ------------- tree view of pdf---------------------------------------------------------
-        // create tree for pdf
-        public void createTree(Dictionary<Dictionary<int, string>, int> saveSection, Dictionary<Dictionary<int, string>, int> saveSectionWithsectionNo, Dictionary<Dictionary<int, string>, int> saveSectionWithRegex, List<string> sectionNameFound, out string finalJson)
-        {
-            Node rootTop = new Node("ROOT", -1);
-            // tree is created section wise.... there will be one root node and the section will be the branches for tree
-            for (int i = 0; i < saveSection.Count(); i++) // loop through section and create tree for the section
-            {
-                int defaultLevel = 0;
-                var regexVal = "";
-                var sectionName = "";
-                var parentCheck = 0;
-                List<string> paraList = new List<string>();
-                Node root = new Node("ROOT", defaultLevel, paraList, regexVal, sectionName, parentCheck);
-                Stack<KeyValuePair<string, Node>> stack = new Stack<KeyValuePair<string, Node>>();
-                List<string> matchedKeys = new List<string>();
-                Node lastNode = null;
-
-                // get the details for the section
-                var sectionPara = saveSection.ElementAt(i).Key;
-                var sectionSectioNo = saveSectionWithsectionNo.ElementAt(i).Key;
-                var SectionRegex = saveSectionWithRegex.ElementAt(i).Key;
-                Dictionary<int, List<string>> combineSectionPara = new Dictionary<int, List<string>>();
-                Dictionary<int, string> combineSectionSectioNo = new Dictionary<int, string>();
-                Dictionary<int, string> combineSectionRegex = new Dictionary<int, string>();
-                List<int> parentSectionNo = new List<int>();
-
-                // this method reconstructs the para and checks the parent and child section for the tree process 
-                paraConstruction(sectionPara, sectionSectioNo, SectionRegex, out combineSectionPara, out combineSectionSectioNo, out combineSectionRegex, out parentSectionNo);
-
-
-                List<int> levelSave = new List<int>();
-                List<string> allSection = new List<string>();
-                List<string> allregex = new List<string>();
-                for (int j = 0; j < combineSectionPara.Count(); j++)
-                {
-                    var para = combineSectionPara.ElementAt(j).Value;
-                    var sectioNo = combineSectionSectioNo.ElementAt(j).Value;
-                    var regex = combineSectionRegex.ElementAt(j).Value;
-                    var parent = parentSectionNo.ElementAt(j);
-                    allSection.Add(sectioNo);
-                    allregex.Add(regex);
-
-                    var rootSectionName = "";
-                    if (sectionNameFound.Count == 0)
-                        rootSectionName = "";
-                    else
-                        rootSectionName = sectionNameFound.ElementAt(i);
-
-                    if (sectioNo == "" & combineSectionPara.Count() == 1)
+                    var finalSectionVal = new Dictionary<string, string>();
+                    finalSectionVal = sectionList;
+                    if (finalSectionVal.Count > 0)
                     {
-                        root.Value = sectioNo;
-                        root.Para = para;
-                        root.SectionName = rootSectionName;
-                        levelSave.Add(0);
-                    }
-                    else
-                    {
-                        if (j == 0 & sectioNo == "")
+                        if ((finalSectionVal.ElementAt(finalSectionVal.Count - 1).Key != null | finalSectionVal.ElementAt(finalSectionVal.Count - 1).Key != "") & finalSectionVal.ElementAt(finalSectionVal.Count - 1).Value == "sectionParent")
                         {
-                            root.Value = sectioNo;
-                            root.Para = para;
-                            root.SectionName = rootSectionName;
-                            levelSave.Add(0);
-
+                            getFirstLine = finalSectionVal.ElementAt(finalSectionVal.Count - 1).Key;
+                            finalSectionVal.Remove(getFirstLine);
                         }
                         else
-                        {
-                            var nodeValue = sectioNo;
+                            getFirstLine = null;
 
-                            if (stack.Count == 0)
+                        var totalSectionShow = 0;
+                        if (SectionNoCount == "0")
+                            totalSectionShow = finalSectionVal.Count;
+                        else
+                            totalSectionShow = Int32.Parse(SectionNoCount);
+                        var sectionCount = 0;
+                        for (int i = finalSectionVal.Count - 1; i >= 0; i--)
+                        {
+                            sectionCount++;
+                            if (finalSectionVal.ElementAt(i).Key != null)
                             {
-                                var child = new Node(sectioNo, root.Level + 1, para, regex, "", parent);
-                                levelSave.Add(root.Level + 1);
-                                root.Children.Add(child);
-                                lastNode = child;
-                                stack.Push(new KeyValuePair<string, Node>(regex, root));
+                                var sectionNoVal = finalSectionVal.ElementAt(i).Key.Trim();
+                                if (finalSectionOutput == "")
+                                    finalSectionOutput = sectionNoVal;
+                                else
+                                    finalSectionOutput = finalSectionOutput + " " + sectionNoVal;
+                            }
+                            if (sectionCount == totalSectionShow)
+                                break;
+                        }
+                    }
+                    else
+                        getFirstLine = null;
+
+                    var foundSectionName = false;
+                    if (getFirstLine != null)
+                    {
+                        var toSearch = "";
+                        Dictionary<int, string> regexDictionary = new Dictionary<int, string>();
+                        regexDictionary.Add(1, "[\\s]*([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}[\\s]*|\\d{0,2}[\\s]*)$"); //
+                        regexDictionary.Add(2, "[\\s]*[\"]([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}[\\s]*|\\d{0,2}[\\s]*)[\"]$"); //
+                        regexDictionary.Add(3, "[\\s]*([a-zA-Z]{1}|\\d{0,3})(\\W?)([a-zA-Z]{1}|\\d{0,2})$"); //
+                        regexDictionary.Add(4, "[\\s]*[\"]([a-zA-Z]{1}[\\s]*|\\d{0,2}[\\s]*)[\"]$"); //
+                        regexDictionary.Add(5, "[\\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[\\s]?"); //
+
+                        foreach (var SecName in SectionName) // loop through all the main head sections 
+                        {
+                            if (foundSectionName == false)
+                            {
+                                foreach (var regexVal in regexDictionary)
+                                {
+                                    toSearch = SecName["keyword"].ToString();
+                                    Regex regex = new Regex("^(?i)" + toSearch + regexVal.Value);
+                                    var match = regex.Match(getFirstLine); // check if match found
+                                    if (match.Success)
+                                    {
+                                        Regex regex1 = new Regex("^(?i)" + toSearch);
+                                        var match1 = regex1.Match(getFirstLine); // check if match found
+                                        var removeHeadSectionName = match.Value.Replace(match1.Value, "").Trim();
+                                        var finalHeadSectionName = match1.Value + " " + removeHeadSectionName;
+                                        foundSectionName = true;
+                                        finalSectionOutput = finalHeadSectionName.Trim() + " " + finalSectionOutput;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (foundSectionName == false)
+                        finalSectionOutput = DefaultSectionName + " " + finalSectionOutput;
+                    return finalSectionOutput;
+
+                }
+                catch (Exception ex)
+                {
+                _Default.LogError("getCompleteParaSection", "", ex);
+                throw;
+                }
+            }
+
+            #region -------------------get the section no for SECTION(multiple paragraph)   (PENDING) ------------------------------------------------------
+            //// get the complete section number for SECTION......
+            public string sectionValSection(string section)
+            {
+                try
+                {
+
+
+                    var sectionVal = "";
+                    Dictionary<int, string> regexDictionary = new Dictionary<int, string>();
+
+                    regexDictionary.Add(1, @"^[\s]*(((?i)section)\s\d+\.(:\d+\.?)*)\s"); //    section 1.
+                    regexDictionary.Add(2, @"^[\s]*(((?i)sectionss)\s\d+\.\d(?:\d+\.?)*)"); //    section 1.1 
+                    regexDictionary.Add(3, @"^[\s]*((?i)section)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}"); //    section xvii
+                    regexDictionary.Add(4, @"^[\s]*((?i)section)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}"); //    section XVII
+                    regexDictionary.Add(5, @"^[\s]*(((?i)section)[\s]*[A-Z])\s");  // section A
+                    regexDictionary.Add(6, @"^[\s]*(((?i)section)[\s]*[a-z])");  //      section a
+                    regexDictionary.Add(7, @"^[\s]*(((?i)article)[\s]*[a-z])");  //      article a
+                    regexDictionary.Add(8, @"^[\s]*(((?i)ARTICLE)[\s]*[A-Z])");  // ARTICLE A  
+                    regexDictionary.Add(9, @"^[\s]*((?i)article)[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}"); //    article XVII
+                    regexDictionary.Add(10, @"^[\s]*((?i)article)[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}"); //    article xvii
+                    regexDictionary.Add(11, @"^[\s]*(((?i)article)\s\d)"); //   article 1,
+                    regexDictionary.Add(12, @"^[\s]*(((?i)article)\s\d+\.(?:\d+\.?)*)"); //  article 1.1
+                    regexDictionary.Add(13, @"^(\d{1,2}\.(:\d+\.?)*)\s"); //    1.
+                    regexDictionary.Add(14, @"^(\d{1,2}\.\d(?:\d+\.?)*)"); //    1.1 
+                    regexDictionary.Add(15, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}\s"); //    xvii
+                    regexDictionary.Add(16, @"^[\s]*(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}[.]\s"); //    xvii.
+                    regexDictionary.Add(17, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}\s"); //    XVII
+                    regexDictionary.Add(18, @"^[\s]*(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}[\s]{0,1}[.]\s"); //    XVII.
+                    regexDictionary.Add(19, @"^[\s]*([A-Z][\s]{0,1}[.])\s");  // A.
+
+                    for (int i = 0; i < regexDictionary.Count(); i++)
+                    {
+                        Regex regexForNextSection = new Regex(regexDictionary[i + 1]);
+                        var matchForNextSection = regexForNextSection.Match(section); // check if match found
+                        if (matchForNextSection.Success)
+                        {
+                            sectionVal = matchForNextSection.Value;
+                            break;
+                        }
+                    }
+
+                    return sectionVal;
+                }
+                catch (Exception ex)
+                {
+                _Default.LogError("sectionValSection", "", ex);
+                throw;
+                }
+            }
+            #endregion
+
+            //---------------------------------------------------------Tree structure ----------------------------------------------------------------
+
+            #region ------------- tree view of pdf---------------------------------------------------------
+            // create tree for pdf
+            public void createTree(Dictionary<Dictionary<int, string>, int> saveSection, Dictionary<Dictionary<int, string>, int> saveSectionWithsectionNo, Dictionary<Dictionary<int, string>, int> saveSectionWithRegex, List<string> sectionNameFound, out string finalJson)
+            {
+                try
+                {
+
+                    Node rootTop = new Node("ROOT", -1);
+                    // tree is created section wise.... there will be one root node and the section will be the branches for tree
+                    for (int i = 0; i < saveSection.Count(); i++) // loop through section and create tree for the section
+                    {
+                        int defaultLevel = 0;
+                        var regexVal = "";
+                        var sectionName = "";
+                        var parentCheck = 0;
+                        List<string> paraList = new List<string>();
+                        Node root = new Node("ROOT", defaultLevel, paraList, regexVal, sectionName, parentCheck);
+                        Stack<KeyValuePair<string, Node>> stack = new Stack<KeyValuePair<string, Node>>();
+                        List<string> matchedKeys = new List<string>();
+                        Node lastNode = null;
+
+                        // get the details for the section
+                        var sectionPara = saveSection.ElementAt(i).Key;
+                        var sectionSectioNo = saveSectionWithsectionNo.ElementAt(i).Key;
+                        var SectionRegex = saveSectionWithRegex.ElementAt(i).Key;
+                        Dictionary<int, List<string>> combineSectionPara = new Dictionary<int, List<string>>();
+                        Dictionary<int, string> combineSectionSectioNo = new Dictionary<int, string>();
+                        Dictionary<int, string> combineSectionRegex = new Dictionary<int, string>();
+                        List<int> parentSectionNo = new List<int>();
+
+                        // this method reconstructs the para and checks the parent and child section for the tree process 
+                        paraConstruction(sectionPara, sectionSectioNo, SectionRegex, out combineSectionPara, out combineSectionSectioNo, out combineSectionRegex, out parentSectionNo);
+
+
+                        List<int> levelSave = new List<int>();
+                        List<string> allSection = new List<string>();
+                        List<string> allregex = new List<string>();
+                        for (int j = 0; j < combineSectionPara.Count(); j++)
+                        {
+                            var para = combineSectionPara.ElementAt(j).Value;
+                            var sectioNo = combineSectionSectioNo.ElementAt(j).Value;
+                            var regex = combineSectionRegex.ElementAt(j).Value;
+                            var parent = parentSectionNo.ElementAt(j);
+                            allSection.Add(sectioNo);
+                            allregex.Add(regex);
+
+                            var rootSectionName = "";
+                            if (sectionNameFound.Count == 0)
+                                rootSectionName = "";
+                            else
+                                rootSectionName = sectionNameFound.ElementAt(i);
+
+                            if (sectioNo == "" & combineSectionPara.Count() == 1)
+                            {
+                                root.Value = sectioNo;
+                                root.Para = para;
+                                root.SectionName = rootSectionName;
+                                levelSave.Add(0);
                             }
                             else
                             {
-                                bool differentSection = false;
-                                if (matchedKeys.Contains(regex) & differentSection == false)
+                                if (j == 0 & sectioNo == "")
                                 {
-                                    var breakFlag = false;
-                                    while (breakFlag == false)
-                                    {
-                                        if (stack.Count == 0)
-                                            break;
-                                        var top = stack.Peek();
-                                        if (top.Key == regex)
-                                        {
-                                            var child = new Node(sectioNo, top.Value.Level + 1, para, regex, "", parent);
-                                            levelSave.Add(top.Value.Level + 1);
-                                            top.Value.Children.Add(child);
+                                    root.Value = sectioNo;
+                                    root.Para = para;
+                                    root.SectionName = rootSectionName;
+                                    levelSave.Add(0);
 
-                                            lastNode = child;
-                                            breakFlag = true;
-                                        }
-                                        else
-                                        {
-                                            matchedKeys.Remove(top.Key);
-                                            stack.Pop();
-                                        }
-                                    }
                                 }
                                 else
                                 {
-                                    if (lastNode != null)
-                                    {
-                                        var child = new Node(sectioNo, lastNode.Level + 1, para, regex, "", parent);
-                                        levelSave.Add(lastNode.Level + 1);
-                                        lastNode.Children.Add(child);
-                                        stack.Push(new KeyValuePair<string, Node>(regex, lastNode));
+                                    var nodeValue = sectioNo;
 
+                                    if (stack.Count == 0)
+                                    {
+                                        var child = new Node(sectioNo, root.Level + 1, para, regex, "", parent);
+                                        levelSave.Add(root.Level + 1);
+                                        root.Children.Add(child);
                                         lastNode = child;
+                                        stack.Push(new KeyValuePair<string, Node>(regex, root));
                                     }
+                                    else
+                                    {
+                                        bool differentSection = false;
+                                        if (matchedKeys.Contains(regex) & differentSection == false)
+                                        {
+                                            var breakFlag = false;
+                                            while (breakFlag == false)
+                                            {
+                                                if (stack.Count == 0)
+                                                    break;
+                                                var top = stack.Peek();
+                                                if (top.Key == regex)
+                                                {
+                                                    var child = new Node(sectioNo, top.Value.Level + 1, para, regex, "", parent);
+                                                    levelSave.Add(top.Value.Level + 1);
+                                                    top.Value.Children.Add(child);
+
+                                                    lastNode = child;
+                                                    breakFlag = true;
+                                                }
+                                                else
+                                                {
+                                                    matchedKeys.Remove(top.Key);
+                                                    stack.Pop();
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (lastNode != null)
+                                            {
+                                                var child = new Node(sectioNo, lastNode.Level + 1, para, regex, "", parent);
+                                                levelSave.Add(lastNode.Level + 1);
+                                                lastNode.Children.Add(child);
+                                                stack.Push(new KeyValuePair<string, Node>(regex, lastNode));
+
+                                                lastNode = child;
+                                            }
+                                        }
+                                    }
+                                    if (matchedKeys.Contains(regex) == false)
+                                        matchedKeys.Add(regex);
                                 }
                             }
-                            if (matchedKeys.Contains(regex) == false)
-                                matchedKeys.Add(regex);
                         }
-                    }
-                }
 
 
-                defaultLevel = 0;
-                regexVal = "";
-                sectionName = "";
-                parentCheck = 0;
-                paraList = new List<string>();
-                root = new Node("ROOT", defaultLevel, paraList, regexVal, sectionName, parentCheck);
-                stack = new Stack<KeyValuePair<string, Node>>();
-                matchedKeys = new List<string>();
-                lastNode = null;
+                        defaultLevel = 0;
+                        regexVal = "";
+                        sectionName = "";
+                        parentCheck = 0;
+                        paraList = new List<string>();
+                        root = new Node("ROOT", defaultLevel, paraList, regexVal, sectionName, parentCheck);
+                        stack = new Stack<KeyValuePair<string, Node>>();
+                        matchedKeys = new List<string>();
+                        lastNode = null;
 
 
-                treeCorrection(parentSectionNo, levelSave, combineSectionPara, combineSectionSectioNo, combineSectionRegex, out combineSectionSectioNo, out combineSectionRegex, out combineSectionPara, out parentSectionNo);
+                        treeCorrection(parentSectionNo, levelSave, combineSectionPara, combineSectionSectioNo, combineSectionRegex, out combineSectionSectioNo, out combineSectionRegex, out combineSectionPara, out parentSectionNo);
 
-                levelSave = new List<int>();
-                allSection = new List<string>();
-                allregex = new List<string>();
-                for (int j = 0; j < combineSectionPara.Count(); j++)
-                {
-                    var para = combineSectionPara.ElementAt(j).Value;
-                    var sectioNo = combineSectionSectioNo.ElementAt(j).Value;
-                    var regex = combineSectionRegex.ElementAt(j).Value;
-                    var parent = parentSectionNo.ElementAt(j);
-                    allSection.Add(sectioNo);
-                    allregex.Add(regex);
-
-                    var rootSectionName = "";
-                    if (sectionNameFound.Count == 0)
-                        rootSectionName = "";
-                    else
-                        rootSectionName = sectionNameFound.ElementAt(i);
-
-                    if (sectioNo == "" & combineSectionPara.Count() == 1)
-                    {
-                        root.Value = sectioNo;
-                        root.Para = para;
-                        root.SectionName = rootSectionName;
-                        levelSave.Add(0);
-                    }
-                    else
-                    {
-                        if (j == 0 & sectioNo == "")
+                        levelSave = new List<int>();
+                        allSection = new List<string>();
+                        allregex = new List<string>();
+                        for (int j = 0; j < combineSectionPara.Count(); j++)
                         {
-                            root.Value = sectioNo;
-                            root.Para = para;
-                            root.SectionName = rootSectionName;
-                            levelSave.Add(0);
+                            var para = combineSectionPara.ElementAt(j).Value;
+                            var sectioNo = combineSectionSectioNo.ElementAt(j).Value;
+                            var regex = combineSectionRegex.ElementAt(j).Value;
+                            var parent = parentSectionNo.ElementAt(j);
+                            allSection.Add(sectioNo);
+                            allregex.Add(regex);
 
-                        }
-                        else
-                        {
-                            var nodeValue = sectioNo;
+                            var rootSectionName = "";
+                            if (sectionNameFound.Count == 0)
+                                rootSectionName = "";
+                            else
+                                rootSectionName = sectionNameFound.ElementAt(i);
 
-                            if (stack.Count == 0)
+                            if (sectioNo == "" & combineSectionPara.Count() == 1)
                             {
-                                var child = new Node(sectioNo, root.Level + 1, para, regex, "", parent);
-                                levelSave.Add(root.Level + 1);
-                                root.Children.Add(child);
-                                lastNode = child;
-                                stack.Push(new KeyValuePair<string, Node>(regex, root));
+                                root.Value = sectioNo;
+                                root.Para = para;
+                                root.SectionName = rootSectionName;
+                                levelSave.Add(0);
                             }
                             else
                             {
-                                bool differentSection = false;
-                                if (matchedKeys.Contains(regex) & differentSection == false)
+                                if (j == 0 & sectioNo == "")
                                 {
-                                    var breakFlag = false;
-                                    while (breakFlag == false)
-                                    {
-                                        if (stack.Count == 0)
-                                            break;
-                                        var top = stack.Peek();
-                                        if (top.Key == regex)
-                                        {
-                                            var child = new Node(sectioNo, top.Value.Level + 1, para, regex, "", parent);
-                                            levelSave.Add(top.Value.Level + 1);
-                                            top.Value.Children.Add(child);
+                                    root.Value = sectioNo;
+                                    root.Para = para;
+                                    root.SectionName = rootSectionName;
+                                    levelSave.Add(0);
 
-                                            lastNode = child;
-                                            breakFlag = true;
-                                        }
-                                        else
-                                        {
-                                            matchedKeys.Remove(top.Key);
-                                            stack.Pop();
-                                        }
-                                    }
                                 }
                                 else
                                 {
-                                    if (lastNode != null)
-                                    {
-                                        var child = new Node(sectioNo, lastNode.Level + 1, para, regex, "", parent);
-                                        levelSave.Add(lastNode.Level + 1);
-                                        lastNode.Children.Add(child);
-                                        stack.Push(new KeyValuePair<string, Node>(regex, lastNode));
+                                    var nodeValue = sectioNo;
 
+                                    if (stack.Count == 0)
+                                    {
+                                        var child = new Node(sectioNo, root.Level + 1, para, regex, "", parent);
+                                        levelSave.Add(root.Level + 1);
+                                        root.Children.Add(child);
                                         lastNode = child;
+                                        stack.Push(new KeyValuePair<string, Node>(regex, root));
                                     }
+                                    else
+                                    {
+                                        bool differentSection = false;
+                                        if (matchedKeys.Contains(regex) & differentSection == false)
+                                        {
+                                            var breakFlag = false;
+                                            while (breakFlag == false)
+                                            {
+                                                if (stack.Count == 0)
+                                                    break;
+                                                var top = stack.Peek();
+                                                if (top.Key == regex)
+                                                {
+                                                    var child = new Node(sectioNo, top.Value.Level + 1, para, regex, "", parent);
+                                                    levelSave.Add(top.Value.Level + 1);
+                                                    top.Value.Children.Add(child);
+
+                                                    lastNode = child;
+                                                    breakFlag = true;
+                                                }
+                                                else
+                                                {
+                                                    matchedKeys.Remove(top.Key);
+                                                    stack.Pop();
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (lastNode != null)
+                                            {
+                                                var child = new Node(sectioNo, lastNode.Level + 1, para, regex, "", parent);
+                                                levelSave.Add(lastNode.Level + 1);
+                                                lastNode.Children.Add(child);
+                                                stack.Push(new KeyValuePair<string, Node>(regex, lastNode));
+
+                                                lastNode = child;
+                                            }
+                                        }
+                                    }
+                                    if (matchedKeys.Contains(regex) == false)
+                                        matchedKeys.Add(regex);
                                 }
                             }
-                            if (matchedKeys.Contains(regex) == false)
-                                matchedKeys.Add(regex);
                         }
+
+
+                        rootTop.Children.Add(root);
+
                     }
+                    //finalJson = Newtonsoft.Json.JsonConvert.SerializeObject(rootTop);
+                    finalJson = CreateJson(rootTop).ToString();
+                    //testc(rootTop);
+
                 }
-
-
-                rootTop.Children.Add(root);
-
-            }
-            //finalJson = Newtonsoft.Json.JsonConvert.SerializeObject(rootTop);
-            finalJson = CreateJson(rootTop).ToString();
-            //testc(rootTop);
-        }
-
-        // combine all para within section 
-        public void paraConstruction(Dictionary<int, string> sectionPara, Dictionary<int, string> sectionSectioNo, Dictionary<int, string> sectionRegex, out Dictionary<int, List<string>> combineSectionPara, out Dictionary<int, string> combineSectionSectioNo, out Dictionary<int, string> combineSectionRegex, out List<int> parentSectionNo)
-        {
-            List<string> doubleSectionRegex = new List<string>();
-            doubleSectionRegex.Add(@"^((?i)(section|article))?[\s]*((?!0)\d{1,2}[\s]{0,1}\.)[\s]?([(|\[]?(([a-zA-Z]{1})|(\d{1,2})|((x{0,2}){1,2}(ix|iv|v?i{0,3})|((X{0,2}){1,2}(IX|IV|V?I{0,3}))))[\]|)|:|.|•|-])(?!\S)");
-            doubleSectionRegex.Add(@"^((?i)(section|article))?[\s]*(\d{1,2}\.\d[(?:\d+\.?)]*)[\s]?([(|\[]?([a-zA-Z]{1}|\d{0,3}|x{0,2}){1,2}(ix|iv|v?i{0,3})|(X{0,2}){1,2}(IX|IV|V?I{0,3})[\]|)|:|.|•|-])?(?!\S)");
-
-
-            combineSectionPara = new Dictionary<int, List<string>>();
-            combineSectionSectioNo = new Dictionary<int, string>();
-            combineSectionRegex = new Dictionary<int, string>();
-            parentSectionNo = new List<int>();
-            List<string> savepara = new List<string>();
-            var count = 1;
-            var lastRegex = "";
-            var lastSectioNo = "";
-            var lastParent = 0;
-            int parent = 0;
-            for (int i = 0; i < sectionPara.Count(); i++)
-            {
-                var para = sectionPara.ElementAt(i).Value;
-                var sectioNo = sectionSectioNo.ElementAt(i).Value;
-                var regex = sectionRegex.ElementAt(i).Value;
-                parentCheck(regex, out parent); // check it rhe section is parent or child
-
-                var countSectionRegexCount = 0;
-                foreach (var item in doubleSectionRegex) // loop through the regex
+                catch (Exception ex)
                 {
-                    countSectionRegexCount++;
-                    if (item == regex)// if the regex matches then find the correct correct section number for the para
+                _Default.LogError("createTree", "", ex);
+                throw;
+                }
+            }
+
+            // combine all para within section 
+            public void paraConstruction(Dictionary<int, string> sectionPara, Dictionary<int, string> sectionSectioNo, Dictionary<int, string> sectionRegex, out Dictionary<int, List<string>> combineSectionPara, out Dictionary<int, string> combineSectionSectioNo, out Dictionary<int, string> combineSectionRegex, out List<int> parentSectionNo)
+            {
+                try
+                {
+
+                    List<string> doubleSectionRegex = new List<string>();
+                    doubleSectionRegex.Add(@"^((?i)(section|article))?[\s]*((?!0)\d{1,2}[\s]{0,1}\.)[\s]?([(|\[]?(([a-zA-Z]{1})|(\d{1,2})|((x{0,2}){1,2}(ix|iv|v?i{0,3})|((X{0,2}){1,2}(IX|IV|V?I{0,3}))))[\]|)|:|.|•|-])(?!\S)");
+                    doubleSectionRegex.Add(@"^((?i)(section|article))?[\s]*(\d{1,2}\.\d[(?:\d+\.?)]*)[\s]?([(|\[]?([a-zA-Z]{1}|\d{0,3}|x{0,2}){1,2}(ix|iv|v?i{0,3})|(X{0,2}){1,2}(IX|IV|V?I{0,3})[\]|)|:|.|•|-])?(?!\S)");
+
+
+                    combineSectionPara = new Dictionary<int, List<string>>();
+                    combineSectionSectioNo = new Dictionary<int, string>();
+                    combineSectionRegex = new Dictionary<int, string>();
+                    parentSectionNo = new List<int>();
+                    List<string> savepara = new List<string>();
+                    var count = 1;
+                    var lastRegex = "";
+                    var lastSectioNo = "";
+                    var lastParent = 0;
+                    int parent = 0;
+                    for (int i = 0; i < sectionPara.Count(); i++)
                     {
-                        bool doubleSection = false;
-                        // if the regex matches means there are 2 section no assigned to the para .....so saperate the section no and save the section saperatly
-                        saperateSection(item, sectioNo, out System.Collections.Generic.List<string> sectionList, out List<string> regexList, out doubleSection);
-                        if (doubleSection == true)
+                        var para = sectionPara.ElementAt(i).Value;
+                        var sectioNo = sectionSectioNo.ElementAt(i).Value;
+                        var regex = sectionRegex.ElementAt(i).Value;
+                        parentCheck(regex, out parent); // check it rhe section is parent or child
+
+                        var countSectionRegexCount = 0;
+                        foreach (var item in doubleSectionRegex) // loop through the regex
                         {
-                            if (lastSectioNo != "")
+                            countSectionRegexCount++;
+                            if (item == regex)// if the regex matches then find the correct correct section number for the para
+                            {
+                                bool doubleSection = false;
+                                // if the regex matches means there are 2 section no assigned to the para .....so saperate the section no and save the section saperatly
+                                saperateSection(item, sectioNo, out System.Collections.Generic.List<string> sectionList, out List<string> regexList, out doubleSection);
+                                if (doubleSection == true)
+                                {
+                                    if (lastSectioNo != "")
+                                    {
+                                        combineSectionPara.Add(count, savepara);
+                                        combineSectionSectioNo.Add(count, lastSectioNo);
+                                        combineSectionRegex.Add(count, lastRegex);
+                                        parentSectionNo.Add(lastParent);
+                                        savepara = new List<string>();
+                                        count++;
+                                    }
+                                    List<string> savepara1 = new List<string>();
+                                    combineSectionPara.Add(count, savepara1);
+                                    combineSectionSectioNo.Add(count, sectionList.ElementAt(0));
+                                    combineSectionRegex.Add(count, regexList.ElementAt(0));
+                                    parentSectionNo.Add(lastParent);
+                                    if (countSectionRegexCount == 2)
+                                        parentSectionNo.Add(1);
+                                    else
+                                        parentSectionNo.Add(0);
+                                    count++;
+                                    sectioNo = sectionList.ElementAt(1);
+                                    regex = regexList.ElementAt(1);
+                                    parent = 0;
+                                }
+                            }
+                        }
+
+                        if (sectioNo == null)
+                        {
+                            savepara.Add(para);
+                        }
+                        else
+                        {
+                            if (savepara.Count() > 0)
                             {
                                 combineSectionPara.Add(count, savepara);
                                 combineSectionSectioNo.Add(count, lastSectioNo);
                                 combineSectionRegex.Add(count, lastRegex);
                                 parentSectionNo.Add(lastParent);
-                                savepara = new List<string>();
                                 count++;
+                                savepara = new List<string>();
+                                savepara.Add(para);
                             }
-                            List<string> savepara1 = new List<string>();
-                            combineSectionPara.Add(count, savepara1);
-                            combineSectionSectioNo.Add(count, sectionList.ElementAt(0));
-                            combineSectionRegex.Add(count, regexList.ElementAt(0));
-                            parentSectionNo.Add(lastParent);
-                            if (countSectionRegexCount == 2)
-                                parentSectionNo.Add(1);
                             else
-                                parentSectionNo.Add(0);
-                            count++;
-                            sectioNo = sectionList.ElementAt(1);
-                            regex = regexList.ElementAt(1);
-                            parent = 0;
+                            {
+                                savepara.Add(para);
+                            }
+                            lastRegex = regex;
+                            lastSectioNo = sectioNo;
+                            lastParent = parent;
                         }
                     }
-                }
-
-                if (sectioNo == null)
-                {
-                    savepara.Add(para);
-                }
-                else
-                {
                     if (savepara.Count() > 0)
                     {
                         combineSectionPara.Add(count, savepara);
                         combineSectionSectioNo.Add(count, lastSectioNo);
                         combineSectionRegex.Add(count, lastRegex);
                         parentSectionNo.Add(lastParent);
-                        count++;
-                        savepara = new List<string>();
-                        savepara.Add(para);
                     }
-                    else
-                    {
-                        savepara.Add(para);
-                    }
-                    lastRegex = regex;
-                    lastSectioNo = sectioNo;
-                    lastParent = parent;
+
+                }
+                catch (Exception ex)
+                {
+                _Default.LogError("paraConstruction", "", ex);
+                throw;
                 }
             }
-            if (savepara.Count() > 0)
+
+            // case handle eg:- 1.1(a) OR 1. VII)
+            public void saperateSection(string regex, string sectionNo, out List<string> sectionList, out List<string> regexList, out bool doubleSection)
             {
-                combineSectionPara.Add(count, savepara);
-                combineSectionSectioNo.Add(count, lastSectioNo);
-                combineSectionRegex.Add(count, lastRegex);
-                parentSectionNo.Add(lastParent);
-            }
-        }
-
-        // case handle eg:- 1.1(a) OR 1. VII)
-        public void saperateSection(string regex, string sectionNo, out List<string> sectionList, out List<string> regexList, out bool doubleSection)
-        {
-            doubleSection = false;
-            Dictionary<int, string> regexDictionary = new Dictionary<int, string>(); // check the regex 
-            regexDictionary.Add(1, @"^[\s]*(?!0)([0-9]{1,2}[:])(?!\S)"); //   1:
-            regexDictionary.Add(30, @"^[\s]*(?!0)([0-9]{1,2}[.])(?!\S)"); //   1.
-            regexDictionary.Add(2, @"^[\s]*(?!0)([0-9]{1,2}[)])(?!\S)"); //   1)
-            regexDictionary.Add(3, @"^[\s]*(?!0)([0-9]{1,2}[]])(?!\S)"); //   1]
-            regexDictionary.Add(4, @"^[\s]*([[\\[][\s]*(?!0)([0-9]{1,2})[\s]*[]])(?!\S)"); //   [1]
-            regexDictionary.Add(5, @"^[\s]*([[(][\s]*(?!0)([0-9]{1,2})[\s]*[)])(?!\S)"); //   (1)
-
-            regexDictionary.Add(6, @"^[\s]*[(][\s]*\b((x{0,2}){1,2}(ix|iv|v?i{0,3}))[\s]*[)](?!\S)"); //    (xvii)
-            regexDictionary.Add(7, @"^[\s]*\b((x{0,2}){1,2}(ix|iv|v?i{0,3}))[\s]{0,1}[)](?!\S)"); //    xvii)
-            regexDictionary.Add(8, @"^[\s]*[[][\s]*\b((x{0,2}){1,2}(ix|iv|v?i{0,3}))[\s]*[]](?!\S)"); //    [xvii]
-            regexDictionary.Add(9, @"^[\s]*\b((x{0,2}){1,2}(ix|iv|v?i{0,3}))[\s]{0,1}[]](?!\S)"); //    xvii]
-            regexDictionary.Add(10, @"^[\s]*\b((x{0,2}){1,2}(ix|iv|v?i{0,3}))[\s]{0,1}[:](?!\S)"); //    xvii:
-            regexDictionary.Add(11, @"^[\s]*\b((x{0,2}){1,2}(ix|iv|v?i{0,3}))[\s]{0,1}[.](?!\S)"); //    xvii.
-
-            regexDictionary.Add(12, @"^[\s]*[(][\s]*\b((X{0,2}){1,2}(IX|IV|V?I{0,3}))[\s]*[)](?!\S)"); //    (XVII)
-            regexDictionary.Add(13, @"^[\s]*\b((X{0,2}){1,2}(IX|IV|V?I{0,3}))[\s]{0,1}[)](?!\S)"); //    XVII)
-            regexDictionary.Add(14, @"^[\s]*[[][\s]*\b((X{0,2}){1,2}(IX|IV|V?I{0,3}))[\s]*[]](?!\S)"); //    [XVII]
-            regexDictionary.Add(15, @"^[\s]*\b((X{0,2}){1,2}(IX|IV|V?I{0,3}))[\s]{0,1}[]](?!\S)"); //    XVII]
-            regexDictionary.Add(16, @"^[\s]*\b((X{0,2}){1,2}(IX|IV|V?I{0,3}))[\s]{0,1}[:](?!\S)"); //    XVII:
-            regexDictionary.Add(17, @"^[\s]*\b((X{0,2}){1,2}(IX|IV|V?I{0,3}))[\s]{0,1}[.](?!\S)"); //    XVII.
-
-            regexDictionary.Add(18, @"^[\s]*([a-z][\s]{0,1}[.])(?!\S)");  //  a.
-            regexDictionary.Add(19, @"^[\s]*([a-z][\s]{0,1}[:])(?!\S)");  //  a:
-            regexDictionary.Add(20, @"^[\s]*([(][\s]*[a-z][\s]*[)])(?!\S)");  //    (a)
-            regexDictionary.Add(21, @"^[\s]*([a-z][\s]{0,1}[)])(?!\S)");  // a)
-            regexDictionary.Add(22, @"^[\s]*([a-z][\s]{0,1}[]])(?!\S)");  //     [a]
-            regexDictionary.Add(23, @"^[\s]*([[][\s]*[a-z][\s]{0,1}[]])(?!\S)");  //   a]
-
-            regexDictionary.Add(24, @"^[\s]*([A-Z][\s]{0,1}[.])(?!\S)");  // A.
-            regexDictionary.Add(25, @"^[\s]*([A-Z][:])(?!\S)");  // A:
-            regexDictionary.Add(26, @"^[\s]*([(][\s]*[A-Z][\s]*[)])(?!\S)");  // (A)
-            regexDictionary.Add(27, @"^[\s]*([A-Z][\s]{0,1}[)])(?!\S)");  // A)
-            regexDictionary.Add(28, @"^[\s]*([A-Z][\s]{0,1}[]])(?!\S)");  // [A]
-            regexDictionary.Add(29, @"^[\s]*([[][\s]*[A-Z][\s]{0,1}[]])(?!\S)");  // A]
-
-
-            sectionList = new List<string>();
-            regexList = new List<string>();
-
-            Regex regexCheckVal = new Regex("(\\d{1,2}\\.(\\d(?:\\d+\\.?)*)?)"); // check if it has section number
-            var match = regexCheckVal.Match(sectionNo); // check if match found
-            if (match.Success) // if found then replace it
-            {
-                sectionList.Add(match.Value.Trim());
-                regexList.Add(regex);
-                foreach (var item in regexDictionary)
+                try
                 {
-                    var secondSectionNo = sectionNo.Replace(match.Value.Trim(), "").Trim();
-                    Regex innerRegex = new Regex(item.Value); // check if it has section number
-                    var innerMatch = innerRegex.Match(secondSectionNo); // check if match found
-                    if (innerMatch.Success) // if found then replace it
+
+
+                    doubleSection = false;
+                    Dictionary<int, string> regexDictionary = new Dictionary<int, string>(); // check the regex 
+                    regexDictionary.Add(1, @"^[\s]*(?!0)([0-9]{1,2}[:])(?!\S)"); //   1:
+                    regexDictionary.Add(30, @"^[\s]*(?!0)([0-9]{1,2}[.])(?!\S)"); //   1.
+                    regexDictionary.Add(2, @"^[\s]*(?!0)([0-9]{1,2}[)])(?!\S)"); //   1)
+                    regexDictionary.Add(3, @"^[\s]*(?!0)([0-9]{1,2}[]])(?!\S)"); //   1]
+                    regexDictionary.Add(4, @"^[\s]*([[\\[][\s]*(?!0)([0-9]{1,2})[\s]*[]])(?!\S)"); //   [1]
+                    regexDictionary.Add(5, @"^[\s]*([[(][\s]*(?!0)([0-9]{1,2})[\s]*[)])(?!\S)"); //   (1)
+
+                    regexDictionary.Add(6, @"^[\s]*[(][\s]*\b((x{0,2}){1,2}(ix|iv|v?i{0,3}))[\s]*[)](?!\S)"); //    (xvii)
+                    regexDictionary.Add(7, @"^[\s]*\b((x{0,2}){1,2}(ix|iv|v?i{0,3}))[\s]{0,1}[)](?!\S)"); //    xvii)
+                    regexDictionary.Add(8, @"^[\s]*[[][\s]*\b((x{0,2}){1,2}(ix|iv|v?i{0,3}))[\s]*[]](?!\S)"); //    [xvii]
+                    regexDictionary.Add(9, @"^[\s]*\b((x{0,2}){1,2}(ix|iv|v?i{0,3}))[\s]{0,1}[]](?!\S)"); //    xvii]
+                    regexDictionary.Add(10, @"^[\s]*\b((x{0,2}){1,2}(ix|iv|v?i{0,3}))[\s]{0,1}[:](?!\S)"); //    xvii:
+                    regexDictionary.Add(11, @"^[\s]*\b((x{0,2}){1,2}(ix|iv|v?i{0,3}))[\s]{0,1}[.](?!\S)"); //    xvii.
+
+                    regexDictionary.Add(12, @"^[\s]*[(][\s]*\b((X{0,2}){1,2}(IX|IV|V?I{0,3}))[\s]*[)](?!\S)"); //    (XVII)
+                    regexDictionary.Add(13, @"^[\s]*\b((X{0,2}){1,2}(IX|IV|V?I{0,3}))[\s]{0,1}[)](?!\S)"); //    XVII)
+                    regexDictionary.Add(14, @"^[\s]*[[][\s]*\b((X{0,2}){1,2}(IX|IV|V?I{0,3}))[\s]*[]](?!\S)"); //    [XVII]
+                    regexDictionary.Add(15, @"^[\s]*\b((X{0,2}){1,2}(IX|IV|V?I{0,3}))[\s]{0,1}[]](?!\S)"); //    XVII]
+                    regexDictionary.Add(16, @"^[\s]*\b((X{0,2}){1,2}(IX|IV|V?I{0,3}))[\s]{0,1}[:](?!\S)"); //    XVII:
+                    regexDictionary.Add(17, @"^[\s]*\b((X{0,2}){1,2}(IX|IV|V?I{0,3}))[\s]{0,1}[.](?!\S)"); //    XVII.
+
+                    regexDictionary.Add(18, @"^[\s]*([a-z][\s]{0,1}[.])(?!\S)");  //  a.
+                    regexDictionary.Add(19, @"^[\s]*([a-z][\s]{0,1}[:])(?!\S)");  //  a:
+                    regexDictionary.Add(20, @"^[\s]*([(][\s]*[a-z][\s]*[)])(?!\S)");  //    (a)
+                    regexDictionary.Add(21, @"^[\s]*([a-z][\s]{0,1}[)])(?!\S)");  // a)
+                    regexDictionary.Add(22, @"^[\s]*([a-z][\s]{0,1}[]])(?!\S)");  //     [a]
+                    regexDictionary.Add(23, @"^[\s]*([[][\s]*[a-z][\s]{0,1}[]])(?!\S)");  //   a]
+
+                    regexDictionary.Add(24, @"^[\s]*([A-Z][\s]{0,1}[.])(?!\S)");  // A.
+                    regexDictionary.Add(25, @"^[\s]*([A-Z][:])(?!\S)");  // A:
+                    regexDictionary.Add(26, @"^[\s]*([(][\s]*[A-Z][\s]*[)])(?!\S)");  // (A)
+                    regexDictionary.Add(27, @"^[\s]*([A-Z][\s]{0,1}[)])(?!\S)");  // A)
+                    regexDictionary.Add(28, @"^[\s]*([A-Z][\s]{0,1}[]])(?!\S)");  // [A]
+                    regexDictionary.Add(29, @"^[\s]*([[][\s]*[A-Z][\s]{0,1}[]])(?!\S)");  // A]
+
+
+                    sectionList = new List<string>();
+                    regexList = new List<string>();
+
+                    Regex regexCheckVal = new Regex("(\\d{1,2}\\.(\\d(?:\\d+\\.?)*)?)"); // check if it has section number
+                    var match = regexCheckVal.Match(sectionNo); // check if match found
+                    if (match.Success) // if found then replace it
                     {
-                        sectionList.Add(secondSectionNo);
-                        regexList.Add(item.Value);
-                        doubleSection = true;
-                    }
-                }
-            }
-        }
-
-        // check if the section is parent/child
-        public void parentCheck(string regex, out int parent)
-        {
-            parent = 0;
-            Dictionary<int, string> matchRegexNumeric = new Dictionary<int, string>();
-            // NUMBERS
-            matchRegexNumeric.Add(1, @"^((?i)(section|article))?[\s]*(\d{1,2}\.\d[(?:\d+\.?)]*)[\s]?([(|\[]?([a-zA-Z]{1}|\d{0,3}|x{0,2}){1,2}(ix|iv|v?i{0,3})|(X{0,2}){1,2}(IX|IV|V?I{0,3})[\]|)|:|.|•|-])?(?!\S)"); //    1.1  / 1.1 a)
-            matchRegexNumeric.Add(2, @"^[\s]*(((?i)section)[\s]*\d*)[\s]{0,1}(.|:|•|-)?(?!\S)"); //    section 1
-            matchRegexNumeric.Add(3, @"^[\s]*(((?i)section)\s\d+\.(?:\d+\.?)*)(?!\S)"); //    section 1.1 
-            matchRegexNumeric.Add(4, @"^[\s]*((((?i)article|art1c1e|art1cle|artic1e))[\s]*\d*)[\s]{0,1}(.|:|•|-)?(?!\S)"); //   article 1
-            matchRegexNumeric.Add(5, @"^[\s]*(((?i)(article|art1c1e|art1cle|artic1e))\s\d+\.(?:\d+\.?)*)(?!\S)"); //  article 1.1 
-            matchRegexNumeric.Add(6, @"^[\s]*((?i)section)[\s]*\b((x{0,2}){1,2}(ix|iv|v?i{0,3}))[\s]{0,1}(.|:|•|-)?(?!\S)"); //    section xvii
-            matchRegexNumeric.Add(7, @"^[\s]*(((?i)(article|art1c1e|art1cle|artic1e))[\s]*(\b((x{0,2}){1,2}(ix|iv|v?i{0,3}))))[\s]{0,1}(.|:|•|-)?(?!\S)"); //    article xvii
-            matchRegexNumeric.Add(8, @"^[\s]*((?i)section)[\s]*\b((X{0,2}){1,2}(IX|IV|V?I{0,3}))[\s]{0,1}(.|:|•|-)?(?!\S)"); //    section XVII
-            matchRegexNumeric.Add(9, @"^[\s]*(((?i)(article|art1c1e|art1cle|artic1e))[\s]*(\b((X{0,2}){1,2}(IX|IV|V?I{0,3}))))[\s]{0,1}(.|:|•|-)?(?!\S)"); //    article XVII
-            matchRegexNumeric.Add(10, @"^[\s]*((?i)(section)[\s]*[a-z])[\s]{0,1}(.|:|•|-)?(?!\S)");  //      section a
-            matchRegexNumeric.Add(11, @"^[\s]*(((?i)(article|art1c1e|art1cle|artic1e))[\s]*[a-z])[\s]{0,1}(.|:|•|-)?(?!\S)");  //      article a
-            matchRegexNumeric.Add(12, @"^[\s]*((?i)(section)[\s]*[A-Z])[\s]{0,1}(.|:|•|-)?(?!\S)");  // section A
-            matchRegexNumeric.Add(13, @"^[\s]*(((?i)(article|art1c1e|art1cle|artic1e))[\s]*[A-Z])[\s]{0,1}(.|:|•|-)?(?!\S)");  // ARTICLE A
-
-
-            if(matchRegexNumeric.Any(s=>s.Value==regex))
-            {
-                parent = 1;
-            }
-            //foreach (var item in matchRegexNumeric)
-            //{
-            //    if (regex == item.Value)
-            //    {
-            //        parent = 1;
-            //        break;
-            //    }
-            //}
-        }
-
-        #endregion
-
-        #region -------------remove unewanted symbol while section number correction ------------------------------------------
-        // remove unwanted symbols
-        public void symbolCorrectDictionaryFn(string section, out string updatedSection)
-        {
-            updatedSection = section;
-            List<string> symbolCorrection = new List<string>(); // check the regex 
-            symbolCorrection.Add("{");
-            symbolCorrection.Add("}");
-
-            foreach (var item in symbolCorrection)
-            {
-                if (section.IndexOf(item) != -1)
-                {
-                    updatedSection = section.Replace(item, "");
-                }
-            }
-        }
-        #endregion
-
-        #region --------correcting section if read wrong----------------------------------
-        // correcting the section number and regex 
-        public void sectionCorrectionCheck(Stack<string> stackRegex, string onlySectionNo, Stack<string> stackSection, out string correctSectionNo, out string correctRegex)
-        {
-            correctSectionNo = "";
-            correctRegex = "";
-
-            Dictionary<string, string> checkPrevSectionLevel1 = new Dictionary<string, string>(); // check the words after section number
-            checkPrevSectionLevel1.Add("u|iv", "v");
-            checkPrevSectionLevel1.Add("w|ix", "x");
-            checkPrevSectionLevel1.Add("U|IV", "V");
-            checkPrevSectionLevel1.Add("W|IX", "X");
-            checkPrevSectionLevel1.Add("R|7", "S");
-            checkPrevSectionLevel1.Add("4", "S");
-            checkPrevSectionLevel1.Add("7|R", "8");
-            checkPrevSectionLevel1.Add("4|R", "5");
-            checkPrevSectionLevel1.Add("k|e", "l");
-            checkPrevSectionLevel1.Add("d|b", "e");
-            checkPrevSectionLevel1.Add("r|4", "s");
-            checkPrevSectionLevel1.Add("g|a", "h");
-            checkPrevSectionLevel1.Add("8|f", "9");
-            checkPrevSectionLevel1.Add("j", "i");
-            checkPrevSectionLevel1.Add("I|i|k", "1");
-            checkPrevSectionLevel1.Add("10", "11");
-
-            Dictionary<string, string> checkPrevSectionLevel2 = new Dictionary<string, string>(); // check the words after section number
-            checkPrevSectionLevel2.Add("R", "S");
-            checkPrevSectionLevel2.Add("4", "5");
-            checkPrevSectionLevel2.Add("7", "8");
-            checkPrevSectionLevel2.Add("W", "X");
-            checkPrevSectionLevel2.Add("IX", "X");
-            checkPrevSectionLevel2.Add("U", "V");
-            checkPrevSectionLevel2.Add("IV", "V");
-            checkPrevSectionLevel2.Add("w", "x");
-            checkPrevSectionLevel2.Add("ix", "x");
-            checkPrevSectionLevel2.Add("u", "v");
-            checkPrevSectionLevel2.Add("iv", "v");
-            checkPrevSectionLevel2.Add("k", "l");
-            checkPrevSectionLevel2.Add("e", "f");
-            checkPrevSectionLevel2.Add("d", "e");
-            checkPrevSectionLevel2.Add("b", "c");
-            checkPrevSectionLevel2.Add("r", "s");
-            checkPrevSectionLevel2.Add("g", "h");
-            checkPrevSectionLevel2.Add("a", "b");
-            checkPrevSectionLevel2.Add("f", "g");
-            checkPrevSectionLevel2.Add("8", "9");
-            checkPrevSectionLevel2.Add("i", "j");
-            checkPrevSectionLevel2.Add("I", "J");
-            checkPrevSectionLevel2.Add("10", "11");
-
-            Dictionary<string, string> assumption = new Dictionary<string, string>(); // check the words after section number
-            assumption.Add("9", "g");
-            assumption.Add("11", "ii");
-
-            Dictionary<string, string> assumptionRegex = new Dictionary<string, string>(); // check the words after section number
-            assumptionRegex.Add("g", "[a-z]");
-            assumptionRegex.Add("ii", "(ix|iv|v?i{0,3})");
-
-            var lastSectionNumber = stackSection.Peek();
-            var lastRegex = stackRegex.Peek();
-            var checkNext = true;
-            foreach (var item in checkPrevSectionLevel1) // loop through level 1
-            {
-                if (checkNext == false)
-                    break;
-                if (item.Value == onlySectionNo) // if section number matches
-                {
-                    var data = item.Key.Split('|'); // split the condition
-                    foreach (var dataCheck in data) // loop through conditions
-                    {
-                        if (checkNext == false)
-                            break;
-                        if (lastSectionNumber == dataCheck) // if matches with condition
+                        sectionList.Add(match.Value.Trim());
+                        regexList.Add(regex);
+                        foreach (var item in regexDictionary)
                         {
-                            foreach (var level2 in checkPrevSectionLevel2) // loop through level 2
+                            var secondSectionNo = sectionNo.Replace(match.Value.Trim(), "").Trim();
+                            Regex innerRegex = new Regex(item.Value); // check if it has section number
+                            var innerMatch = innerRegex.Match(secondSectionNo); // check if match found
+                            if (innerMatch.Success) // if found then replace it
                             {
-                                if (dataCheck == level2.Key)
-                                {
-                                    correctSectionNo = level2.Value;
-                                    correctRegex = lastRegex;
-                                    checkNext = false;
-                                    break;
-                                }
+                                sectionList.Add(secondSectionNo);
+                                regexList.Add(item.Value);
+                                doubleSection = true;
                             }
                         }
                     }
                 }
-            }
-            if (correctSectionNo == "")
-            {
-                var count = 0;
-                foreach (var item in assumption)
+                catch (Exception ex)
                 {
-                    if (item.Key == onlySectionNo & lastRegex.IndexOf(assumptionRegex.ElementAt(count).Value) != -1)
-                    {
-                        correctSectionNo = item.Value;
-                        correctRegex = lastRegex;
-                    }
-                    count++;
+                _Default.LogError("saperateSection", "", ex);
+                throw;
                 }
             }
-        }
-        #endregion
 
-        public void checkSpecialCharForSection(string onlySectionNo, Dictionary<int, string> combineSectionRegex, Dictionary<int, string> combineSectionSectioNo, List<int> levelSave, int j, out string sectionNo, out string regex)
-        {
-            sectionNo = "";
-            regex = "";
-            var levelSaveCopy = levelSave;
-            var predictedSectionNo = new Dictionary<string, string>();
-            var currentLevel = levelSave.ElementAt(j);
-            //var set = new List<int>();
-            var start = j + 1;
-            List<int> set = new List<int>(levelSave);
-            List<string> sectionSet = combineSectionSectioNo.Values.ToList();
-            List<string> regexSet = combineSectionRegex.Values.ToList();
-            var startIndex = j;
-            var endIndex = 0;
-            var hasChild = false;
-            List<string> saveSpecialChar = new List<string>();
-            for (int i = start; i < levelSave.Count(); i++)
+            // check if the section is parent/child
+            public void parentCheck(string regex, out int parent)
             {
-                var level = levelSave.ElementAt(i);
-                if (level == currentLevel)
+                try
                 {
-                    var value = combineSectionSectioNo.ElementAt(i).Value.Trim();
-                    foreach (var item in _CheckWord.specialChar) // get only the section number 
-                    {
-                        Regex regexVal = new Regex(item);
-                        var match = regexVal.Match(value); // check if match found
-                        if (match.Success)
-                        {
-                            value = value.Replace(match.Value, "");
-                            saveSpecialChar.Add(match.Value);
-                        }
-                    }
-                    if (value != onlySectionNo)
-                    {
-                        hasChild = true;
-                    }
-                    break;
-                }
-                if (level < currentLevel) // parent found
-                {
-                    endIndex = i;
-                    break;
-                }
-                if (level == currentLevel + 1 && i == start) // check for "2"
-                {
-                    var nextSection = combineSectionSectioNo.ElementAt(start).Value.Trim();
-                    if ((nextSection.IndexOf("2") == 0 | nextSection.IndexOf("2") == 1) & onlySectionNo == "I")
-                    {
-                        sectionNo = "1";
-                        regex = combineSectionRegex.ElementAt(start).Value;
-                        hasChild = true;
-                        break;
-                    }
-                    else if (nextSection.IndexOf("ii") != -1 & onlySectionNo == "i")
-                    {
-                        sectionNo = "i";
-                        regex = combineSectionRegex.ElementAt(start).Value;
-                        hasChild = true;
-                        break;
-                    }
-                }
-            }
-            if (saveSpecialChar.Count() > 0 & onlySectionNo == "I" & (j == 0 || combineSectionSectioNo.ElementAt(j - 1).Value.Trim() == ""))
-            {
-                if (saveSpecialChar.Count() == 1)
-                {
-                    sectionNo = "1";
-                    regex = "^[\\s]*(?!0)([0-9]{1,2}[" + saveSpecialChar.ElementAt(0) + "])(?!\\S)"; //   1:;
 
-                }
-                else if (saveSpecialChar.Count() == 2)
-                {
-                    sectionNo = "1";
-                    regex = "^[\\s]*([\\" + saveSpecialChar.ElementAt(0) + "[\\s]*(?!0)([0-9]{1,2})[\\s]*[" + saveSpecialChar.ElementAt(1) + "])(?!\\S)"; //   [1];
-                }
-            }
-            if (hasChild != true)
-            {
-                if (endIndex != 0)
-                {
-                    set.RemoveRange(endIndex + 1, levelSave.Count() - (endIndex + 1));
-                    sectionSet.RemoveRange(endIndex + 1, levelSave.Count() - (endIndex + 1));
-                    regexSet.RemoveRange(endIndex + 1, levelSave.Count() - (endIndex + 1));
-                }
-
-                List<int> reverseSet = new List<int>(set);
-                reverseSet.Reverse();
-                start = set.Count() - j;
-                endIndex = 0;
-                for (int i = start; i < set.Count(); i++)
-                {
-                    var level = reverseSet.ElementAt(i);
-                    if (level < currentLevel)
-                    {
-                        endIndex = i;
-                        break;
-                    }
-                }
-                if (endIndex == 0)
-                {
-                    set.RemoveRange(0, j - 1);
-                    sectionSet.RemoveRange(0, j - 1);
-                    regexSet.RemoveRange(0, j - 1);
-                }
-                else
-                {
-                    set.Reverse(); sectionSet.Reverse(); regexSet.Reverse();
-                    set.RemoveRange(endIndex + 1, set.Count() - (endIndex + 1));
-                    sectionSet.RemoveRange(endIndex + 1, sectionSet.Count() - (endIndex + 1));
-                    regexSet.RemoveRange(endIndex + 1, regexSet.Count() - (endIndex + 1));
-                    set.Reverse(); sectionSet.Reverse(); regexSet.Reverse();
-                }
-                if (set.ElementAt(0) == set.ElementAt(set.Count() - 1))
-                {
-                    var sectionValPrev = sectionSet.ElementAt(0);
-                    var sectionValNext = sectionSet.ElementAt(set.Count() - 1);
-
-                    foreach (var item in _CheckWord.specialChar) // get only the section number 
-                    {
-                        Regex regexCheck = new Regex("(?i)" + item);
-                        var match = regexCheck.Match(sectionValPrev); // check if match found
-                        if (match.Success)
-                        {
-                            sectionValPrev = sectionValPrev.Replace(match.Value, "").Trim();
-                            sectionValNext = sectionValNext.Replace(match.Value, "").Trim();
-                        }
-                    }
-
-                    if (sectionValPrev == "d" | sectionValPrev == "e" & sectionValNext == "g" | sectionValNext == "h")
-                    {
-                        sectionNo = "f";
-                        regex = regexSet.ElementAt(0);
-                    }
-                    else if (sectionValPrev == "j" | sectionValPrev == "k" | sectionValPrev == "i" & sectionValNext == "m" | sectionValNext == "n")
-                    {
-                        sectionNo = "l";
-                        regex = regexSet.ElementAt(0);
-                    }
-                    else if (sectionValPrev == "H")
-                    {
-                        sectionNo = "I";
-                        regex = regexSet.ElementAt(0);
-                    }
-                }
-                else
-                {
-                    var sectionValPrev = sectionSet.ElementAt(0);
-                    foreach (var item in _CheckWord.specialChar) // get only the section number 
-                    {
-                        Regex regexCheck = new Regex("(?i)" + item);
-                        var match = regexCheck.Match(sectionValPrev); // check if match found
-                        if (match.Success)
-                        {
-                            sectionValPrev = sectionValPrev.Replace(match.Value, "").Trim();
-                        }
-                    }
-                    if (sectionValPrev == "c" | sectionValPrev == "d" | sectionValPrev == "e")
-                    {
-                        sectionNo = "f";
-                        regex = regexSet.ElementAt(0);
-                    }
-                    else if (sectionValPrev == "j" | sectionValPrev == "k" | sectionValPrev == "i")
-                    {
-                        sectionNo = "l";
-                        regex = regexSet.ElementAt(0);
-                    }
-                    else if (sectionValPrev == "H")
-                    {
-                        sectionNo = "I";
-                        regex = regexSet.ElementAt(0);
-                    }
-                }
-            }
-        }
-
-        public void treeCorrection(List<int> parentSectionNo, List<int> levelSave, Dictionary<int, List<string>> combineSectionPara, Dictionary<int, string> combineSectionSectioNo, Dictionary<int, string> combineSectionRegex, out Dictionary<int, string> outputSection, out Dictionary<int, string> outputRegex, out Dictionary<int, List<string>> outputPara, out List<int> outputParent)
-        {
-
-            outputRegex = new Dictionary<int, string>();
-            outputSection = new Dictionary<int, string>();
-            outputPara = new Dictionary<int, List<string>>();
-            outputParent = new List<int>();
-            Dictionary<int, List<string>> combineSectionParaCopy = new Dictionary<int, List<string>>();
-            Dictionary<int, string> combineSectionSectioNoCopy = new Dictionary<int, string>();
-            Dictionary<int, string> combineSectionRegexCopy = new Dictionary<int, string>();
-            Stack<string> stackRegex = new Stack<string>();
-            Stack<int> stackSectionIndex = new Stack<int>();
-            Stack<string> stackSection = new Stack<string>();
-            Stack<List<string>> stackpara = new Stack<List<string>>();
-            List<List<string>> matchType = new List<List<string>>();
-            List<string> matchedRegex = new List<string>();
-            List<List<string>> savePara = new List<List<string>>();
-
-            var paraEntered = 0;
-
-            for (int i = 0; i < combineSectionPara.Count(); i++) // list of all paragraphs 
-            {
-                if (combineSectionSectioNo[i + 1] != "") // check if only one value there or not
-                { // if more then one paragraph there
-                    var sectioNo = combineSectionSectioNo[i + 1]; // get the section number
-                    var regexVal = combineSectionRegex[i + 1]; // get the regex for section number
-                    var paraData = combineSectionPara[i + 1]; // get the para associated with that section number
+                    parent = 0;
+                    Dictionary<int, string> matchRegexNumeric = new Dictionary<int, string>();
+                    // NUMBERS
+                    matchRegexNumeric.Add(1, @"^((?i)(section|article))?[\s]*(\d{1,2}\.\d[(?:\d+\.?)]*)[\s]?([(|\[]?([a-zA-Z]{1}|\d{0,3}|x{0,2}){1,2}(ix|iv|v?i{0,3})|(X{0,2}){1,2}(IX|IV|V?I{0,3})[\]|)|:|.|•|-])?(?!\S)"); //    1.1  / 1.1 a)
+                    matchRegexNumeric.Add(2, @"^[\s]*(((?i)section)[\s]*\d*)[\s]{0,1}[.|:|•|-]?(?!\S)"); //    section 1
+                    matchRegexNumeric.Add(3, @"^[\s]*(((?i)section)\s\d+\.(?:\d+\.?)*)(?!\S)"); //    section 1.1 
+                    matchRegexNumeric.Add(4, @"^[\s]*((((?i)article|art1c1e|art1cle|artic1e))[\s]*\d*)[\s]{0,1}[.|:|•|-]?(?!\S)"); //   article 1
+                    matchRegexNumeric.Add(5, @"^[\s]*(((?i)(article|art1c1e|art1cle|artic1e))\s\d+\.(?:\d+\.?)*)(?!\S)"); //  article 1.1 
+                    matchRegexNumeric.Add(6, @"^[\s]*((?i)section)[\s]*\b((x{0,2}){1,2}(ix|iv|v?i{0,3}))[\s]{0,1}[.|:|•|-]?(?!\S)"); //    section xvii
+                    matchRegexNumeric.Add(7, @"^[\s]*(((?i)(article|art1c1e|art1cle|artic1e))[\s]*(\b((x{0,2}){1,2}(ix|iv|v?i{0,3}))))[\s]{0,1}[.|:|•|-]?(?!\S)"); //    article xvii
+                    matchRegexNumeric.Add(8, @"^[\s]*((?i)section)[\s]*\b((X{0,2}){1,2}(IX|IV|V?I{0,3}))[\s]{0,1}[.|:|•|-]?(?!\S)"); //    section XVII
+                    matchRegexNumeric.Add(9, @"^[\s]*(((?i)(article|art1c1e|art1cle|artic1e))[\s]*(\b((X{0,2}){1,2}(IX|IV|V?I{0,3}))))[\s]{0,1}[.|:|•|-]?(?!\S)"); //    article XVII
+                    matchRegexNumeric.Add(10, @"^[\s]*((?i)(section)[\s]*[a-z])[\s]{0,1}[.|:|•|-]?(?!\S)");  //      section a
+                    matchRegexNumeric.Add(11, @"^[\s]*(((?i)(article|art1c1e|art1cle|artic1e))[\s]*[a-z])[\s]{0,1}[.|:|•|-]?(?!\S)");  //      article a
+                    matchRegexNumeric.Add(12, @"^[\s]*((?i)(section)[\s]*[A-Z])[\s]{0,1}[.|:|•|-]?(?!\S)");  // section A
+                    matchRegexNumeric.Add(13, @"^[\s]*(((?i)(article|art1c1e|art1cle|artic1e))[\s]*[A-Z])[\s]{0,1}[.|:|•|-]?(?!\S)");  // ARTICLE A
 
 
-                    if ((sectioNo != null | sectioNo != "") & i == 0)
+                    if (matchRegexNumeric.Any(s => s.Value == regex))
                     {
-                        combineSectionParaCopy.Add(paraEntered, paraData); // save paragraph
-                        combineSectionSectioNoCopy.Add(paraEntered, sectioNo); // save section number
-                        combineSectionRegexCopy.Add(paraEntered, regexVal); // save regex 
-                        outputParent.Add(1);
-                        paraEntered++; // increment count
-                        if (stackpara.Count() > 0)
-                            stackpara.Pop(); // pop para 
-                        stackpara.Push(paraData); // add new para
-                        continue;
+                        parent = 1;
                     }
-
-                    var onlySectionNo = "";
-                    var replacedData = "";
-                    var sectionNoCopy = sectioNo; // copy of section number
-                    symbolCorrectDictionaryFn(sectionNoCopy, out sectionNoCopy);
-                    foreach (var item in _CheckWord.specialChar) // get only the section number 
-                    {
-                        Regex regex = new Regex(item);
-                        var match = regex.Match(sectionNoCopy); // check if match found
-                        if (match.Success)
-                        {
-                            sectionNoCopy = sectionNoCopy.Replace(match.Value, "");
-                            if (replacedData == "")
-                                replacedData = item.Replace("(?!\\S)", "").Replace("\\", "");
-                            else
-                                replacedData = replacedData + "|" + item.Replace("(?!\\S)", "").Replace("\\", "");
-                        }
-                    }
-                    onlySectionNo = sectionNoCopy.Trim();
-
-                    var regexValue = 0;
-                    //foreach (var item in _regex.treeCorrectionRegex) // loop through all the regex and get the matchtype value
+                    //foreach (var item in matchRegexNumeric)
                     //{
-                    //    if (item.Key == regexVal)
+                    //    if (regex == item.Value)
                     //    {
-                    //        regexValue = item.Value; // value of match type
+                    //        parent = 1;
                     //        break;
                     //    }
                     //}
-                    //convert linq query
-                    var checkvalue = _regex.treeCorrectionRegex.Where(s => s.Key == regexVal).FirstOrDefault();
-                    if(checkvalue.Value!=null)                   
-                        regexValue = checkvalue.Value;
-                  
-                    // coorect section
-                    var correctSectionNo = "";
-                    var correctRegex = "";
-                    foreach (var item in _CheckWord.wrongReadCharList)
+
+                }
+                catch (Exception ex)
+                {
+                _Default.LogError("parentCheck", "", ex);
+                throw;
+                }
+            }
+
+            #endregion
+
+            #region -------------remove unewanted symbol while section number correction ------------------------------------------
+            // remove unwanted symbols
+            public void symbolCorrectDictionaryFn(string section, out string updatedSection)
+            {
+                try
+                {
+
+
+                    updatedSection = section;
+                    List<string> symbolCorrection = new List<string>(); // check the regex 
+                    symbolCorrection.Add("{");
+                    symbolCorrection.Add("}");
+
+                    foreach (var item in symbolCorrection)
                     {
-                        if (item == onlySectionNo && stackRegex.Count() > 0)
+                        if (section.IndexOf(item) != -1)
                         {
-                            sectionCorrectionCheck(stackRegex, onlySectionNo, stackSection, out correctSectionNo, out correctRegex);
-                            if (correctSectionNo != "" & correctRegex != "")
+                            updatedSection = section.Replace(item, "");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                _Default.LogError("symbolCorrectDictionaryFn", "", ex);
+                throw;
+                }
+            }
+            #endregion
+
+            #region --------correcting section if read wrong----------------------------------
+            // correcting the section number and regex 
+            public void sectionCorrectionCheck(Stack<string> stackRegex, string onlySectionNo, Stack<string> stackSection, out string correctSectionNo, out string correctRegex)
+            {
+                try
+                {
+
+                    correctSectionNo = "";
+                    correctRegex = "";
+
+                    Dictionary<string, string> checkPrevSectionLevel1 = new Dictionary<string, string>(); // check the words after section number
+                    checkPrevSectionLevel1.Add("u|iv", "v");
+                    checkPrevSectionLevel1.Add("w|ix", "x");
+                    checkPrevSectionLevel1.Add("U|IV", "V");
+                    checkPrevSectionLevel1.Add("W|IX", "X");
+                    checkPrevSectionLevel1.Add("R|7", "S");
+                    checkPrevSectionLevel1.Add("4", "S");
+                    checkPrevSectionLevel1.Add("7|R", "8");
+                    checkPrevSectionLevel1.Add("4|R", "5");
+                    checkPrevSectionLevel1.Add("k|e", "l");
+                    checkPrevSectionLevel1.Add("d|b", "e");
+                    checkPrevSectionLevel1.Add("r|4", "s");
+                    checkPrevSectionLevel1.Add("g|a", "h");
+                    checkPrevSectionLevel1.Add("8|f", "9");
+                    checkPrevSectionLevel1.Add("j", "i");
+                    checkPrevSectionLevel1.Add("I|i|k", "1");
+                    checkPrevSectionLevel1.Add("10", "11");
+
+                    Dictionary<string, string> checkPrevSectionLevel2 = new Dictionary<string, string>(); // check the words after section number
+                    checkPrevSectionLevel2.Add("R", "S");
+                    checkPrevSectionLevel2.Add("4", "5");
+                    checkPrevSectionLevel2.Add("7", "8");
+                    checkPrevSectionLevel2.Add("W", "X");
+                    checkPrevSectionLevel2.Add("IX", "X");
+                    checkPrevSectionLevel2.Add("U", "V");
+                    checkPrevSectionLevel2.Add("IV", "V");
+                    checkPrevSectionLevel2.Add("w", "x");
+                    checkPrevSectionLevel2.Add("ix", "x");
+                    checkPrevSectionLevel2.Add("u", "v");
+                    checkPrevSectionLevel2.Add("iv", "v");
+                    checkPrevSectionLevel2.Add("k", "l");
+                    checkPrevSectionLevel2.Add("e", "f");
+                    checkPrevSectionLevel2.Add("d", "e");
+                    checkPrevSectionLevel2.Add("b", "c");
+                    checkPrevSectionLevel2.Add("r", "s");
+                    checkPrevSectionLevel2.Add("g", "h");
+                    checkPrevSectionLevel2.Add("a", "b");
+                    checkPrevSectionLevel2.Add("f", "g");
+                    checkPrevSectionLevel2.Add("8", "9");
+                    checkPrevSectionLevel2.Add("i", "j");
+                    checkPrevSectionLevel2.Add("I", "J");
+                    checkPrevSectionLevel2.Add("10", "11");
+
+                    Dictionary<string, string> assumption = new Dictionary<string, string>(); // check the words after section number
+                    assumption.Add("9", "g");
+                    assumption.Add("11", "ii");
+
+                    Dictionary<string, string> assumptionRegex = new Dictionary<string, string>(); // check the words after section number
+                    assumptionRegex.Add("g", "[a-z]");
+                    assumptionRegex.Add("ii", "(ix|iv|v?i{0,3})");
+
+                    var lastSectionNumber = stackSection.Peek();
+                    var lastRegex = stackRegex.Peek();
+                    var checkNext = true;
+                    foreach (var item in checkPrevSectionLevel1) // loop through level 1
+                    {
+                        if (checkNext == false)
+                            break;
+                        if (item.Value == onlySectionNo) // if section number matches
+                        {
+                            var data = item.Key.Split('|'); // split the condition
+                            foreach (var dataCheck in data) // loop through conditions
                             {
-                                sectioNo = correctSectionNo;
-                                regexVal = correctRegex;
-                                onlySectionNo = correctSectionNo;
-                                foreach (var itemSet in _regex.treeCorrectionRegex) // loop through all the regex and get the matchtype value
+                                if (checkNext == false)
+                                    break;
+                                if (lastSectionNumber == dataCheck) // if matches with condition
                                 {
-                                    if (itemSet.Key == regexVal)
+                                    foreach (var level2 in checkPrevSectionLevel2) // loop through level 2
                                     {
-                                        regexValue = itemSet.Value; // value of match type
-                                        break;
+                                        if (dataCheck == level2.Key)
+                                        {
+                                            correctSectionNo = level2.Value;
+                                            correctRegex = lastRegex;
+                                            checkNext = false;
+                                            break;
+                                        }
                                     }
                                 }
+                            }
+                        }
+                    }
+                    if (correctSectionNo == "")
+                    {
+                        var count = 0;
+                        foreach (var item in assumption)
+                        {
+                            if (item.Key == onlySectionNo & lastRegex.IndexOf(assumptionRegex.ElementAt(count).Value) != -1)
+                            {
+                                correctSectionNo = item.Value;
+                                correctRegex = lastRegex;
+                            }
+                            count++;
+                        }
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                _Default.LogError("sectionCorrectionCheck", "", ex);
+                throw;
+                }
+            }
+            #endregion
+
+            public void checkSpecialCharForSection(string onlySectionNo, Dictionary<int, string> combineSectionRegex, Dictionary<int, string> combineSectionSectioNo, List<int> levelSave, int j, out string sectionNo, out string regex)
+            {
+                try
+                {
+
+                    sectionNo = "";
+                    regex = "";
+                    var levelSaveCopy = levelSave;
+                    var predictedSectionNo = new Dictionary<string, string>();
+                    var currentLevel = levelSave.ElementAt(j);
+                    //var set = new List<int>();
+                    var start = j + 1;
+                    List<int> set = new List<int>(levelSave);
+                    List<string> sectionSet = combineSectionSectioNo.Values.ToList();
+                    List<string> regexSet = combineSectionRegex.Values.ToList();
+                    var startIndex = j;
+                    var endIndex = 0;
+                    var hasChild = false;
+                    List<string> saveSpecialChar = new List<string>();
+                    for (int i = start; i < levelSave.Count(); i++)
+                    {
+                        var level = levelSave.ElementAt(i);
+                        if (level == currentLevel)
+                        {
+                            var value = combineSectionSectioNo.ElementAt(i).Value.Trim();
+                            foreach (var item in _CheckWord.specialChar) // get only the section number 
+                            {
+                                Regex regexVal = new Regex(item);
+                                var match = regexVal.Match(value); // check if match found
+                                if (match.Success)
+                                {
+                                    value = value.Replace(match.Value, "");
+                                    saveSpecialChar.Add(match.Value);
+                                }
+                            }
+                            if (value != onlySectionNo)
+                            {
+                                hasChild = true;
                             }
                             break;
                         }
-                    }
-
-                    // loop for "I" and "i"
-                    if (sectioNo.IndexOf("I") != -1 | onlySectionNo == "i")
-                    {
-                        var newSection = "";
-                        var newRegex = "";
-                        checkSpecialCharForSection(onlySectionNo, combineSectionRegex, combineSectionSectioNo, levelSave, i, out newSection, out newRegex);
-                        if (newSection != "")
+                        if (level < currentLevel) // parent found
                         {
-                            sectioNo = newSection;
-                            regexVal = newRegex;
-                            onlySectionNo = newSection;
-                            foreach (var item in _regex.treeCorrectionRegex) // loop through all the regex and get the matchtype value
+                            endIndex = i;
+                            break;
+                        }
+                        if (level == currentLevel + 1 && i == start) // check for "2"
+                        {
+                            var nextSection = combineSectionSectioNo.ElementAt(start).Value.Trim();
+                            if ((nextSection.IndexOf("2") == 0 | nextSection.IndexOf("2") == 1) & onlySectionNo == "I")
                             {
-                                if (item.Key == regexVal)
-                                {
-                                    regexValue = item.Value; // value of match type
-                                    break;
-                                }
+                                sectionNo = "1";
+                                regex = combineSectionRegex.ElementAt(start).Value;
+                                hasChild = true;
+                                break;
                             }
-                        }
-                    }
-
-
-                    // if section / article is there..........or 1.1 ... continue
-                    Regex regexSectionAndArticleMatch = new Regex("(?i)(section|article)");
-                    if (_regex.regexNotToCheckFn.Contains(regexVal) | regexSectionAndArticleMatch.Match(sectioNo).Success)
-                    {
-                        combineSectionParaCopy.Add(paraEntered, paraData); // save paragraph
-                        combineSectionSectioNoCopy.Add(paraEntered, sectioNo); // save section number
-                        combineSectionRegexCopy.Add(paraEntered, regexVal); // save regex 
-                        outputParent.Add(1);
-                        paraEntered++; // increment count
-                        if (stackpara.Count() > 0)
-                            stackpara.Pop(); // pop para 
-                        stackpara.Push(paraData); // add new para
-
-                        if (stackRegex.Count() > 0)
-                        {
-                            stackRegex.Pop();
-                            stackSection.Pop();
-                            matchedRegex.RemoveAt(matchedRegex.Count() - 1);
-                            matchType.RemoveAt(matchType.Count() - 1);
-                            stackSectionIndex.Pop();
-                        }
-                        continue;
-                    }
-
-                    if (stackRegex.Count() == 0 & regexVal != "") // first section no in stack
-                    {
-                        if (regexValue != 0)
-                        {
-                            var listName = regexMatch()[regexValue]; // get the list from match type
-                            var newSectionFound = new List<string>();
-                            for (int u = 0; u < listName.Count(); u++) // loop throgh list till get the index
+                            else if (nextSection.IndexOf("ii") != -1 & onlySectionNo == "i")
                             {
-                                if (listName.ElementAt(u) == onlySectionNo & u == 0) // check if the index is zero for section
-                                {
-                                    // if yes save the values in stack
-                                    stackRegex.Push(regexVal); // push regex in stack 
-                                    stackSection.Push(onlySectionNo); // save section number
-                                    matchedRegex.Add(regexVal); // save regex
-                                    matchType.Add(listName.ToList()); // save list
-                                    stackSectionIndex.Push(0); // save index of section
-                                    if (stackpara.Count() > 0)
-                                        stackpara.Pop(); // pop para 
-                                    stackpara.Push(paraData); // add new para
-                                    //-----------------
-                                    combineSectionParaCopy.Add(paraEntered, stackpara.Peek()); // save paragraph
-                                    combineSectionSectioNoCopy.Add(paraEntered, stackSection.Peek()); // save section number
-                                    combineSectionRegexCopy.Add(paraEntered, stackRegex.Peek()); // save regex 
-                                    outputParent.Add(0);
-                                    paraEntered++; // increment count
-                                    //------------------
-                                }
-                                else // if not the first index of section ...then search for all the section above it
-                                {
-                                    var lastMatchType = listName.ToList();
-                                    var index = lastMatchType.IndexOf(onlySectionNo);
-                                    var getAllSectionInRange = new List<string>();
-                                    getAllSectionInRange = lastMatchType.GetRange(0, index);
-
-                                    var getTheParaToCheck = stackpara.Peek();
-                                    if (getTheParaToCheck.Count() > 1)
-                                    {
-                                        foreach (var item in getAllSectionInRange)
-                                        {
-                                            List<string> toFind = new List<string>();
-                                            toFind.Add(item);
-                                            Dictionary<string, List<string>> paraList = new Dictionary<string, List<string>>();
-                                            checkInParaForSection(replacedData, combineSectionParaCopy, regexValue, regexVal, getTheParaToCheck, toFind, out paraList);
-
-                                            if (paraList.Count() > 1) // if section number found  
-                                            {
-                                                combineSectionParaCopy[paraEntered - 1] = paraList.ElementAt(0).Value;
-                                                paraList.Remove(paraList.Keys.First());
-                                                for (int p = 0; p < paraList.Count(); p++)
-                                                {
-                                                    ////-----------------
-                                                    combineSectionParaCopy.Add(paraEntered, paraList.ElementAt(p).Value);// save paragraph
-                                                    combineSectionSectioNoCopy.Add(paraEntered, (paraList.ElementAt(p).Key).ToString());// save section number
-                                                    combineSectionRegexCopy.Add(paraEntered, regexVal);// save regex 
-                                                    outputParent.Add(0);
-                                                    paraEntered++;// increment count
-                                                                  ////-----------------
-                                                    stackpara.Pop();
-                                                    stackpara.Push(paraList.ElementAt(p).Value);
-                                                }
-                                            }
-
-                                            getTheParaToCheck = stackpara.Peek();
-                                        }
-                                    }
-                                    stackRegex.Push(regexVal);
-                                    stackSection.Push(onlySectionNo);
-                                    matchedRegex.Add(regexVal);
-                                    matchType.Add(listName.ToList());
-                                    stackSectionIndex.Push(index);
-                                    stackpara.Pop();
-                                    stackpara.Push(paraData);
-                                    ////-----------------
-                                    combineSectionParaCopy.Add(paraEntered, stackpara.Peek());// save paragraph
-                                    combineSectionSectioNoCopy.Add(paraEntered, stackSection.Peek());// save section number
-                                    combineSectionRegexCopy.Add(paraEntered, stackRegex.Peek());// save regex 
-                                    outputParent.Add(0);
-                                    paraEntered++;// increment count
-                                    //--------------------
-                                }
+                                sectionNo = "i";
+                                regex = combineSectionRegex.ElementAt(start).Value;
+                                hasChild = true;
                                 break;
                             }
                         }
                     }
-                    else // not first section 
+                    if (saveSpecialChar.Count() > 0 & onlySectionNo == "I" & (j == 0 || combineSectionSectioNo.ElementAt(j - 1).Value.Trim() == ""))
                     {
-                        if (matchedRegex.Contains(regexVal)) // if the stack has that value (sibling found)
+                        if (saveSpecialChar.Count() == 1)
                         {
-                            var lastSectionVal = stackRegex.Peek(); // last section number in stack
-                            if (lastSectionVal == regexVal) // if matches
-                            {
-                                var lastMatchType = matchType.ElementAt(matchType.Count - 1); // get the 
-                                var getTheCurrentSectionNo = "";
-                                if (lastMatchType.Count() >= stackSectionIndex.Peek() + 1)
-                                {
-                                    var nextIndex = stackSectionIndex.Peek() + 1; // next index to search
+                            sectionNo = "1";
+                            regex = "^[\\s]*(?!0)([0-9]{1,2}[" + saveSpecialChar.ElementAt(0) + "])(?!\\S)"; //   1:;
 
-                                    int index = lastMatchType.IndexOf(onlySectionNo);
-                                    if (stackSectionIndex.Peek() + 1 > index)
-                                    {
-                                        stackSectionIndex.Pop();
-                                        stackSectionIndex.Push(0);
-                                    }
-                                    if (stackSectionIndex.Peek() + 1 > lastMatchType.Count() - 1)
-                                    {
-                                        var currentIndexVal = lastMatchType.IndexOf(onlySectionNo);
-                                        stackSectionIndex.Pop();
-                                        stackSectionIndex.Push(currentIndexVal);
-                                        nextIndex = currentIndexVal;
-                                        getTheCurrentSectionNo = lastMatchType.ElementAt(currentIndexVal); // section section number to search
-                                    }
+                        }
+                        else if (saveSpecialChar.Count() == 2)
+                        {
+                            sectionNo = "1";
+                            regex = "^[\\s]*([\\" + saveSpecialChar.ElementAt(0) + "[\\s]*(?!0)([0-9]{1,2})[\\s]*[" + saveSpecialChar.ElementAt(1) + "])(?!\\S)"; //   [1];
+                        }
+                    }
+                    if (hasChild != true)
+                    {
+                        if (endIndex != 0)
+                        {
+                            set.RemoveRange(endIndex + 1, levelSave.Count() - (endIndex + 1));
+                            sectionSet.RemoveRange(endIndex + 1, levelSave.Count() - (endIndex + 1));
+                            regexSet.RemoveRange(endIndex + 1, levelSave.Count() - (endIndex + 1));
+                        }
+
+                        List<int> reverseSet = new List<int>(set);
+                        reverseSet.Reverse();
+                        start = set.Count() - j;
+                        endIndex = 0;
+                        for (int i = start; i < set.Count(); i++)
+                        {
+                            var level = reverseSet.ElementAt(i);
+                            if (level < currentLevel)
+                            {
+                                endIndex = i;
+                                break;
+                            }
+                        }
+                        if (endIndex == 0)
+                        {
+                            set.RemoveRange(0, j - 1);
+                            sectionSet.RemoveRange(0, j - 1);
+                            regexSet.RemoveRange(0, j - 1);
+                        }
+                        else
+                        {
+                            set.Reverse(); sectionSet.Reverse(); regexSet.Reverse();
+                            set.RemoveRange(endIndex + 1, set.Count() - (endIndex + 1));
+                            sectionSet.RemoveRange(endIndex + 1, sectionSet.Count() - (endIndex + 1));
+                            regexSet.RemoveRange(endIndex + 1, regexSet.Count() - (endIndex + 1));
+                            set.Reverse(); sectionSet.Reverse(); regexSet.Reverse();
+                        }
+                        if (set.ElementAt(0) == set.ElementAt(set.Count() - 1))
+                        {
+                            var sectionValPrev = sectionSet.ElementAt(0);
+                            var sectionValNext = sectionSet.ElementAt(set.Count() - 1);
+
+                            foreach (var item in _CheckWord.specialChar) // get only the section number 
+                            {
+                                Regex regexCheck = new Regex("(?i)" + item);
+                                var match = regexCheck.Match(sectionValPrev); // check if match found
+                                if (match.Success)
+                                {
+                                    sectionValPrev = sectionValPrev.Replace(match.Value, "").Trim();
+                                    sectionValNext = sectionValNext.Replace(match.Value, "").Trim();
+                                }
+                            }
+
+                            if (sectionValPrev == "d" | sectionValPrev == "e" & sectionValNext == "g" | sectionValNext == "h")
+                            {
+                                sectionNo = "f";
+                                regex = regexSet.ElementAt(0);
+                            }
+                            else if (sectionValPrev == "j" | sectionValPrev == "k" | sectionValPrev == "i" & sectionValNext == "m" | sectionValNext == "n")
+                            {
+                                sectionNo = "l";
+                                regex = regexSet.ElementAt(0);
+                            }
+                            else if (sectionValPrev == "H")
+                            {
+                                sectionNo = "I";
+                                regex = regexSet.ElementAt(0);
+                            }
+                        }
+                        else
+                        {
+                            var sectionValPrev = sectionSet.ElementAt(0);
+                            foreach (var item in _CheckWord.specialChar) // get only the section number 
+                            {
+                                Regex regexCheck = new Regex("(?i)" + item);
+                                var match = regexCheck.Match(sectionValPrev); // check if match found
+                                if (match.Success)
+                                {
+                                    sectionValPrev = sectionValPrev.Replace(match.Value, "").Trim();
+                                }
+                            }
+                            if (sectionValPrev == "c" | sectionValPrev == "d" | sectionValPrev == "e")
+                            {
+                                sectionNo = "f";
+                                regex = regexSet.ElementAt(0);
+                            }
+                            else if (sectionValPrev == "j" | sectionValPrev == "k" | sectionValPrev == "i")
+                            {
+                                sectionNo = "l";
+                                regex = regexSet.ElementAt(0);
+                            }
+                            else if (sectionValPrev == "H")
+                            {
+                                sectionNo = "I";
+                                regex = regexSet.ElementAt(0);
+                            }
+                        }
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                _Default.LogError("checkSpecialCharForSection", "", ex);
+                throw;
+                }
+            }
+
+            public void treeCorrection(List<int> parentSectionNo, List<int> levelSave, Dictionary<int, List<string>> combineSectionPara, Dictionary<int, string> combineSectionSectioNo, Dictionary<int, string> combineSectionRegex, out Dictionary<int, string> outputSection, out Dictionary<int, string> outputRegex, out Dictionary<int, List<string>> outputPara, out List<int> outputParent)
+            {
+                try
+                {
+
+
+
+                    outputRegex = new Dictionary<int, string>();
+                    outputSection = new Dictionary<int, string>();
+                    outputPara = new Dictionary<int, List<string>>();
+                    outputParent = new List<int>();
+                    Dictionary<int, List<string>> combineSectionParaCopy = new Dictionary<int, List<string>>();
+                    Dictionary<int, string> combineSectionSectioNoCopy = new Dictionary<int, string>();
+                    Dictionary<int, string> combineSectionRegexCopy = new Dictionary<int, string>();
+                    Stack<string> stackRegex = new Stack<string>();
+                    Stack<int> stackSectionIndex = new Stack<int>();
+                    Stack<string> stackSection = new Stack<string>();
+                    Stack<List<string>> stackpara = new Stack<List<string>>();
+                    List<List<string>> matchType = new List<List<string>>();
+                    List<string> matchedRegex = new List<string>();
+                    List<List<string>> savePara = new List<List<string>>();
+
+                    var paraEntered = 0;
+
+                    for (int i = 0; i < combineSectionPara.Count(); i++) // list of all paragraphs 
+                    {
+                        if (combineSectionSectioNo[i + 1] != "") // check if only one value there or not
+                        { // if more then one paragraph there
+                            var sectioNo = combineSectionSectioNo[i + 1]; // get the section number
+                            var regexVal = combineSectionRegex[i + 1]; // get the regex for section number
+                            var paraData = combineSectionPara[i + 1]; // get the para associated with that section number
+
+
+                            if ((sectioNo != null | sectioNo != "") & i == 0)
+                            {
+                                combineSectionParaCopy.Add(paraEntered, paraData); // save paragraph
+                                combineSectionSectioNoCopy.Add(paraEntered, sectioNo); // save section number
+                                combineSectionRegexCopy.Add(paraEntered, regexVal); // save regex 
+                                outputParent.Add(1);
+                                paraEntered++; // increment count
+                                if (stackpara.Count() > 0)
+                                    stackpara.Pop(); // pop para 
+                                stackpara.Push(paraData); // add new para
+                                continue;
+                            }
+
+                            var onlySectionNo = "";
+                            var replacedData = "";
+                            var sectionNoCopy = sectioNo; // copy of section number
+                            symbolCorrectDictionaryFn(sectionNoCopy, out sectionNoCopy);
+                            foreach (var item in _CheckWord.specialChar) // get only the section number 
+                            {
+                                Regex regex = new Regex(item);
+                                var match = regex.Match(sectionNoCopy); // check if match found
+                                if (match.Success)
+                                {
+                                    sectionNoCopy = sectionNoCopy.Replace(match.Value, "");
+                                    if (replacedData == "")
+                                        replacedData = item.Replace("(?!\\S)", "").Replace("\\", "");
                                     else
-                                        getTheCurrentSectionNo = lastMatchType.ElementAt(stackSectionIndex.Peek() + 1); // section section number to search
-                                    if (getTheCurrentSectionNo == onlySectionNo || index - (stackSectionIndex.Peek() + 1) < 0) // check if both section matches then save the section number 
+                                        replacedData = replacedData + "|" + item.Replace("(?!\\S)", "").Replace("\\", "");
+                                }
+                            }
+                            onlySectionNo = sectionNoCopy.Trim();
+
+                            var regexValue = 0;
+                            //foreach (var item in _regex.treeCorrectionRegex) // loop through all the regex and get the matchtype value
+                            //{
+                            //    if (item.Key == regexVal)
+                            //    {
+                            //        regexValue = item.Value; // value of match type
+                            //        break;
+                            //    }
+                            //}
+                            //convert linq query
+                            var checkvalue = _regex.treeCorrectionRegex.Where(s => s.Key == regexVal).FirstOrDefault();
+                            if (checkvalue.Value != null)
+                                regexValue = checkvalue.Value;
+
+                        // if section / article is there..........or 1.1 ... continue
+                        Regex regexSectionAndArticleMatch = new Regex("(?i)(section|article)");
+                        if (_regex.regexNotToCheckFn.Contains(regexVal) | regexSectionAndArticleMatch.Match(sectioNo).Success)
+                        {
+                            combineSectionParaCopy.Add(paraEntered, paraData); // save paragraph
+                            combineSectionSectioNoCopy.Add(paraEntered, sectioNo); // save section number
+                            combineSectionRegexCopy.Add(paraEntered, regexVal); // save regex 
+                            outputParent.Add(1);
+                            paraEntered++; // increment count
+                            if (stackpara.Count() > 0)
+                                stackpara.Pop(); // pop para 
+                            stackpara.Push(paraData); // add new para
+
+                            if (stackRegex.Count() > 0)
+                            {
+                                stackRegex.Pop();
+                                stackSection.Pop();
+                                matchedRegex.RemoveAt(matchedRegex.Count() - 1);
+                                matchType.RemoveAt(matchType.Count() - 1);
+                                stackSectionIndex.Pop();
+                            }
+                            continue;
+                        }
+
+                        // coorect section
+                        var correctSectionNo = "";
+                        var correctRegex = "";
+                        foreach (var item in _CheckWord.wrongReadCharList)
+                        {
+                            if (item == onlySectionNo && stackRegex.Count() > 0)
+                            {
+                                sectionCorrectionCheck(stackRegex, onlySectionNo, stackSection, out correctSectionNo, out correctRegex);
+                                if (correctSectionNo != "" & correctRegex != "")
+                                {
+                                    sectioNo = correctSectionNo;
+                                    regexVal = correctRegex;
+                                    onlySectionNo = correctSectionNo;
+                                    foreach (var itemSet in _regex.treeCorrectionRegex) // loop through all the regex and get the matchtype value
                                     {
-                                        stackSection.Pop();
-                                        stackSection.Push(onlySectionNo);
-                                        stackSectionIndex.Pop();
-                                        stackSectionIndex.Push(nextIndex);
-                                        stackpara.Pop();
-                                        stackpara.Push(paraData);
-                                        ////-----------------
-                                        combineSectionParaCopy.Add(paraEntered, stackpara.Peek());
-                                        combineSectionSectioNoCopy.Add(paraEntered, stackSection.Peek());
-                                        combineSectionRegexCopy.Add(paraEntered, stackRegex.Peek());
+                                        if (itemSet.Key == regexVal)
+                                        {
+                                            regexValue = itemSet.Value; // value of match type
+                                            break;
+                                        }
+                                    }
+                                }
+                                break;
+                            }
+                        }
+
+                        // loop for "I" and "i"
+                        if (sectioNo.IndexOf("I") != -1 | onlySectionNo == "i")
+                        {
+                            var newSection = "";
+                            var newRegex = "";
+                            checkSpecialCharForSection(onlySectionNo, combineSectionRegex, combineSectionSectioNo, levelSave, i, out newSection, out newRegex);
+                            if (newSection != "")
+                            {
+                                sectioNo = newSection;
+                                regexVal = newRegex;
+                                onlySectionNo = newSection;
+                                foreach (var item in _regex.treeCorrectionRegex) // loop through all the regex and get the matchtype value
+                                {
+                                    if (item.Key == regexVal)
+                                    {
+                                        regexValue = item.Value; // value of match type
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                            
+                        if (stackRegex.Count() == 0 & regexVal != "") // first section no in stack
+                        {
+                            if (regexValue != 0)
+                            {
+                                var listName = regexMatch()[regexValue]; // get the list from match type
+                                var newSectionFound = new List<string>();
+                                for (int u = 0; u < listName.Count(); u++) // loop throgh list till get the index
+                                {
+                                    if (listName.ElementAt(u) == onlySectionNo & u == 0) // check if the index is zero for section
+                                    {
+                                        // if yes save the values in stack
+                                        stackRegex.Push(regexVal); // push regex in stack 
+                                        stackSection.Push(onlySectionNo); // save section number
+                                        matchedRegex.Add(regexVal); // save regex
+                                        matchType.Add(listName.ToList()); // save list
+                                        stackSectionIndex.Push(0); // save index of section
+                                        if (stackpara.Count() > 0)
+                                            stackpara.Pop(); // pop para 
+                                        stackpara.Push(paraData); // add new para
+                                                                    //-----------------
+                                        combineSectionParaCopy.Add(paraEntered, stackpara.Peek()); // save paragraph
+                                        combineSectionSectioNoCopy.Add(paraEntered, stackSection.Peek()); // save section number
+                                        combineSectionRegexCopy.Add(paraEntered, stackRegex.Peek()); // save regex 
                                         outputParent.Add(0);
-                                        paraEntered++;
-                                        ////-----------------
-                                        //matchType.RemoveAt(matchType.Count()-1);
+                                        paraEntered++; // increment count
+                                                        //------------------
                                     }
-                                    else
+                                    else // if not the first index of section ...then search for all the section above it
                                     {
-                                        index = lastMatchType.IndexOf(onlySectionNo);
-                                        var getAllSectionInRange = lastMatchType.GetRange(stackSectionIndex.Peek() + 1, index - (stackSectionIndex.Peek() + 1));
+                                        var lastMatchType = listName.ToList();
+                                        var index = lastMatchType.IndexOf(onlySectionNo);
+                                        var getAllSectionInRange = new List<string>();
+                                        getAllSectionInRange = lastMatchType.GetRange(0, index);
 
                                         var getTheParaToCheck = stackpara.Peek();
                                         if (getTheParaToCheck.Count() > 1)
@@ -1752,12 +1772,12 @@ namespace ReboProject
                                                     for (int p = 0; p < paraList.Count(); p++)
                                                     {
                                                         ////-----------------
-                                                        combineSectionParaCopy.Add(paraEntered, paraList.ElementAt(p).Value);// save
+                                                        combineSectionParaCopy.Add(paraEntered, paraList.ElementAt(p).Value);// save paragraph
                                                         combineSectionSectioNoCopy.Add(paraEntered, (paraList.ElementAt(p).Key).ToString());// save section number
                                                         combineSectionRegexCopy.Add(paraEntered, regexVal);// save regex 
                                                         outputParent.Add(0);
                                                         paraEntered++;// increment count
-                                                                      ////-----------------
+                                                                        ////-----------------
                                                         stackpara.Pop();
                                                         stackpara.Push(paraList.ElementAt(p).Value);
                                                     }
@@ -1766,722 +1786,755 @@ namespace ReboProject
                                                 getTheParaToCheck = stackpara.Peek();
                                             }
                                         }
-                                        stackSection.Pop();
+                                        stackRegex.Push(regexVal);
                                         stackSection.Push(onlySectionNo);
-                                        stackSectionIndex.Pop();
+                                        matchedRegex.Add(regexVal);
+                                        matchType.Add(listName.ToList());
                                         stackSectionIndex.Push(index);
                                         stackpara.Pop();
                                         stackpara.Push(paraData);
+                                        ////-----------------
+                                        combineSectionParaCopy.Add(paraEntered, stackpara.Peek());// save paragraph
+                                        combineSectionSectioNoCopy.Add(paraEntered, stackSection.Peek());// save section number
+                                        combineSectionRegexCopy.Add(paraEntered, stackRegex.Peek());// save regex 
+                                        outputParent.Add(0);
+                                        paraEntered++;// increment count
+                                                        //--------------------
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                        else // not first section 
+                        {
+                            if (matchedRegex.Contains(regexVal)) // if the stack has that value (sibling found)
+                            {
+                                var lastSectionVal = stackRegex.Peek(); // last section number in stack
+                                if (lastSectionVal == regexVal) // if matches
+                                {
+                                    var lastMatchType = matchType.ElementAt(matchType.Count - 1); // get the 
+                                    var getTheCurrentSectionNo = "";
+                                    if (lastMatchType.Count() >= stackSectionIndex.Peek() + 1)
+                                    {
+                                        var nextIndex = stackSectionIndex.Peek() + 1; // next index to search
+
+                                        int index = lastMatchType.IndexOf(onlySectionNo);
+                                        if (stackSectionIndex.Peek() + 1 > index)
+                                        {
+                                            stackSectionIndex.Pop();
+                                            stackSectionIndex.Push(0);
+                                        }
+                                        if (stackSectionIndex.Peek() + 1 > lastMatchType.Count() - 1)
+                                        {
+                                            var currentIndexVal = lastMatchType.IndexOf(onlySectionNo);
+                                            stackSectionIndex.Pop();
+                                            stackSectionIndex.Push(currentIndexVal);
+                                            nextIndex = currentIndexVal;
+                                            getTheCurrentSectionNo = lastMatchType.ElementAt(currentIndexVal); // section section number to search
+                                        }
+                                        else
+                                            getTheCurrentSectionNo = lastMatchType.ElementAt(stackSectionIndex.Peek() + 1); // section section number to search
+                                        if (getTheCurrentSectionNo == onlySectionNo || index - (stackSectionIndex.Peek() + 1) < 0) // check if both section matches then save the section number 
+                                        {
+                                            stackSection.Pop();
+                                            stackSection.Push(onlySectionNo);
+                                            stackSectionIndex.Pop();
+                                            stackSectionIndex.Push(nextIndex);
+                                            stackpara.Pop();
+                                            stackpara.Push(paraData);
+                                            ////-----------------
+                                            combineSectionParaCopy.Add(paraEntered, stackpara.Peek());
+                                            combineSectionSectioNoCopy.Add(paraEntered, stackSection.Peek());
+                                            combineSectionRegexCopy.Add(paraEntered, stackRegex.Peek());
+                                            outputParent.Add(0);
+                                            paraEntered++;
+                                            ////-----------------
+                                            //matchType.RemoveAt(matchType.Count()-1);
+                                        }
+                                        else
+                                        {
+                                            index = lastMatchType.IndexOf(onlySectionNo);
+                                            var getAllSectionInRange = lastMatchType.GetRange(stackSectionIndex.Peek() + 1, index - (stackSectionIndex.Peek() + 1));
+
+                                            var getTheParaToCheck = stackpara.Peek();
+                                            if (getTheParaToCheck.Count() > 1)
+                                            {
+                                                foreach (var item in getAllSectionInRange)
+                                                {
+                                                    List<string> toFind = new List<string>();
+                                                    toFind.Add(item);
+                                                    Dictionary<string, List<string>> paraList = new Dictionary<string, List<string>>();
+                                                    checkInParaForSection(replacedData, combineSectionParaCopy, regexValue, regexVal, getTheParaToCheck, toFind, out paraList);
+
+                                                    if (paraList.Count() > 1) // if section number found  
+                                                    {
+                                                        combineSectionParaCopy[paraEntered - 1] = paraList.ElementAt(0).Value;
+                                                        paraList.Remove(paraList.Keys.First());
+                                                        for (int p = 0; p < paraList.Count(); p++)
+                                                        {
+                                                            ////-----------------
+                                                            combineSectionParaCopy.Add(paraEntered, paraList.ElementAt(p).Value);// save
+                                                            combineSectionSectioNoCopy.Add(paraEntered, (paraList.ElementAt(p).Key).ToString());// save section number
+                                                            combineSectionRegexCopy.Add(paraEntered, regexVal);// save regex 
+                                                            outputParent.Add(0);
+                                                            paraEntered++;// increment count
+                                                                            ////-----------------
+                                                            stackpara.Pop();
+                                                            stackpara.Push(paraList.ElementAt(p).Value);
+                                                        }
+                                                    }
+
+                                                    getTheParaToCheck = stackpara.Peek();
+                                                }
+                                            }
+                                            stackSection.Pop();
+                                            stackSection.Push(onlySectionNo);
+                                            stackSectionIndex.Pop();
+                                            stackSectionIndex.Push(index);
+                                            stackpara.Pop();
+                                            stackpara.Push(paraData);
+                                            combineSectionParaCopy.Add(paraEntered, stackpara.Peek());
+                                            combineSectionSectioNoCopy.Add(paraEntered, stackSection.Peek());
+                                            combineSectionRegexCopy.Add(paraEntered, stackRegex.Peek());
+                                            outputParent.Add(0);
+                                            paraEntered++;
+                                            //break;
+                                        }
+                                    }
+                                }
+                                else // check next value in stack
+                                {
+                                    var checkNextRegex = true;
+                                    while (checkNextRegex == true)
+                                    {
+                                        stackRegex.Pop();
+                                        matchedRegex.RemoveAt(matchedRegex.Count() - 1);
+                                        matchType.RemoveAt(matchType.Count() - 1);
+                                        lastSectionVal = stackRegex.Peek();
+                                        stackSectionIndex.Pop();
+                                        stackSection.Pop();
+
+                                        if (lastSectionVal == regexVal)
+                                        {
+                                            var lastMatchType = matchType.ElementAt(matchType.Count - 1);
+                                            var getTheCurrentSectionNo = "";
+                                            if (lastMatchType.Count() < stackSectionIndex.Peek() + 1)
+                                            {
+                                                stackSectionIndex.Pop();
+                                                stackSectionIndex.Push(0);
+                                            }
+                                            if (lastMatchType.Count() >= stackSectionIndex.Peek() + 1)
+                                            {
+                                                var nextIndex = stackSectionIndex.Peek() + 1;
+                                                if (stackSectionIndex.Peek() + 1 > lastMatchType.Count() - 1)
+                                                {
+                                                    var currentIndexVal = lastMatchType.IndexOf(onlySectionNo);
+                                                    stackSectionIndex.Pop();
+                                                    stackSectionIndex.Push(currentIndexVal);
+                                                    nextIndex = currentIndexVal;
+                                                    getTheCurrentSectionNo = lastMatchType.ElementAt(currentIndexVal); // section section number to search
+                                                }
+                                                else
+                                                    getTheCurrentSectionNo = lastMatchType.ElementAt(stackSectionIndex.Peek() + 1); // section section number to search
+                                                if (getTheCurrentSectionNo == onlySectionNo)
+                                                {
+                                                    stackSection.Pop();
+                                                    stackSection.Push(onlySectionNo);
+                                                    stackSectionIndex.Pop();
+                                                    stackSectionIndex.Push(nextIndex);
+                                                    stackpara.Pop();
+                                                    stackpara.Push(paraData);
+                                                    ////-----------------
+                                                    combineSectionParaCopy.Add(paraEntered, stackpara.Peek());
+                                                    combineSectionSectioNoCopy.Add(paraEntered, stackSection.Peek());
+                                                    combineSectionRegexCopy.Add(paraEntered, stackRegex.Peek());
+                                                    outputParent.Add(0);
+                                                    paraEntered++;
+                                                    ////-----------------
+                                                    break;
+                                                }
+                                                else
+                                                {
+                                                    var index = lastMatchType.IndexOf(onlySectionNo);
+                                                    var getAllSectionInRange = new List<string>();
+                                                    if (stackSectionIndex.Peek() + 1 > index)
+                                                    {
+                                                        stackpara.Pop();
+                                                        if (paraData.Count() == 0)
+                                                        {
+                                                            stackpara.Push(null);
+                                                            combineSectionParaCopy.Add(paraEntered, null);
+                                                        }
+                                                        else
+                                                        {
+                                                            stackpara.Push(paraData);
+                                                            combineSectionParaCopy.Add(paraEntered, paraData);
+                                                        }
+
+
+                                                        combineSectionSectioNoCopy.Add(paraEntered, sectioNo);
+                                                        combineSectionRegexCopy.Add(paraEntered, regexVal);
+                                                        outputParent.Add(0);
+                                                        paraEntered++;
+                                                        stackSection.Pop();
+                                                        stackSection.Push(sectioNo);
+                                                        stackSectionIndex.Pop();
+                                                        stackSectionIndex.Push(nextIndex + 1);
+
+                                                        stackpara.Push(paraData);
+                                                        break;
+                                                    }
+                                                    else
+                                                    {
+                                                        getAllSectionInRange = lastMatchType.GetRange(stackSectionIndex.Peek() + 1, index - (stackSectionIndex.Peek() + 1));
+                                                    }
+
+                                                    var getTheParaToCheck = stackpara.Peek();
+                                                    if (getTheParaToCheck.Count() > 1)
+                                                    {
+                                                        foreach (var item in getAllSectionInRange)
+                                                        {
+                                                            List<string> toFind = new List<string>();
+                                                            toFind.Add(item);
+                                                            Dictionary<string, List<string>> paraList = new Dictionary<string, List<string>>();
+                                                            checkInParaForSection(replacedData, combineSectionParaCopy, regexValue, regexVal, getTheParaToCheck, toFind, out paraList);
+
+                                                            if (paraList.Count() > 1) // if section number found  
+                                                            {
+                                                                combineSectionParaCopy[paraEntered - 1] = paraList.ElementAt(0).Value;
+                                                                paraList.Remove(paraList.Keys.First());
+                                                                for (int p = 0; p < paraList.Count(); p++)
+                                                                {
+                                                                    ////-----------------
+                                                                    combineSectionParaCopy.Add(paraEntered, paraList.ElementAt(p).Value);// save paragraph
+                                                                    combineSectionSectioNoCopy.Add(paraEntered, (paraList.ElementAt(p).Key).ToString());// save section number
+                                                                    combineSectionRegexCopy.Add(paraEntered, regexVal);// save regex 
+                                                                    outputParent.Add(0);
+                                                                    paraEntered++;// increment count
+                                                                                    ////-----------------
+                                                                    stackpara.Pop();
+                                                                    stackpara.Push(paraList.ElementAt(p).Value);
+                                                                }
+                                                            }
+
+                                                            getTheParaToCheck = stackpara.Peek();
+                                                        }
+                                                    }
+                                                    stackSection.Pop();
+                                                    stackSection.Push(onlySectionNo);
+                                                    stackSectionIndex.Pop();
+                                                    stackSectionIndex.Push(nextIndex + 1);
+                                                    stackpara.Pop();
+                                                    stackpara.Push(paraData);
+                                                    combineSectionParaCopy.Add(paraEntered, stackpara.Peek());
+                                                    combineSectionSectioNoCopy.Add(paraEntered, stackSection.Peek());
+                                                    combineSectionRegexCopy.Add(paraEntered, stackRegex.Peek());
+                                                    outputParent.Add(0);
+                                                    paraEntered++;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            else // stack dont have that value (child found)
+                            {
+                                var listName = regexMatch()[regexValue]; // get the list from match type
+                                var newSectionFound = new List<string>();
+                                for (int u = 0; u < listName.Count(); u++) // loop throgh list ti get the index
+                                {
+                                    if (listName.ElementAt(u) == onlySectionNo & u == 0)
+                                    {
+                                        // if yes save the values in stack
+                                        stackRegex.Push(regexVal);
+                                        stackSection.Push(onlySectionNo);
+                                        matchedRegex.Add(regexVal);
+                                        matchType.Add(listName.ToList());
+                                        stackSectionIndex.Push(0);
+                                        stackpara.Pop();
+                                        stackpara.Push(paraData);
+                                        ////-----------------
                                         combineSectionParaCopy.Add(paraEntered, stackpara.Peek());
                                         combineSectionSectioNoCopy.Add(paraEntered, stackSection.Peek());
                                         combineSectionRegexCopy.Add(paraEntered, stackRegex.Peek());
                                         outputParent.Add(0);
                                         paraEntered++;
-                                        //break;
+                                        ////-----------------
                                     }
-                                }
-                            }
-                            else // check next value in stack
-                            {
-                                var checkNextRegex = true;
-                                while (checkNextRegex == true)
-                                {
-                                    stackRegex.Pop();
-                                    matchedRegex.RemoveAt(matchedRegex.Count() - 1);
-                                    matchType.RemoveAt(matchType.Count() - 1);
-                                    lastSectionVal = stackRegex.Peek();
-                                    stackSectionIndex.Pop();
-                                    stackSection.Pop();
-
-                                    if (lastSectionVal == regexVal)
+                                    else
                                     {
-                                        var lastMatchType = matchType.ElementAt(matchType.Count - 1);
-                                        var getTheCurrentSectionNo = "";
-                                        if (lastMatchType.Count() < stackSectionIndex.Peek() + 1)
+                                        var lastMatchType = listName.ToList();
+                                        var index = lastMatchType.IndexOf(onlySectionNo);
+                                        var getAllSectionInRange = new List<string>();
+                                        getAllSectionInRange = lastMatchType.GetRange(0, index);
+
+                                        var getTheParaToCheck = stackpara.Peek();
+                                        if (getTheParaToCheck.Count() > 1)
                                         {
-                                            stackSectionIndex.Pop();
-                                            stackSectionIndex.Push(0);
-                                        }
-                                        if (lastMatchType.Count() >= stackSectionIndex.Peek() + 1)
-                                        {
-                                            var nextIndex = stackSectionIndex.Peek() + 1;
-                                            if (stackSectionIndex.Peek() + 1 > lastMatchType.Count() - 1)
+                                            foreach (var item in getAllSectionInRange)
                                             {
-                                                var currentIndexVal = lastMatchType.IndexOf(onlySectionNo);
-                                                stackSectionIndex.Pop();
-                                                stackSectionIndex.Push(currentIndexVal);
-                                                nextIndex = currentIndexVal;
-                                                getTheCurrentSectionNo = lastMatchType.ElementAt(currentIndexVal); // section section number to search
-                                            }
-                                            else
-                                                getTheCurrentSectionNo = lastMatchType.ElementAt(stackSectionIndex.Peek() + 1); // section section number to search
-                                            if (getTheCurrentSectionNo == onlySectionNo)
-                                            {
-                                                stackSection.Pop();
-                                                stackSection.Push(onlySectionNo);
-                                                stackSectionIndex.Pop();
-                                                stackSectionIndex.Push(nextIndex);
-                                                stackpara.Pop();
-                                                stackpara.Push(paraData);
-                                                ////-----------------
-                                                combineSectionParaCopy.Add(paraEntered, stackpara.Peek());
-                                                combineSectionSectioNoCopy.Add(paraEntered, stackSection.Peek());
-                                                combineSectionRegexCopy.Add(paraEntered, stackRegex.Peek());
-                                                outputParent.Add(0);
-                                                paraEntered++;
-                                                ////-----------------
-                                                break;
-                                            }
-                                            else
-                                            {
-                                                var index = lastMatchType.IndexOf(onlySectionNo);
-                                                var getAllSectionInRange = new List<string>();
-                                                if (stackSectionIndex.Peek() + 1 > index)
+                                                List<string> toFind = new List<string>();
+                                                toFind.Add(item);
+                                                Dictionary<string, List<string>> paraList = new Dictionary<string, List<string>>();
+                                                checkInParaForSection(replacedData, combineSectionParaCopy, regexValue, regexVal, getTheParaToCheck, toFind, out paraList);
+
+                                                if (paraList.Count() > 1) // if section number found  
                                                 {
-                                                    stackpara.Pop();
-                                                    if (paraData.Count() == 0)
+                                                    combineSectionParaCopy[paraEntered - 1] = paraList.ElementAt(0).Value;
+                                                    paraList.Remove(paraList.Keys.First());
+                                                    for (int p = 0; p < paraList.Count(); p++)
                                                     {
-                                                        stackpara.Push(null);
-                                                        combineSectionParaCopy.Add(paraEntered, null);
-                                                    }
-                                                    else
-                                                    {
-                                                        stackpara.Push(paraData);
-                                                        combineSectionParaCopy.Add(paraEntered, paraData);
-                                                    }
-
-
-                                                    combineSectionSectioNoCopy.Add(paraEntered, sectioNo);
-                                                    combineSectionRegexCopy.Add(paraEntered, regexVal);
-                                                    outputParent.Add(0);
-                                                    paraEntered++;
-                                                    stackSection.Pop();
-                                                    stackSection.Push(sectioNo);
-                                                    stackSectionIndex.Pop();
-                                                    stackSectionIndex.Push(nextIndex + 1);
-
-                                                    stackpara.Push(paraData);
-                                                    break;
-                                                }
-                                                else
-                                                {
-                                                    getAllSectionInRange = lastMatchType.GetRange(stackSectionIndex.Peek() + 1, index - (stackSectionIndex.Peek() + 1));
-                                                }
-
-                                                var getTheParaToCheck = stackpara.Peek();
-                                                if (getTheParaToCheck.Count() > 1)
-                                                {
-                                                    foreach (var item in getAllSectionInRange)
-                                                    {
-                                                        List<string> toFind = new List<string>();
-                                                        toFind.Add(item);
-                                                        Dictionary<string, List<string>> paraList = new Dictionary<string, List<string>>();
-                                                        checkInParaForSection(replacedData, combineSectionParaCopy, regexValue, regexVal, getTheParaToCheck, toFind, out paraList);
-
-                                                        if (paraList.Count() > 1) // if section number found  
-                                                        {
-                                                            combineSectionParaCopy[paraEntered - 1] = paraList.ElementAt(0).Value;
-                                                            paraList.Remove(paraList.Keys.First());
-                                                            for (int p = 0; p < paraList.Count(); p++)
-                                                            {
-                                                                ////-----------------
-                                                                combineSectionParaCopy.Add(paraEntered, paraList.ElementAt(p).Value);// save paragraph
-                                                                combineSectionSectioNoCopy.Add(paraEntered, (paraList.ElementAt(p).Key).ToString());// save section number
-                                                                combineSectionRegexCopy.Add(paraEntered, regexVal);// save regex 
-                                                                outputParent.Add(0);
-                                                                paraEntered++;// increment count
-                                                                              ////-----------------
-                                                                stackpara.Pop();
-                                                                stackpara.Push(paraList.ElementAt(p).Value);
-                                                            }
-                                                        }
-
-                                                        getTheParaToCheck = stackpara.Peek();
+                                                        ////-----------------
+                                                        combineSectionParaCopy.Add(paraEntered, paraList.ElementAt(p).Value);// save paragraph
+                                                        combineSectionSectioNoCopy.Add(paraEntered, (paraList.ElementAt(p).Key).ToString());// save section number
+                                                        combineSectionRegexCopy.Add(paraEntered, regexVal);// save regex 
+                                                        outputParent.Add(0);
+                                                        paraEntered++;// increment count
+                                                                        ////-----------------
+                                                        stackpara.Pop();
+                                                        stackpara.Push(paraList.ElementAt(p).Value);
                                                     }
                                                 }
-                                                stackSection.Pop();
-                                                stackSection.Push(onlySectionNo);
-                                                stackSectionIndex.Pop();
-                                                stackSectionIndex.Push(nextIndex + 1);
-                                                stackpara.Pop();
-                                                stackpara.Push(paraData);
-                                                combineSectionParaCopy.Add(paraEntered, stackpara.Peek());
-                                                combineSectionSectioNoCopy.Add(paraEntered, stackSection.Peek());
-                                                combineSectionRegexCopy.Add(paraEntered, stackRegex.Peek());
-                                                outputParent.Add(0);
-                                                paraEntered++;
-                                                break;
+
+                                                getTheParaToCheck = stackpara.Peek();
                                             }
                                         }
+                                        stackRegex.Push(regexVal);
+                                        stackSection.Push(onlySectionNo);
+                                        matchedRegex.Add(regexVal);
+                                        matchType.Add(listName.ToList());
+                                        stackSectionIndex.Push(index);
+                                        stackpara.Pop();
+                                        stackpara.Push(paraData);
+                                        ////-----------------
+                                        combineSectionParaCopy.Add(paraEntered, stackpara.Peek());
+                                        combineSectionSectioNoCopy.Add(paraEntered, stackSection.Peek());
+                                        combineSectionRegexCopy.Add(paraEntered, stackRegex.Peek());
+                                        outputParent.Add(0);
+                                        paraEntered++;
+                                        ////-----------------
                                     }
-                                }
-                            }
-                        }
-                        else // stack dont have that value (child found)
-                        {
-                            var listName = regexMatch()[regexValue]; // get the list from match type
-                            var newSectionFound = new List<string>();
-                            for (int u = 0; u < listName.Count(); u++) // loop throgh list ti get the index
-                            {
-                                if (listName.ElementAt(u) == onlySectionNo & u == 0)
-                                {
-                                    // if yes save the values in stack
-                                    stackRegex.Push(regexVal);
-                                    stackSection.Push(onlySectionNo);
-                                    matchedRegex.Add(regexVal);
-                                    matchType.Add(listName.ToList());
-                                    stackSectionIndex.Push(0);
-                                    stackpara.Pop();
-                                    stackpara.Push(paraData);
-                                    ////-----------------
-                                    combineSectionParaCopy.Add(paraEntered, stackpara.Peek());
-                                    combineSectionSectioNoCopy.Add(paraEntered, stackSection.Peek());
-                                    combineSectionRegexCopy.Add(paraEntered, stackRegex.Peek());
-                                    outputParent.Add(0);
-                                    paraEntered++;
-                                    ////-----------------
-                                }
-                                else
-                                {
-                                    var lastMatchType = listName.ToList();
-                                    var index = lastMatchType.IndexOf(onlySectionNo);
-                                    var getAllSectionInRange = new List<string>();
-                                    getAllSectionInRange = lastMatchType.GetRange(0, index);
-
-                                    var getTheParaToCheck = stackpara.Peek();
-                                    if (getTheParaToCheck.Count() > 1)
-                                    {
-                                        foreach (var item in getAllSectionInRange)
-                                        {
-                                            List<string> toFind = new List<string>();
-                                            toFind.Add(item);
-                                            Dictionary<string, List<string>> paraList = new Dictionary<string, List<string>>();
-                                            checkInParaForSection(replacedData, combineSectionParaCopy, regexValue, regexVal, getTheParaToCheck, toFind, out paraList);
-
-                                            if (paraList.Count() > 1) // if section number found  
-                                            {
-                                                combineSectionParaCopy[paraEntered - 1] = paraList.ElementAt(0).Value;
-                                                paraList.Remove(paraList.Keys.First());
-                                                for (int p = 0; p < paraList.Count(); p++)
-                                                {
-                                                    ////-----------------
-                                                    combineSectionParaCopy.Add(paraEntered, paraList.ElementAt(p).Value);// save paragraph
-                                                    combineSectionSectioNoCopy.Add(paraEntered, (paraList.ElementAt(p).Key).ToString());// save section number
-                                                    combineSectionRegexCopy.Add(paraEntered, regexVal);// save regex 
-                                                    outputParent.Add(0);
-                                                    paraEntered++;// increment count
-                                                                  ////-----------------
-                                                    stackpara.Pop();
-                                                    stackpara.Push(paraList.ElementAt(p).Value);
-                                                }
-                                            }
-
-                                            getTheParaToCheck = stackpara.Peek();
-                                        }
-                                    }
-                                    stackRegex.Push(regexVal);
-                                    stackSection.Push(onlySectionNo);
-                                    matchedRegex.Add(regexVal);
-                                    matchType.Add(listName.ToList());
-                                    stackSectionIndex.Push(index);
-                                    stackpara.Pop();
-                                    stackpara.Push(paraData);
-                                    ////-----------------
-                                    combineSectionParaCopy.Add(paraEntered, stackpara.Peek());
-                                    combineSectionSectioNoCopy.Add(paraEntered, stackSection.Peek());
-                                    combineSectionRegexCopy.Add(paraEntered, stackRegex.Peek());
-                                    outputParent.Add(0);
-                                    paraEntered++;
-                                    ////-----------------
-                                }
-                                break;
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    combineSectionParaCopy.Add(paraEntered, combineSectionPara[i + 1]); // add paragraph in the list
-                    combineSectionSectioNoCopy.Add(paraEntered, "");// add section number in the list
-                    combineSectionRegexCopy.Add(paraEntered, "");// add regex in the list
-                    outputParent.Add(0);
-                    paraEntered++; // increment the count
-                    stackpara.Push(combineSectionPara[i + 1]);// push paragraph in the stack
-                }
-
-            }
-            outputSection = combineSectionSectioNoCopy;
-            outputPara = combineSectionParaCopy;
-            outputRegex = combineSectionRegexCopy;
-        }
-
-        #region -----------find section inside para----------------------------------------
-        // check para for above sections
-        public void checkInParaForSection(string replacedData, Dictionary<int, List<string>> combineSectionParaCopy, int regexValue, string regexVal, List<string> getTheParaToCheck, List<string> getAllSectionInRange, out Dictionary<string, List<string>> paraList)
-        {
-            Dictionary<string, List<string>> saveNewSection = new Dictionary<string, List<string>>();
-            paraList = new Dictionary<string, List<string>>();
-            var finalSectionFound = "";
-            var finalSectionFoundIndex = 0;
-            var lastStringSet = new List<string>();
-            lastStringSet = combineSectionParaCopy.Values.Last();
-
-            Dictionary<int, string> newRegex = new Dictionary<int, string>();
-            newRegex.Add(1, @"(?!0)([0-9]{1,2})");
-            newRegex.Add(2, @"(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}");
-            newRegex.Add(3, @"(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}");
-            newRegex.Add(4, @"([a-z])");
-            newRegex.Add(5, @"([A-Z])");
-
-            Dictionary<string, string> replacedDataConditions = new Dictionary<string, string>();
-            replacedDataConditions.Add(".", ".|,");
-            replacedDataConditions.Add(")", ">|\\]|\\)");
-            replacedDataConditions.Add("]", "\\)|>|\\]");
-            replacedDataConditions.Add(":", ";|:");
-            replacedDataConditions.Add("[|]", "<|\\(|\\[#>|\\)|\\]");
-            replacedDataConditions.Add("(|)", "C|<|\\[|\\(#>|\\]|\\)");
-
-            Dictionary<string, string> ExceptionVal = new Dictionary<string, string>();
-            ExceptionVal.Add("O", "0");
-
-            var stringlistToCheck = getTheParaToCheck;
-            var checkNextLine = true;
-            foreach (var item in getAllSectionInRange)
-            {
-                for (int i = stringlistToCheck.Count() - 1; i >= 0; i--)
-                {
-                    if (checkNextLine == false)
-                        break;
-                    var sentence = stringlistToCheck.ElementAt(i);
-                    Regex regex = new Regex(regexVal.Replace("^", ""));
-                    var checkNextRegex = true;
-
-                    foreach (Match match in regex.Matches(sentence))
-                    {
-                        var foundInSentence = match.Value;
-                        var sectionToSearch = item;
-                        foreach (var itemSpeChar in _CheckWord.specialChar) // get the section no only
-                        {
-                            Regex regexSpeChar = new Regex("(?i)" + itemSpeChar);
-                            var matchSpeChar = regexSpeChar.Match(foundInSentence); // check if match found
-                            if (matchSpeChar.Success)
-                            {
-                                sectionToSearch = sectionToSearch.Replace(matchSpeChar.Value, "");
-                                foundInSentence = foundInSentence.Replace(matchSpeChar.Value, "");
-                            }
-                        }
-                        if (foundInSentence == sectionToSearch)
-                        {
-                            finalSectionFound = sectionToSearch;
-                            finalSectionFoundIndex = match.Index;
-                            checkNextRegex = false;
-                            break;
-                        }
-                    }
-                    if (checkNextRegex == true)
-                    {
-                        var getSecondRegex = newRegex[regexValue];
-                        var splitData = replacedDataConditions[replacedData].Split('#');
-
-                        if (splitData.Count() == 2)
-                            getSecondRegex = "^[\\s]?[" + splitData[0] + "]?[\\s]{0,1}" + getSecondRegex + "[\\s]{0,1}[" + splitData[1] + "]?(?!\\S)";
-                        else
-                            getSecondRegex = "^[\\s]?" + getSecondRegex + "[\\s]{0,1}[" + splitData[0] + "]?(?!\\S)";
-
-                        Regex regexSecond = new Regex(getSecondRegex);
-                        var sectionIndex = 0;
-                        foreach (Match matchVal in regexSecond.Matches(sentence))
-                        {
-                            var matchValCopy = matchVal.Value.Trim();
-                            matchValCopy = Regex.Replace(matchValCopy, "[(|<|\\[]", "");
-                            matchValCopy = Regex.Replace(matchValCopy, "[)|\\]|>|:|;|.|,]", "");
-
-                            if (matchValCopy == item & i != 0)
-                            {
-                                if (stringlistToCheck.ElementAt(i - 1).EndsWith(";") | stringlistToCheck.ElementAt(i - 1).EndsWith("."))
-                                {
-                                    sectionIndex = sentence.IndexOf(matchValCopy);
-                                    finalSectionFound = matchValCopy;
-                                    checkNextLine = false;
-                                    checkNextRegex = false;
                                     break;
                                 }
                             }
                         }
                     }
-                    if (checkNextRegex == false)
-                    {
-                        List<string> firstSection = new List<string>();
-                        List<string> secondSection = new List<string>();
-                        var checkNextPara = false;
-                        for (int z = 0; z < lastStringSet.Count(); z++)
-                        {
-                            var para = lastStringSet.ElementAt(z);
-                            if (checkNextPara == false)
-                            {
-                                if (para.Trim() == sentence.Trim())
-                                {
-                                    var suString = para.Substring(0, finalSectionFoundIndex);
-                                    if (suString != "")
-                                    {
-                                        firstSection.Add(suString);
-                                    }
-                                    if (saveNewSection.Count() == 0)
-                                    {
-                                        saveNewSection.Add("0", firstSection);
-                                        paraList.Add("", firstSection);
-                                    }
-                                    checkNextPara = true;
-                                }
-                                else
-                                {
-                                    firstSection.Add(para);
-                                }
-
-                            }
-                            if (checkNextPara == true)
-                            {
-                                if (secondSection.Count() == 0 | lastStringSet.Count() == 1)
-                                {
-                                    var suString = para.Substring(finalSectionFoundIndex);
-                                    secondSection.Add(suString);
-                                }
-                                else
-                                {
-                                    secondSection.Add(para);
-                                }
-
-                            }
-                        }
-                        saveNewSection.Add(finalSectionFound, secondSection);
-                        paraList.Add(finalSectionFound, secondSection);
-                        stringlistToCheck = secondSection;
-                        checkNextLine = false;
-                    }
-                }
-            }
-        }
-
-        #endregion
-
-        #region ---------------------------------tree view to json------------------------------------
-        public JObject CreateJson(Node node)
-        {
-            var jo = new JObject();
-            var ja = new JArray();
-            for (int i = 0; i < node.Children.Count; i++)
-            {
-                var child = node.Children[i];
-                var childJo = CreateJson(child);
-                ja.Add(childJo);
-            }
-
-            var jaPara = new JArray();
-            if (node.Para != null)
-            {
-                foreach (var item in node.Para)
-                {
-                    jaPara.Add(item);
-                }
-            }
-
-            jo["section"] = node.Value;
-            jo["SectionName"] = node.SectionName;
-            jo["Level"] = node.Level;
-            jo["regex"] = node.Regex;
-            jo["para"] = jaPara;
-            jo["children"] = ja;
-            jo["parentCheck"] = node.ParentCheck;
-            return jo;
-        }
-        public JObject CreateSectionJson(Node node)
-        {
-            var jo = new JObject();
-            var ja = new JArray();
-            for (int i = 0; i < node.Children.Count; i++)
-            {
-                var child = node.Children[i];
-                var childJo = CreateSectionJson(child);
-                ja.Add(childJo);
-            }
-
-            var jaPara = new JArray();
-            if (node.Para != null)
-            {
-                foreach (var item in node.Para)
-                {
-                    jaPara.Add(item);
-                }
-            }
-
-            jo["section"] = node.Value;
-            jo["SectionName"] = node.SectionName;
-            jo["Level"] = node.Level;
-            jo["para"] = jaPara;
-            jo["regex"] = node.Regex;
-            jo["children"] = ja;
-            jo["parentCheck"] = node.ParentCheck;
-            return jo;
-        }
-        #endregion
-
-        //------------------------------------------------------------------------------------------------------------------------------------------
-
-        #region --------------------------------------------------------FINANCIAL--------------------------------------------------
-
-        //-------------------------------------complete date------------------------------------------------------
-        // get complete date
-        public List<string> getDate(string html)
-        {
-            html = "26th January 2018";
-            var objDate = "";
-            Regex regex = new Regex(@"(?:\d+[a-z]*\s*(?:of\s+)?)?(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s*,?\s*(?:(?:\d+[a-z]*\s*)?\s*,?\s*)?\d{4}\b", RegexOptions.IgnoreCase);
-
-            List<string> formattedString = new List<string>();
-            foreach (Match m in regex.Matches(html))
-            {
-                string datestring = m.Value;
-
-
-                if (!string.IsNullOrEmpty(datestring))
-                {
-                    int indexOfFirstLetter = Regex.Match(datestring, "(?<=[0-9])(?:st|nd|rd|th)", RegexOptions.IgnoreCase).Index;
-                    if (indexOfFirstLetter != 0)
-                    {
-                        datestring = datestring.Remove(indexOfFirstLetter, 2);
-                    }
-                }
-                else
-                {
-                    return null;
-                }
-
-                DateTime value;
-                if (DateTime.TryParse(datestring, out value))
-                {
-                    objDate = value.ToString("MM/dd/yyyy");
-                }
-                if (objDate == "")
-                {
-                    return null;
-                }
-                else
-
-                    formattedString.Add(objDate);
-            }
-            return formattedString;
-        }
-
-        //get moth year or year
-        public List<string> getYear(string html)
-        {
-            var objDate = "";
-            Regex regex = new Regex(@"((?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s*)?,?\s*(?:(?:\d+[a-z]*\s*)?\s*,?\s*)?\d{4}\b", RegexOptions.IgnoreCase);
-
-            List<string> formattedString = new List<string>();
-            foreach (Match m in regex.Matches(html))
-            {
-                string datestring = m.Value;
-
-
-                if (!string.IsNullOrEmpty(datestring))
-                {
-                    int indexOfFirstLetter = Regex.Match(datestring, "(?<=[0-9])(?:st|nd|rd|th)", RegexOptions.IgnoreCase).Index;
-                    if (indexOfFirstLetter != 0)
-                    {
-                        datestring = datestring.Remove(indexOfFirstLetter, 2);
-                    }
-                }
-                else
-                {
-                    return null;
-                }
-
-                DateTime value;
-                Regex regexYear = new Regex(@"\d{4}", RegexOptions.IgnoreCase);
-                var match = regexYear.Match(datestring); // check if match found
-                if (match.Success)
-                {
-                    if (datestring.Trim().IndexOf(match.Value.Trim()) == 0)
-                    {
-                        objDate = match.Value.Trim();
-                    }
                     else
                     {
-                        DateTime.TryParse(datestring, out value);
-                        objDate = value.ToString("MM/yyyy");
+                        combineSectionParaCopy.Add(paraEntered, combineSectionPara[i + 1]); // add paragraph in the list
+                        combineSectionSectioNoCopy.Add(paraEntered, "");// add section number in the list
+                        combineSectionRegexCopy.Add(paraEntered, "");// add regex in the list
+                        outputParent.Add(0);
+                        paraEntered++; // increment the count
+                        stackpara.Push(combineSectionPara[i + 1]);// push paragraph in the stack
                     }
+
+                    }
+                    outputSection = combineSectionSectioNoCopy;
+                    outputPara = combineSectionParaCopy;
+                    outputRegex = combineSectionRegexCopy;
                 }
-                if (objDate == "")
+                catch (Exception ex)
                 {
-                    return null;
+                _Default.LogError("treeCorrection", "", ex);
+                throw;
                 }
-                else
-
-                    formattedString.Add(objDate);
-            }
-            return formattedString;
-        }
-        //-------------------------------------------------------------------------------------------
-
-        //---------------------------------------amount----------------------------------------------------
-        // get amount
-        public List<string> getCurrencyAmount(string html)
-        {
-
-            string Pattern = @"(?<SYMBOL>[$â‚¬Â£]){1}[\s]*([\d{1,3}]+(\.\d(?:\d+\.?)*)?)";
-            List<string> formattedString = new List<string>();
-            foreach (Match m in Regex.Matches(html, Pattern))
-            {
-                formattedString.Add(m.Value);
-            }
-            if (formattedString.Count() == 0)
-                getMultipleTextualDollar(html, out formattedString);
-            return formattedString;
-        }
-
-        // word amount
-        public void getMultipleTextualDollar(string numberString, out List<string> formattedString)
-        {
-            Dictionary<string, long> numberTable = new Dictionary<string, long>
-        { {"zero",0},{"one",1},{"two",2},{"three",3},{"four",4},
-        {"five",5},{"six",6},{"seven",7},{"eight",8},{"nine",9},
-        {"ten",10},{"eleven",11},{"twelve",12},{"thirteen",13},
-        {"fourteen",14},{"fifteen",15},{"sixteen",16},
-        {"seventeen",17},{"eighteen",18},{"nineteen",19},{"twenty",20},
-        {"thirty",30},{"forty",40},{"fifty",50},{"sixty",60},
-        {"seventy",70},{"eighty",80},{"ninety",90},{"hundred",100},
-        {"thousand",1000},{"million",1000000},{"billion",1000000000},
-        {"trillion",1000000000000},{"quadrillion",1000000000000000},
-        {"quintillion",1000000000000000000}};
-            formattedString = new List<string>();
-            var numbers = Regex.Matches(numberString, @"\w+").Cast<Match>()
-                        .Select(m => m.Value.ToLowerInvariant())
-                        .Where(v => numberTable.ContainsKey(v))
-                        .Select(v => numberTable[v]);
-
-            List<int> dollarIndex = new List<int>();
-            var startdollar = 0;
-            string[] outputData = numberString.Split(new[] { "dollar" }, StringSplitOptions.None);
-            var dollarCount = outputData.Length - 1;
-            for (int k = 0; k < dollarCount; k++)
-            {
-                var indexVal = numberString.Replace(" ", "").ToLower().IndexOf("dollar", startdollar);
-                startdollar = indexVal + 6;
-                dollarIndex.Add(indexVal);
             }
 
-            List<string> numberVal = new List<string>();
-            List<long> sample = new List<long>();
-            var dollar = "dollar";
-            long acc = 0, total = 0L;
-            int prevIndex = 0, currIndex = 0;
-            string currKey = "", prevKey = "";
-            int i = 0;
-            var startFromVal = 0;
-            if (numberString.ToLower().IndexOf("dollar") != -1)
+            #region -----------find section inside para----------------------------------------
+            // check para for above sections
+            public void checkInParaForSection(string replacedData, Dictionary<int, List<string>> combineSectionParaCopy, int regexValue, string regexVal, List<string> getTheParaToCheck, List<string> getAllSectionInRange, out Dictionary<string, List<string>> paraList)
             {
-                foreach (var n in numbers)
+                try
                 {
-                    numberString = numberString.Replace(" ", "");
-                    currKey = numberTable.FirstOrDefault(x => x.Value.ToString().ToLower() == n.ToString().ToLower()).Key;
-                    currIndex = numberString.ToLower().IndexOf(currKey.ToLower(), startFromVal);
-                    startFromVal = currIndex + currKey.Length - 1;
-                    if (!(prevIndex == 0 || currIndex - (prevIndex + prevKey.Length - 1) == 1))
+
+                    Dictionary<string, List<string>> saveNewSection = new Dictionary<string, List<string>>();
+                    paraList = new Dictionary<string, List<string>>();
+                    var finalSectionFound = "";
+                    var finalSectionFoundIndex = 0;
+                    var lastStringSet = new List<string>();
+                    lastStringSet = combineSectionParaCopy.Values.Last();
+
+                    Dictionary<int, string> newRegex = new Dictionary<int, string>();
+                    newRegex.Add(1, @"(?!0)([0-9]{1,2})");
+                    newRegex.Add(2, @"(?=[xvi])M*D?C{0,4}L?x{0,4}v?i{0,4}");
+                    newRegex.Add(3, @"(?=[XVI])M*D?C{0,4}L?X{0,4}V?I{0,4}");
+                    newRegex.Add(4, @"([a-z])");
+                    newRegex.Add(5, @"([A-Z])");
+
+                    Dictionary<string, string> replacedDataConditions = new Dictionary<string, string>();
+                    replacedDataConditions.Add(".", ".|,");
+                    replacedDataConditions.Add(")", ">|\\]|\\)");
+                    replacedDataConditions.Add("]", "\\)|>|\\]");
+                    replacedDataConditions.Add(":", ";|:");
+                    replacedDataConditions.Add("[|]", "<|\\(|\\[#>|\\)|\\]");
+                    replacedDataConditions.Add("(|)", "C|<|\\[|\\(#>|\\]|\\)");
+
+                    Dictionary<string, string> ExceptionVal = new Dictionary<string, string>();
+                    ExceptionVal.Add("O", "0");
+
+                    var stringlistToCheck = getTheParaToCheck;
+                    var checkNextLine = true;
+                    foreach (var item in getAllSectionInRange)
                     {
-                        var getAllWord = "";
-                        foreach (var item in numberVal)
+                        for (int i = stringlistToCheck.Count() - 1; i >= 0; i--)
                         {
-                            getAllWord = getAllWord + item;
-                        }
-                        var indexOfNumber = numberString.IndexOf(getAllWord);
-
-                        foreach (var item in dollarIndex)
-                        {
-                            if (indexOfNumber - dollar.Length == item)
-                            {
-                                sample.Add(acc);
+                            if (checkNextLine == false)
                                 break;
+                            var sentence = stringlistToCheck.ElementAt(i);
+                            Regex regex = new Regex(regexVal.Replace("^", ""));
+                            var checkNextRegex = true;
+
+                            foreach (Match match in regex.Matches(sentence))
+                            {
+                                var foundInSentence = match.Value;
+                                var sectionToSearch = item;
+                                foreach (var itemSpeChar in _CheckWord.specialChar) // get the section no only
+                                {
+                                    Regex regexSpeChar = new Regex("(?i)" + itemSpeChar);
+                                    var matchSpeChar = regexSpeChar.Match(foundInSentence); // check if match found
+                                    if (matchSpeChar.Success)
+                                    {
+                                        sectionToSearch = sectionToSearch.Replace(matchSpeChar.Value, "");
+                                        foundInSentence = foundInSentence.Replace(matchSpeChar.Value, "");
+                                    }
+                                }
+                                if (foundInSentence == sectionToSearch)
+                                {
+                                    finalSectionFound = sectionToSearch;
+                                    finalSectionFoundIndex = match.Index;
+                                    checkNextRegex = false;
+                                    break;
+                                }
+                            }
+                            if (checkNextRegex == true)
+                            {
+                                var getSecondRegex = newRegex[regexValue];
+                                var splitData = replacedDataConditions[replacedData].Split('#');
+
+                                if (splitData.Count() == 2)
+                                    getSecondRegex = "^[\\s]?[" + splitData[0] + "]?[\\s]{0,1}" + getSecondRegex + "[\\s]{0,1}[" + splitData[1] + "]?(?!\\S)";
+                                else
+                                    getSecondRegex = "^[\\s]?" + getSecondRegex + "[\\s]{0,1}[" + splitData[0] + "]?(?!\\S)";
+
+                                Regex regexSecond = new Regex(getSecondRegex);
+                                var sectionIndex = 0;
+                                foreach (Match matchVal in regexSecond.Matches(sentence))
+                                {
+                                    var matchValCopy = matchVal.Value.Trim();
+                                    matchValCopy = Regex.Replace(matchValCopy, "[(|<|\\[]", "");
+                                    matchValCopy = Regex.Replace(matchValCopy, "[)|\\]|>|:|;|.|,]", "");
+
+                                    if (matchValCopy == item & i != 0)
+                                    {
+                                        if (stringlistToCheck.ElementAt(i - 1).EndsWith(";") | stringlistToCheck.ElementAt(i - 1).EndsWith("."))
+                                        {
+                                            sectionIndex = sentence.IndexOf(matchValCopy);
+                                            finalSectionFound = matchValCopy;
+                                            checkNextLine = false;
+                                            checkNextRegex = false;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            if (checkNextRegex == false)
+                            {
+                                List<string> firstSection = new List<string>();
+                                List<string> secondSection = new List<string>();
+                                var checkNextPara = false;
+                                for (int z = 0; z < lastStringSet.Count(); z++)
+                                {
+                                    var para = lastStringSet.ElementAt(z);
+                                    if (checkNextPara == false)
+                                    {
+                                        if (para.Trim() == sentence.Trim())
+                                        {
+                                            var suString = para.Substring(0, finalSectionFoundIndex);
+                                            if (suString != "")
+                                            {
+                                                firstSection.Add(suString);
+                                            }
+                                            if (saveNewSection.Count() == 0)
+                                            {
+                                                saveNewSection.Add("0", firstSection);
+                                                paraList.Add("", firstSection);
+                                            }
+                                            checkNextPara = true;
+                                        }
+                                        else
+                                        {
+                                            firstSection.Add(para);
+                                        }
+
+                                    }
+                                    if (checkNextPara == true)
+                                    {
+                                        if (secondSection.Count() == 0 | lastStringSet.Count() == 1)
+                                        {
+                                            var suString = para.Substring(finalSectionFoundIndex);
+                                            secondSection.Add(suString);
+                                        }
+                                        else
+                                        {
+                                            secondSection.Add(para);
+                                        }
+
+                                    }
+                                }
+                                saveNewSection.Add(finalSectionFound, secondSection);
+                                paraList.Add(finalSectionFound, secondSection);
+                                stringlistToCheck = secondSection;
+                                checkNextLine = false;
                             }
                         }
-                        numberVal = new List<string>();
-                        i++;
-                        prevIndex = 0;
-                        currIndex = 0;
-                        prevKey = "";
-                        acc = 0;
-                        total = 0L;
+                    }
 
-                    }
-                    numberVal.Add(currKey);
-                    if (n >= 1000)
-                    {
-                        total += (acc * n);
-                        acc = 0;
-                    }
-                    else if (n >= 100)
-                    {
-                        acc *= n;
-                    }
-                    else acc += n;
 
-                    prevIndex = currIndex;
-                    prevKey = currKey;
                 }
-                if (acc != 0)
+                catch (Exception ex)
                 {
-                    var getAllWord = "";
-                    foreach (var item in numberVal)
-                    {
-                        getAllWord = getAllWord + item;
-                    }
-                    var indexOfNumber = numberString.IndexOf(getAllWord);
+                _Default.LogError("checkInParaForSection", "", ex);
+                throw;
+                }
+            }
 
-                    foreach (var item in dollarIndex)
+            #endregion
+
+            #region ---------------------------------tree view to json------------------------------------
+            public JObject CreateJson(Node node)
+            {
+                try
+                {
+
+
+                    var jo = new JObject();
+                    var ja = new JArray();
+                    for (int i = 0; i < node.Children.Count; i++)
                     {
-                        if (indexOfNumber - dollar.Length == item)
+                        var child = node.Children[i];
+                        var childJo = CreateJson(child);
+                        ja.Add(childJo);
+                    }
+
+                    var jaPara = new JArray();
+                    if (node.Para != null)
+                    {
+                        foreach (var item in node.Para)
                         {
-                            sample.Add(acc);
-                            break;
+                            jaPara.Add(item);
                         }
                     }
+
+                    jo["section"] = node.Value;
+                    jo["SectionName"] = node.SectionName;
+                    jo["Level"] = node.Level;
+                    jo["regex"] = node.Regex;
+                    jo["para"] = jaPara;
+                    jo["children"] = ja;
+                    jo["parentCheck"] = node.ParentCheck;
+                    return jo;
                 }
-
-
-                foreach (var ss in sample)
+                catch (Exception ex)
                 {
-                    formattedString.Add(ss + "%");
+                _Default.LogError("CreateJson", "", ex);
+                throw;
                 }
             }
-        }
-        //-------------------------------------------------------------------------------------------
-
-        //---------------------------------------percentage----------------------------------------------------
-        // get percent
-        public List<string> extractPercentage(string html)
-        {
-            List<string> formattedString = new List<string>();
-            foreach (Match m in Regex.Matches(html, @"(\d{1,3})?(\.(\d(?:\d+\.?)*)?)?[\s]*(\%)"))
+            public JObject CreateSectionJson(Node node)
             {
-                formattedString.Add(m.Value);
-            }
-            if (formattedString.Count() == 0)
-                getMultipleTextualPercent(html, out formattedString);
-            for (var i = 0; i < formattedString.Count(); i++)
-            {
-                if (formattedString[i].IndexOf('.') == 0)
+                try
                 {
-                    formattedString[i] = "0" + formattedString[i];
+
+                    var jo = new JObject();
+                    var ja = new JArray();
+                    for (int i = 0; i < node.Children.Count; i++)
+                    {
+                        var child = node.Children[i];
+                        var childJo = CreateSectionJson(child);
+                        ja.Add(childJo);
+                    }
+
+                    var jaPara = new JArray();
+                    if (node.Para != null)
+                    {
+                        foreach (var item in node.Para)
+                        {
+                            jaPara.Add(item);
+                        }
+                    }
+
+                    jo["section"] = node.Value;
+                    jo["SectionName"] = node.SectionName;
+                    jo["Level"] = node.Level;
+                    jo["para"] = jaPara;
+                    jo["regex"] = node.Regex;
+                    jo["children"] = ja;
+                    jo["parentCheck"] = node.ParentCheck;
+                    return jo;
+
+                }
+                catch (Exception ex)
+                {
+                _Default.LogError("CreateSectionJson", "", ex);
+                throw;
                 }
             }
-            return formattedString;
-        }
+            #endregion
 
-        // word percent 
-        public void getMultipleTextualPercent(string numberString, out List<string> formattedString)
+            //------------------------------------------------------------------------------------------------------------------------------------------
 
-        {
-            Dictionary<string, long> numberTable = new Dictionary<string, long>
+            #region --------------------------------------------------------FINANCIAL--------------------------------------------------
+
+            //-------------------------------------complete date------------------------------------------------------
+            // get complete date
+            public List<string> getDate(string html)
+            {
+                try
+                {
+
+                    html = "26th January 2018";
+                    var objDate = "";
+                    Regex regex = new Regex(@"(?:\d+[a-z]*\s*(?:of\s+)?)?(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s*,?\s*(?:(?:\d+[a-z]*\s*)?\s*,?\s*)?\d{4}\b", RegexOptions.IgnoreCase);
+
+                    List<string> formattedString = new List<string>();
+                    foreach (Match m in regex.Matches(html))
+                    {
+                        string datestring = m.Value;
+
+
+                        if (!string.IsNullOrEmpty(datestring))
+                        {
+                            int indexOfFirstLetter = Regex.Match(datestring, "(?<=[0-9])(?:st|nd|rd|th)", RegexOptions.IgnoreCase).Index;
+                            if (indexOfFirstLetter != 0)
+                            {
+                                datestring = datestring.Remove(indexOfFirstLetter, 2);
+                            }
+                        }
+                        else
+                        {
+                            return null;
+                        }
+
+                        DateTime value;
+                        if (DateTime.TryParse(datestring, out value))
+                        {
+                            objDate = value.ToString("MM/dd/yyyy");
+                        }
+                        if (objDate == "")
+                        {
+                            return null;
+                        }
+                        else
+
+                            formattedString.Add(objDate);
+                    }
+                    return formattedString;
+
+                }
+                catch (Exception ex)
+                {
+                _Default.LogError("getDate", "", ex);
+                throw;
+                }
+            }
+
+            //get moth year or year
+            public List<string> getYear(string html)
+            {
+                try
+                {
+
+
+                    var objDate = "";
+                    Regex regex = new Regex(@"((?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s*)?,?\s*(?:(?:\d+[a-z]*\s*)?\s*,?\s*)?\d{4}\b", RegexOptions.IgnoreCase);
+
+                    List<string> formattedString = new List<string>();
+                    foreach (Match m in regex.Matches(html))
+                    {
+                        string datestring = m.Value;
+
+
+                        if (!string.IsNullOrEmpty(datestring))
+                        {
+                            int indexOfFirstLetter = Regex.Match(datestring, "(?<=[0-9])(?:st|nd|rd|th)", RegexOptions.IgnoreCase).Index;
+                            if (indexOfFirstLetter != 0)
+                            {
+                                datestring = datestring.Remove(indexOfFirstLetter, 2);
+                            }
+                        }
+                        else
+                        {
+                            return null;
+                        }
+
+                        DateTime value;
+                        Regex regexYear = new Regex(@"\d{4}", RegexOptions.IgnoreCase);
+                        var match = regexYear.Match(datestring); // check if match found
+                        if (match.Success)
+                        {
+                            if (datestring.Trim().IndexOf(match.Value.Trim()) == 0)
+                            {
+                                objDate = match.Value.Trim();
+                            }
+                            else
+                            {
+                                DateTime.TryParse(datestring, out value);
+                                objDate = value.ToString("MM/yyyy");
+                            }
+                        }
+                        if (objDate == "")
+                        {
+                            return null;
+                        }
+                        else
+
+                            formattedString.Add(objDate);
+                    }
+                    return formattedString;
+                }
+                catch (Exception ex)
+                {
+                _Default.LogError("getYear", "", ex);
+                throw;
+                }
+            }
+            //-------------------------------------------------------------------------------------------
+
+            //---------------------------------------amount----------------------------------------------------
+            // get amount
+            public List<string> getCurrencyAmount(string html)
+            {
+                try
+                {
+
+                    string Pattern = @"(?<SYMBOL>[$â‚¬Â£]){1}[\s]*([\d{1,3}]+(\.\d(?:\d+\.?)*)?)";
+                    List<string> formattedString = new List<string>();
+                    foreach (Match m in Regex.Matches(html, Pattern))
+                    {
+                        formattedString.Add(m.Value);
+                    }
+                    if (formattedString.Count() == 0)
+                        getMultipleTextualDollar(html, out formattedString);
+                    return formattedString;
+
+                }
+                catch (Exception ex)
+                {
+                _Default.LogError("getCurrencyAmount", "", ex);
+                throw;
+                }
+
+            }
+
+            // word amount
+            public void getMultipleTextualDollar(string numberString, out List<string> formattedString)
+            {
+                try
+                {
+
+                    Dictionary<string, long> numberTable = new Dictionary<string, long>
         { {"zero",0},{"one",1},{"two",2},{"three",3},{"four",4},
         {"five",5},{"six",6},{"seven",7},{"eight",8},{"nine",9},
         {"ten",10},{"eleven",11},{"twelve",12},{"thirteen",13},
@@ -2492,261 +2545,153 @@ namespace ReboProject
         {"thousand",1000},{"million",1000000},{"billion",1000000000},
         {"trillion",1000000000000},{"quadrillion",1000000000000000},
         {"quintillion",1000000000000000000}};
-            formattedString = new List<string>();
-            var numbers = Regex.Matches(numberString, @"\w+").Cast<Match>()
-                        .Select(m => m.Value.ToLowerInvariant())
-                        .Where(v => numberTable.ContainsKey(v))
-                        .Select(v => numberTable[v]);
+                    formattedString = new List<string>();
+                    var numbers = Regex.Matches(numberString, @"\w+").Cast<Match>()
+                                .Select(m => m.Value.ToLowerInvariant())
+                                .Where(v => numberTable.ContainsKey(v))
+                                .Select(v => numberTable[v]);
 
-            List<long> sample = new List<long>();
-            long acc = 0, total = 0L;
-            int prevIndex = 0, currIndex = 0;
-            string currKey = "", prevKey = "";
-            int i = 0;
-            var startFromVal = 0;
-            if (numberString.ToLower().IndexOf("percent") != -1)
-            {
-                foreach (var n in numbers)
-                {
-                    numberString = numberString.Replace(" ", "");
-                    currKey = numberTable.FirstOrDefault(x => x.Value.ToString().ToLower() == n.ToString().ToLower()).Key;
-                    currIndex = numberString.ToLower().IndexOf(currKey.ToLower(), startFromVal);
-                    startFromVal = startFromVal + currKey.Length;
-                    if (!(prevIndex == 0 || currIndex - (prevIndex + prevKey.Length - 1) == 1))
+                    List<int> dollarIndex = new List<int>();
+                    var startdollar = 0;
+                    string[] outputData = numberString.Split(new[] { "dollar" }, StringSplitOptions.None);
+                    var dollarCount = outputData.Length - 1;
+                    for (int k = 0; k < dollarCount; k++)
                     {
-                        if (numberString.ToLower().IndexOf("percent") == prevIndex + prevKey.Length)
-                            sample.Add(acc);
-                        i++;
-                        prevIndex = 0;
-                        currIndex = 0;
-                        prevKey = "";
-                        currKey = "";
-                        acc = 0;
-                        total = 0L;
+                        var indexVal = numberString.Replace(" ", "").ToLower().IndexOf("dollar", startdollar);
+                        startdollar = indexVal + 6;
+                        dollarIndex.Add(indexVal);
                     }
 
-                    if (n >= 1000)
+                    List<string> numberVal = new List<string>();
+                    List<long> sample = new List<long>();
+                    var dollar = "dollar";
+                    long acc = 0, total = 0L;
+                    int prevIndex = 0, currIndex = 0;
+                    string currKey = "", prevKey = "";
+                    int i = 0;
+                    var startFromVal = 0;
+                    if (numberString.ToLower().IndexOf("dollar") != -1)
                     {
-                        total += (acc * n);
-                        acc = 0;
-                    }
-                    else if (n >= 100)
-                    {
-                        acc *= n;
-                    }
-                    else acc += n;
+                        foreach (var n in numbers)
+                        {
+                            numberString = numberString.Replace(" ", "");
+                            currKey = numberTable.FirstOrDefault(x => x.Value.ToString().ToLower() == n.ToString().ToLower()).Key;
+                            currIndex = numberString.ToLower().IndexOf(currKey.ToLower(), startFromVal);
+                            startFromVal = currIndex + currKey.Length - 1;
+                            if (!(prevIndex == 0 || currIndex - (prevIndex + prevKey.Length - 1) == 1))
+                            {
+                                var getAllWord = "";
+                                foreach (var item in numberVal)
+                                {
+                                    getAllWord = getAllWord + item;
+                                }
+                                var indexOfNumber = numberString.IndexOf(getAllWord);
 
-                    prevIndex = currIndex;
-                    prevKey = currKey;
+                                foreach (var item in dollarIndex)
+                                {
+                                    if (indexOfNumber - dollar.Length == item)
+                                    {
+                                        sample.Add(acc);
+                                        break;
+                                    }
+                                }
+                                numberVal = new List<string>();
+                                i++;
+                                prevIndex = 0;
+                                currIndex = 0;
+                                prevKey = "";
+                                acc = 0;
+                                total = 0L;
+
+                            }
+                            numberVal.Add(currKey);
+                            if (n >= 1000)
+                            {
+                                total += (acc * n);
+                                acc = 0;
+                            }
+                            else if (n >= 100)
+                            {
+                                acc *= n;
+                            }
+                            else acc += n;
+
+                            prevIndex = currIndex;
+                            prevKey = currKey;
+                        }
+                        if (acc != 0)
+                        {
+                            var getAllWord = "";
+                            foreach (var item in numberVal)
+                            {
+                                getAllWord = getAllWord + item;
+                            }
+                            var indexOfNumber = numberString.IndexOf(getAllWord);
+
+                            foreach (var item in dollarIndex)
+                            {
+                                if (indexOfNumber - dollar.Length == item)
+                                {
+                                    sample.Add(acc);
+                                    break;
+                                }
+                            }
+                        }
+
+
+                        foreach (var ss in sample)
+                        {
+                            formattedString.Add(ss + "%");
+                        }
+                    }
+
                 }
-                if (acc != 0)
-                    sample.Add(acc);
-
-                foreach (var ss in sample)
+                catch (Exception ex)
                 {
-                    formattedString.Add(ss.ToString() + "%");
-                }
-            }
-        }
-        //-------------------------------------------------------------------------------------------
-
-        //---------------------------------------days----------------------------------------------------
-        // only days
-        public List<string> getDays(string html)
-        {
-            html = Regex.Replace(html, @"[^0-9a-zA-Z]+", " ");
-            List<string> formattedString = new List<string>();
-            foreach (Match m in Regex.Matches(html, @"\d{2}[\s]*days"))
-            {
-                formattedString.Add(m.Value);
-            }
-            if (formattedString.Count() == 0)
-                getTextualDays(html, out formattedString);
-            if (formattedString.Count() == 0)
-                getMonths(html, out formattedString);
-            return formattedString;
-        }
-
-        //only days word
-        public void getTextualDays(string numberString, out List<string> formattedString)
-        {
-            numberString = Regex.Replace(numberString, @"[\d-]", " ");
-            Dictionary<string, long> numberTable = new Dictionary<string, long>
-            { {"zero",0},{"one",1},{"two",2},{"three",3},{"four",4},
-            {"five",5},{"six",6},{"seven",7},{"eight",8},{"nine",9},
-            {"ten",10},{"eleven",11},{"twelve",12},{"thirteen",13},
-            {"fourteen",14},{"fifteen",15},{"sixteen",16},
-            {"seventeen",17},{"eighteen",18},{"nineteen",19},{"twenty",20},
-            {"thirty",30},{"forty",40},{"fifty",50},{"sixty",60},
-            {"seventy",70},{"eighty",80},{"ninety",90},{"hundred",100},
-            {"thousand",1000},{"million",1000000},{"billion",1000000000},
-            {"trillion",1000000000000},{"quadrillion",1000000000000000},
-            {"quintillion",1000000000000000000}};
-            formattedString = new List<string>();
-            var numbers = Regex.Matches(numberString, @"\w+").Cast<Match>()
-                        .Select(m => m.Value.ToLowerInvariant())
-                        .Where(v => numberTable.ContainsKey(v))
-                        .Select(v => numberTable[v]);
-
-            List<long> sample = new List<long>();
-            long acc = 0, total = 0L;
-            int prevIndex = 0, currIndex = 0;
-            string currKey = "", prevKey = "";
-            int i = 0;
-            var startFromVal = 0;
-            if (numberString.ToLower().IndexOf("days") != -1)
-            {
-                foreach (var n in numbers)
-                {
-                    numberString = numberString.Replace(" ", "");
-                    currKey = numberTable.FirstOrDefault(x => x.Value.ToString().ToLower() == n.ToString().ToLower()).Key;
-                    currIndex = numberString.ToLower().IndexOf(currKey.ToLower(), startFromVal);
-                    startFromVal = startFromVal + currKey.Length;
-                    if (!(prevIndex == 0 || currIndex - (prevIndex + prevKey.Length - 1) == 1))
-                    {
-                        if (numberString.ToLower().IndexOf("days") == prevIndex + prevKey.Length)
-                            sample.Add(acc);
-                        i++;
-                        prevIndex = 0;
-                        currIndex = 0;
-                        prevKey = "";
-                        currKey = "";
-                        acc = 0;
-                        total = 0L;
-                    }
-
-                    if (n >= 1000)
-                    {
-                        total += (acc * n);
-                        acc = 0;
-                    }
-                    else if (n >= 100)
-                    {
-                        acc *= n;
-                    }
-                    else acc += n;
-
-                    prevIndex = currIndex;
-                    prevKey = currKey;
-                }
-                if (acc != 0)
-                    sample.Add(acc);
-
-                foreach (var ss in sample)
-                {
-                    formattedString.Add(ss.ToString() + " days");
+                _Default.LogError("getMultipleTextualDollar", "", ex);
+                throw;
                 }
             }
-        }
-        //-------------------------------------------------------------------------------------------
+            //-------------------------------------------------------------------------------------------
 
-        //-------------------------------------- months-----------------------------------------------------
-        // only months
-        public void getMonths(string html, out List<string> formattedString)
-        {
-            html = Regex.Replace(html, @"[^0-9a-zA-Z]+", " ");
-            formattedString = new List<string>();
-            foreach (Match m in Regex.Matches(html, @"\d{2}[\s]*months"))
+            //---------------------------------------percentage----------------------------------------------------
+            // get percent
+            public List<string> extractPercentage(string html)
             {
-                formattedString.Add(m.Value);
-            }
-            if (formattedString.Count() == 0)
-                getTextualMonths(html, out formattedString);
-        }
-
-        // only month words
-        public void getTextualMonths(string numberString, out List<string> formattedString)
-        {
-            numberString = Regex.Replace(numberString, @"[\d-]", " ");
-            Dictionary<string, long> numberTable = new Dictionary<string, long>
-            { {"zero",0},{"one",1},{"two",2},{"three",3},{"four",4},
-            {"five",5},{"six",6},{"seven",7},{"eight",8},{"nine",9},
-            {"ten",10},{"eleven",11},{"twelve",12},{"thirteen",13},
-            {"fourteen",14},{"fifteen",15},{"sixteen",16},
-            {"seventeen",17},{"eighteen",18},{"nineteen",19},{"twenty",20},
-            {"thirty",30},{"forty",40},{"fifty",50},{"sixty",60},
-            {"seventy",70},{"eighty",80},{"ninety",90},{"hundred",100},
-            {"thousand",1000},{"million",1000000},{"billion",1000000000},
-            {"trillion",1000000000000},{"quadrillion",1000000000000000},
-            {"quintillion",1000000000000000000}};
-            formattedString = new List<string>();
-            var numbers = Regex.Matches(numberString, @"\w+").Cast<Match>()
-                        .Select(m => m.Value.ToLowerInvariant())
-                        .Where(v => numberTable.ContainsKey(v))
-                        .Select(v => numberTable[v]);
-
-            List<long> sample = new List<long>();
-            long acc = 0, total = 0L;
-            int prevIndex = 0, currIndex = 0;
-            string currKey = "", prevKey = "";
-            int i = 0;
-            var startFromVal = 0;
-            if (numberString.ToLower().IndexOf("months") != -1)
-            {
-                foreach (var n in numbers)
+                try
                 {
-                    numberString = numberString.Replace(" ", "");
-                    currKey = numberTable.FirstOrDefault(x => x.Value.ToString().ToLower() == n.ToString().ToLower()).Key;
-                    currIndex = numberString.ToLower().IndexOf(currKey.ToLower(), startFromVal);
-                    startFromVal = startFromVal + currKey.Length;
-                    if (!(prevIndex == 0 || currIndex - (prevIndex + prevKey.Length - 1) == 1))
-                    {
-                        if (numberString.ToLower().IndexOf("months") == prevIndex + prevKey.Length)
-                            sample.Add(acc);
-                        i++;
-                        prevIndex = 0;
-                        currIndex = 0;
-                        prevKey = "";
-                        currKey = "";
-                        acc = 0;
-                        total = 0L;
-                    }
 
-                    if (n >= 1000)
+                    List<string> formattedString = new List<string>();
+                    foreach (Match m in Regex.Matches(html, @"(\d{1,3})?(\.(\d(?:\d+\.?)*)?)?[\s]*(\%)"))
                     {
-                        total += (acc * n);
-                        acc = 0;
+                        formattedString.Add(m.Value);
                     }
-                    else if (n >= 100)
+                    if (formattedString.Count() == 0)
+                        getMultipleTextualPercent(html, out formattedString);
+                    for (var i = 0; i < formattedString.Count(); i++)
                     {
-                        acc *= n;
+                        if (formattedString[i].IndexOf('.') == 0)
+                        {
+                            formattedString[i] = "0" + formattedString[i];
+                        }
                     }
-                    else acc += n;
+                    return formattedString;
 
-                    prevIndex = currIndex;
-                    prevKey = currKey;
                 }
-                if (acc != 0)
-                    sample.Add(acc);
-
-                foreach (var ss in sample)
+                catch (Exception ex)
                 {
-                    formattedString.Add(ss.ToString() + " months");
+                _Default.LogError("extractPercentage", "", ex);
+                throw;
                 }
             }
-        }
-        //-------------------------------------------------------------------------------------------
 
-        //----------------------------------------- only days and year--------------------------------------------------
-        // only year count
-        public List<string> getYearCount(string html)
-        {
-            html = Regex.Replace(html, @"[^0-9a-zA-Z]+", " ");
-            List<string> formattedString = new List<string>();
-            foreach (Match m in Regex.Matches(html, @"(year[s]?)?[\s]*\d{4}[\s]*(year[s]?)?"))
+            // word percent 
+            public void getMultipleTextualPercent(string numberString, out List<string> formattedString)
             {
-                formattedString.Add(m.Value);
-            }
-            if (formattedString.Count() == 0)
-                getTextualYear(html, out formattedString);
-            return formattedString;
-        }
+                try
+                {
 
-        //only days word
-        public void getTextualYear(string numberString, out List<string> formattedString)
-
-        {
-            Dictionary<string, long> numberTable = new Dictionary<string, long>
+                    Dictionary<string, long> numberTable = new Dictionary<string, long>
         { {"zero",0},{"one",1},{"two",2},{"three",3},{"four",4},
         {"five",5},{"six",6},{"seven",7},{"eight",8},{"nine",9},
         {"ten",10},{"eleven",11},{"twelve",12},{"thirteen",13},
@@ -2757,437 +2702,790 @@ namespace ReboProject
         {"thousand",1000},{"million",1000000},{"billion",1000000000},
         {"trillion",1000000000000},{"quadrillion",1000000000000000},
         {"quintillion",1000000000000000000}};
-            formattedString = new List<string>();
-            var numbers = Regex.Matches(numberString, @"\w+").Cast<Match>()
-                        .Select(m => m.Value.ToLowerInvariant())
-                        .Where(v => numberTable.ContainsKey(v))
-                        .Select(v => numberTable[v]);
+                    formattedString = new List<string>();
+                    var numbers = Regex.Matches(numberString, @"\w+").Cast<Match>()
+                                .Select(m => m.Value.ToLowerInvariant())
+                                .Where(v => numberTable.ContainsKey(v))
+                                .Select(v => numberTable[v]);
 
-            List<long> sample = new List<long>();
-            long acc = 0, total = 0L;
-            int prevIndex = 0, currIndex = 0;
-            string currKey = "", prevKey = "";
-            int i = 0;
-            var startFromVal = 0;
-            if (numberString.ToLower().IndexOf("years") != -1)
-            {
-                foreach (var n in numbers)
-                {
-                    numberString = numberString.Replace(" ", "");
-                    currKey = numberTable.FirstOrDefault(x => x.Value.ToString().ToLower() == n.ToString().ToLower()).Key;
-                    currIndex = numberString.ToLower().IndexOf(currKey.ToLower(), startFromVal);
-                    startFromVal = startFromVal + currKey.Length;
-                    if (!(prevIndex == 0 || currIndex - (prevIndex + prevKey.Length - 1) == 1))
+                    List<long> sample = new List<long>();
+                    long acc = 0, total = 0L;
+                    int prevIndex = 0, currIndex = 0;
+                    string currKey = "", prevKey = "";
+                    int i = 0;
+                    var startFromVal = 0;
+                    if (numberString.ToLower().IndexOf("percent") != -1)
                     {
-                        if (numberString.ToLower().IndexOf("years") == prevIndex + prevKey.Length)
+                        foreach (var n in numbers)
+                        {
+                            numberString = numberString.Replace(" ", "");
+                            currKey = numberTable.FirstOrDefault(x => x.Value.ToString().ToLower() == n.ToString().ToLower()).Key;
+                            currIndex = numberString.ToLower().IndexOf(currKey.ToLower(), startFromVal);
+                            startFromVal = startFromVal + currKey.Length;
+                            if (!(prevIndex == 0 || currIndex - (prevIndex + prevKey.Length - 1) == 1))
+                            {
+                                if (numberString.ToLower().IndexOf("percent") == prevIndex + prevKey.Length)
+                                    sample.Add(acc);
+                                i++;
+                                prevIndex = 0;
+                                currIndex = 0;
+                                prevKey = "";
+                                currKey = "";
+                                acc = 0;
+                                total = 0L;
+                            }
+
+                            if (n >= 1000)
+                            {
+                                total += (acc * n);
+                                acc = 0;
+                            }
+                            else if (n >= 100)
+                            {
+                                acc *= n;
+                            }
+                            else acc += n;
+
+                            prevIndex = currIndex;
+                            prevKey = currKey;
+                        }
+                        if (acc != 0)
                             sample.Add(acc);
-                        i++;
-                        prevIndex = 0;
-                        currIndex = 0;
-                        prevKey = "";
-                        currKey = "";
-                        acc = 0;
-                        total = 0L;
+
+                        foreach (var ss in sample)
+                        {
+                            formattedString.Add(ss.ToString() + "%");
+                        }
                     }
 
-                    if (n >= 1000)
-                    {
-                        total += (acc * n);
-                        acc = 0;
-                    }
-                    else if (n >= 100)
-                    {
-                        acc *= n;
-                    }
-                    else acc += n;
-
-                    prevIndex = currIndex;
-                    prevKey = currKey;
                 }
-                if (acc != 0)
-                    sample.Add(acc);
-
-                foreach (var ss in sample)
+                catch (Exception ex)
                 {
-                    formattedString.Add(ss.ToString() + " years");
+                _Default.LogError("getMultipleTextualPercent", "", ex);
+                throw;
                 }
             }
-        }
-        //-------------------------------------------------------------------------------------------
+            //-------------------------------------------------------------------------------------------
 
-        //----------------------------------------- get only amount value--------------------------------------------------
-
-        public void getCurrencyAmountFinancial(List<string> amountList, out List<string> amountListCopy)
-        {
-            amountListCopy = new List<string>();
-            foreach (var item in amountList)
+            //---------------------------------------days----------------------------------------------------
+            // only days
+            public List<string> getDays(string html)
             {
-                string Pattern = @"(?<SYMBOL>[$â‚¬Â£]){1}[\s]*([\d{1,3}]+(\.\d(?:\d+\.?)*)?)";
-                foreach (Match m in Regex.Matches(item, Pattern))
+                try
                 {
-                    amountListCopy.Add(m.Value);
+
+                    html = Regex.Replace(html, @"[^0-9a-zA-Z]+", " ");
+                    List<string> formattedString = new List<string>();
+                    foreach (Match m in Regex.Matches(html, @"\d{2}[\s]*days"))
+                    {
+                        formattedString.Add(m.Value);
+                    }
+                    if (formattedString.Count() == 0)
+                        getTextualDays(html, out formattedString);
+                    if (formattedString.Count() == 0)
+                        getMonths(html, out formattedString);
+                    return formattedString;
+
+                }
+                catch (Exception ex)
+                {
+                _Default.LogError("getDays", "", ex);
+                throw;
                 }
             }
-        }
 
-        //--------------------------------------------------------------------------------------------------------------------------------------------------
-
-        #endregion
-
-        #region --------------------------------------------------EXCEL----------------------------------------------------
-        //--
-        public void ReplaceTextInExcelFile(string path, string projName, List<string> saveDatapointName, JArray saveLeaseDataForExcel)
-        {
-            Microsoft.Office.Interop.Excel.Workbook wb = default(Workbook);
-            Microsoft.Office.Interop.Excel.Application app = default(Application);
-
-            var ExcelPathConfig = WebConfigurationManager.AppSettings["Excel path"];
-            var DirectoryConfig = WebConfigurationManager.AppSettings["Directory path"];
-            var getDirectoryName = path.Split(new string[] { "\\" }, StringSplitOptions.None); // get the directory name eg: D:
-            var LeaseName = getDirectoryName.Last();
-            var getExcelFile = Directory.GetFiles(DirectoryConfig + "\\" + ExcelPathConfig + "\\"); // get the excel file from folder
-            var mainFile = getExcelFile.Where(x => x.IndexOf("$") == -1).FirstOrDefault();
-            var fileSplitName = mainFile.Split('.'); // split for extension
-            var extension = fileSplitName[fileSplitName.Length - 1]; // get the extension
-
-            var date = DateTime.Now.ToString("d-M-yyyy");
-            var time = DateTime.Now.ToString("HH-mm-ss");
-
-            //-------------------------------------------get data to save --------------------------------------------------------
-
-            Dictionary<string, string> fileName = new Dictionary<string, string>(); // only file name 
-            Dictionary<string, string> pageNo = new Dictionary<string, string>(); // only page no
-            Dictionary<string, string> dataPointName = new Dictionary<string, string>(); // only datapoint name
-            Dictionary<string, string> completeOutput = new Dictionary<string, string>(); // sectio No and summarization
-            Dictionary<string, string> sectionNo = new Dictionary<string, string>(); // only section no
-            Dictionary<string, string> summarization = new Dictionary<string, string>(); // only summarization
-            Dictionary<string, string> output = new Dictionary<string, string>(); // paragraphs show
-
-
-            foreach (var item in saveLeaseDataForExcel) // save the data in dictionary
+            //only days word
+            public void getTextualDays(string numberString, out List<string> formattedString)
             {
-                if (item["fileName"].ToString() == "")
-                    fileName.Add(item["dataPointName"].ToString(), item["leaseName"].ToString());
-                else
-                    fileName.Add(item["dataPointName"].ToString(), item["leaseName"].ToString() + " (" + item["fileName"].ToString() + ")");
-                pageNo.Add(item["dataPointName"].ToString(), item["pageNo"].ToString());
-                dataPointName.Add(item["dataPointName"].ToString(), item["dataPointName"].ToString());
-                completeOutput.Add(item["dataPointName"].ToString(), item["correctString"].ToString());
-                sectionNo.Add(item["dataPointName"].ToString(), item["onlySectionNo"].ToString());
-                output.Add(item["dataPointName"].ToString(), item["output"].ToString());
-                if (item["onlySummarization"].ToString() == "")
-                    summarization.Add(item["dataPointName"].ToString(), "Lease is silent");
-                else
-                    summarization.Add(item["dataPointName"].ToString(), item["onlySummarization"].ToString());
+                try
+                {
+
+
+                    numberString = Regex.Replace(numberString, @"[\d-]", " ");
+                    Dictionary<string, long> numberTable = new Dictionary<string, long>
+            { {"zero",0},{"one",1},{"two",2},{"three",3},{"four",4},
+            {"five",5},{"six",6},{"seven",7},{"eight",8},{"nine",9},
+            {"ten",10},{"eleven",11},{"twelve",12},{"thirteen",13},
+            {"fourteen",14},{"fifteen",15},{"sixteen",16},
+            {"seventeen",17},{"eighteen",18},{"nineteen",19},{"twenty",20},
+            {"thirty",30},{"forty",40},{"fifty",50},{"sixty",60},
+            {"seventy",70},{"eighty",80},{"ninety",90},{"hundred",100},
+            {"thousand",1000},{"million",1000000},{"billion",1000000000},
+            {"trillion",1000000000000},{"quadrillion",1000000000000000},
+            {"quintillion",1000000000000000000}};
+                    formattedString = new List<string>();
+                    var numbers = Regex.Matches(numberString, @"\w+").Cast<Match>()
+                                .Select(m => m.Value.ToLowerInvariant())
+                                .Where(v => numberTable.ContainsKey(v))
+                                .Select(v => numberTable[v]);
+
+                    List<long> sample = new List<long>();
+                    long acc = 0, total = 0L;
+                    int prevIndex = 0, currIndex = 0;
+                    string currKey = "", prevKey = "";
+                    int i = 0;
+                    var startFromVal = 0;
+                    if (numberString.ToLower().IndexOf("days") != -1)
+                    {
+                        foreach (var n in numbers)
+                        {
+                            numberString = numberString.Replace(" ", "");
+                            currKey = numberTable.FirstOrDefault(x => x.Value.ToString().ToLower() == n.ToString().ToLower()).Key;
+                            currIndex = numberString.ToLower().IndexOf(currKey.ToLower(), startFromVal);
+                            startFromVal = startFromVal + currKey.Length;
+                            if (!(prevIndex == 0 || currIndex - (prevIndex + prevKey.Length - 1) == 1))
+                            {
+                                if (numberString.ToLower().IndexOf("days") == prevIndex + prevKey.Length)
+                                    sample.Add(acc);
+                                i++;
+                                prevIndex = 0;
+                                currIndex = 0;
+                                prevKey = "";
+                                currKey = "";
+                                acc = 0;
+                                total = 0L;
+                            }
+
+                            if (n >= 1000)
+                            {
+                                total += (acc * n);
+                                acc = 0;
+                            }
+                            else if (n >= 100)
+                            {
+                                acc *= n;
+                            }
+                            else acc += n;
+
+                            prevIndex = currIndex;
+                            prevKey = currKey;
+                        }
+                        if (acc != 0)
+                            sample.Add(acc);
+
+                        foreach (var ss in sample)
+                        {
+                            formattedString.Add(ss.ToString() + " days");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                _Default.LogError("getTextualDays", "", ex);
+                throw;
+                }
+            }
+            //-------------------------------------------------------------------------------------------
+
+            //-------------------------------------- months-----------------------------------------------------
+            // only months
+            public void getMonths(string html, out List<string> formattedString)
+            {
+                try
+                {
+
+                    html = Regex.Replace(html, @"[^0-9a-zA-Z]+", " ");
+                    formattedString = new List<string>();
+                    foreach (Match m in Regex.Matches(html, @"\d{2}[\s]*months"))
+                    {
+                        formattedString.Add(m.Value);
+                    }
+                    if (formattedString.Count() == 0)
+                        getTextualMonths(html, out formattedString);
+                }
+                catch (Exception ex)
+                {
+                _Default.LogError("getMonths", "", ex);
+                throw;
+                }
             }
 
-            // save data in excel
-            try
+            // only month words
+            public void getTextualMonths(string numberString, out List<string> formattedString)
             {
-                var excelTempPath = DirectoryConfig + "\\" + ExcelPathConfig + "\\" + projName + "." + extension; // get the excel
-                var excelCopyPth = path.Remove(path.LastIndexOf('\\')) + "\\" + projName + "_(" + date + ")-(" + time + ")" + "." + extension;
-                var excelPath = path + "\\" + LeaseName + "_(" + date + ") - (" + time + ")" + "." + extension;
-                System.IO.File.Copy(excelTempPath, excelCopyPth, true); // make a copy of file where changes need to be made and save it to new path
-                File.Move(excelCopyPth, excelPath);
-
-
-                // -----------------------------getting excel files ----------------------------------------------------
-                object m = Type.Missing;
-                app = new Microsoft.Office.Interop.Excel.Application();
-                app.DisplayAlerts = false; // diable the aleart message
-                wb = app.Workbooks.Open(excelPath, m, false, m, m, m, m, m, m, m, m, m, m, m, m);
-
-                //----------------------------------------------------------------------------------------------------------
-
-                foreach (Worksheet ws in wb.Sheets)
+                try
                 {
-                    Microsoft.Office.Interop.Excel.Range r = (Microsoft.Office.Interop.Excel.Range)ws.UsedRange;
 
-                    foreach (var item in output)
+                    numberString = Regex.Replace(numberString, @"[\d-]", " ");
+                    Dictionary<string, long> numberTable = new Dictionary<string, long>
+            { {"zero",0},{"one",1},{"two",2},{"three",3},{"four",4},
+            {"five",5},{"six",6},{"seven",7},{"eight",8},{"nine",9},
+            {"ten",10},{"eleven",11},{"twelve",12},{"thirteen",13},
+            {"fourteen",14},{"fifteen",15},{"sixteen",16},
+            {"seventeen",17},{"eighteen",18},{"nineteen",19},{"twenty",20},
+            {"thirty",30},{"forty",40},{"fifty",50},{"sixty",60},
+            {"seventy",70},{"eighty",80},{"ninety",90},{"hundred",100},
+            {"thousand",1000},{"million",1000000},{"billion",1000000000},
+            {"trillion",1000000000000},{"quadrillion",1000000000000000},
+            {"quintillion",1000000000000000000}};
+                    formattedString = new List<string>();
+                    var numbers = Regex.Matches(numberString, @"\w+").Cast<Match>()
+                                .Select(m => m.Value.ToLowerInvariant())
+                                .Where(v => numberTable.ContainsKey(v))
+                                .Select(v => numberTable[v]);
+
+                    List<long> sample = new List<long>();
+                    long acc = 0, total = 0L;
+                    int prevIndex = 0, currIndex = 0;
+                    string currKey = "", prevKey = "";
+                    int i = 0;
+                    var startFromVal = 0;
+                    if (numberString.ToLower().IndexOf("months") != -1)
                     {
-                        var isSuccess = false;
-                        string replace = "{{" + item.Key + "_output" + "}}"; // replace text
-                        var stringLength = 250 - replace.Length; // char count pass  at once length
-                        string replacement = (item.Value).ToString(); // replacement string
-                        var replacementLength = replacement.Length; // length of replacement string
-                        for (int i = 0; i < replacementLength; i += stringLength)
+                        foreach (var n in numbers)
                         {
-                            var strlength = i + stringLength;
-                            if (strlength < replacementLength) // checks weather replacement string length is more than string to be passed at once 
+                            numberString = numberString.Replace(" ", "");
+                            currKey = numberTable.FirstOrDefault(x => x.Value.ToString().ToLower() == n.ToString().ToLower()).Key;
+                            currIndex = numberString.ToLower().IndexOf(currKey.ToLower(), startFromVal);
+                            startFromVal = startFromVal + currKey.Length;
+                            if (!(prevIndex == 0 || currIndex - (prevIndex + prevKey.Length - 1) == 1))
                             {
-                                var currentString = replacement.Substring(i, stringLength) + replace; // string to be passed with the replace string attached to it
+                                if (numberString.ToLower().IndexOf("months") == prevIndex + prevKey.Length)
+                                    sample.Add(acc);
+                                i++;
+                                prevIndex = 0;
+                                currIndex = 0;
+                                prevKey = "";
+                                currKey = "";
+                                acc = 0;
+                                total = 0L;
+                            }
+
+                            if (n >= 1000)
+                            {
+                                total += (acc * n);
+                                acc = 0;
+                            }
+                            else if (n >= 100)
+                            {
+                                acc *= n;
+                            }
+                            else acc += n;
+
+                            prevIndex = currIndex;
+                            prevKey = currKey;
+                        }
+                        if (acc != 0)
+                            sample.Add(acc);
+
+                        foreach (var ss in sample)
+                        {
+                            formattedString.Add(ss.ToString() + " months");
+                        }
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                _Default.LogError("getTextualMonths", "", ex);
+                throw;
+                }
+            }
+            //-------------------------------------------------------------------------------------------
+
+            //----------------------------------------- only days and year--------------------------------------------------
+            // only year count
+            public List<string> getYearCount(string html)
+            {
+                try
+                {
+
+                    html = Regex.Replace(html, @"[^0-9a-zA-Z]+", " ");
+                    List<string> formattedString = new List<string>();
+                    foreach (Match m in Regex.Matches(html, @"(year[s]?)?[\s]*\d{4}[\s]*(year[s]?)?"))
+                    {
+                        formattedString.Add(m.Value);
+                    }
+                    if (formattedString.Count() == 0)
+                        getTextualYear(html, out formattedString);
+                    return formattedString;
+
+                }
+                catch (Exception ex)
+                {
+                _Default.LogError("getYearCount", "", ex);
+                throw;
+                }
+            }
+
+            //only days word
+            public void getTextualYear(string numberString, out List<string> formattedString)
+            {
+                try
+                {
+
+
+                    Dictionary<string, long> numberTable = new Dictionary<string, long>
+        { {"zero",0},{"one",1},{"two",2},{"three",3},{"four",4},
+        {"five",5},{"six",6},{"seven",7},{"eight",8},{"nine",9},
+        {"ten",10},{"eleven",11},{"twelve",12},{"thirteen",13},
+        {"fourteen",14},{"fifteen",15},{"sixteen",16},
+        {"seventeen",17},{"eighteen",18},{"nineteen",19},{"twenty",20},
+        {"thirty",30},{"forty",40},{"fifty",50},{"sixty",60},
+        {"seventy",70},{"eighty",80},{"ninety",90},{"hundred",100},
+        {"thousand",1000},{"million",1000000},{"billion",1000000000},
+        {"trillion",1000000000000},{"quadrillion",1000000000000000},
+        {"quintillion",1000000000000000000}};
+                    formattedString = new List<string>();
+                    var numbers = Regex.Matches(numberString, @"\w+").Cast<Match>()
+                                .Select(m => m.Value.ToLowerInvariant())
+                                .Where(v => numberTable.ContainsKey(v))
+                                .Select(v => numberTable[v]);
+
+                    List<long> sample = new List<long>();
+                    long acc = 0, total = 0L;
+                    int prevIndex = 0, currIndex = 0;
+                    string currKey = "", prevKey = "";
+                    int i = 0;
+                    var startFromVal = 0;
+                    if (numberString.ToLower().IndexOf("years") != -1)
+                    {
+                        foreach (var n in numbers)
+                        {
+                            numberString = numberString.Replace(" ", "");
+                            currKey = numberTable.FirstOrDefault(x => x.Value.ToString().ToLower() == n.ToString().ToLower()).Key;
+                            currIndex = numberString.ToLower().IndexOf(currKey.ToLower(), startFromVal);
+                            startFromVal = startFromVal + currKey.Length;
+                            if (!(prevIndex == 0 || currIndex - (prevIndex + prevKey.Length - 1) == 1))
+                            {
+                                if (numberString.ToLower().IndexOf("years") == prevIndex + prevKey.Length)
+                                    sample.Add(acc);
+                                i++;
+                                prevIndex = 0;
+                                currIndex = 0;
+                                prevKey = "";
+                                currKey = "";
+                                acc = 0;
+                                total = 0L;
+                            }
+
+                            if (n >= 1000)
+                            {
+                                total += (acc * n);
+                                acc = 0;
+                            }
+                            else if (n >= 100)
+                            {
+                                acc *= n;
+                            }
+                            else acc += n;
+
+                            prevIndex = currIndex;
+                            prevKey = currKey;
+                        }
+                        if (acc != 0)
+                            sample.Add(acc);
+
+                        foreach (var ss in sample)
+                        {
+                            formattedString.Add(ss.ToString() + " years");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                _Default.LogError("getTextualYear", "", ex);
+                throw;
+                }
+            }
+            //-------------------------------------------------------------------------------------------
+
+            //----------------------------------------- get only amount value--------------------------------------------------
+
+            public void getCurrencyAmountFinancial(List<string> amountList, out List<string> amountListCopy)
+            {
+                try
+                {
+
+                    amountListCopy = new List<string>();
+                    foreach (var item in amountList)
+                    {
+                        string Pattern = @"(?<SYMBOL>[$â‚¬Â£]){1}[\s]*([\d{1,3}]+(\.\d(?:\d+\.?)*)?)";
+                        foreach (Match m in Regex.Matches(item, Pattern))
+                        {
+                            amountListCopy.Add(m.Value);
+                        }
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                _Default.LogError("getCurrencyAmountFinancial", "", ex);
+                throw;
+                }
+            }
+
+            //--------------------------------------------------------------------------------------------------------------------------------------------------
+
+            #endregion
+
+            #region --------------------------------------------------EXCEL----------------------------------------------------
+            //--
+            public void ReplaceTextInExcelFile(string path, string projName, List<string> saveDatapointName, JArray saveLeaseDataForExcel)
+            {
+                try
+                {
+
+                    Microsoft.Office.Interop.Excel.Workbook wb = default(Workbook);
+                    Microsoft.Office.Interop.Excel.Application app = default(Application);
+
+                    var ExcelPathConfig = WebConfigurationManager.AppSettings["Excel path"];
+                    var DirectoryConfig = WebConfigurationManager.AppSettings["Directory path"];
+                    var getDirectoryName = path.Split(new string[] { "\\" }, StringSplitOptions.None); // get the directory name eg: D:
+                    var LeaseName = getDirectoryName.Last();
+                    var getExcelFile = Directory.GetFiles(DirectoryConfig + "\\" + ExcelPathConfig + "\\"); // get the excel file from folder
+                    var mainFile = getExcelFile.Where(x => x.IndexOf("$") == -1).FirstOrDefault();
+                    var fileSplitName = mainFile.Split('.'); // split for extension
+                    var extension = fileSplitName[fileSplitName.Length - 1]; // get the extension
+
+                    var date = DateTime.Now.ToString("d-M-yyyy");
+                    var time = DateTime.Now.ToString("HH-mm-ss");
+
+                    //-------------------------------------------get data to save --------------------------------------------------------
+
+                    Dictionary<string, string> fileName = new Dictionary<string, string>(); // only file name 
+                    Dictionary<string, string> pageNo = new Dictionary<string, string>(); // only page no
+                    Dictionary<string, string> dataPointName = new Dictionary<string, string>(); // only datapoint name
+                    Dictionary<string, string> completeOutput = new Dictionary<string, string>(); // sectio No and summarization
+                    Dictionary<string, string> sectionNo = new Dictionary<string, string>(); // only section no
+                    Dictionary<string, string> summarization = new Dictionary<string, string>(); // only summarization
+                    Dictionary<string, string> output = new Dictionary<string, string>(); // paragraphs show
+
+
+                    foreach (var item in saveLeaseDataForExcel) // save the data in dictionary
+                    {
+                        if (item["fileName"].ToString() == "")
+                            fileName.Add(item["dataPointName"].ToString(), item["leaseName"].ToString());
+                        else
+                            fileName.Add(item["dataPointName"].ToString(), item["leaseName"].ToString() + " (" + item["fileName"].ToString() + ")");
+                        pageNo.Add(item["dataPointName"].ToString(), item["pageNo"].ToString());
+                        dataPointName.Add(item["dataPointName"].ToString(), item["dataPointName"].ToString());
+                        completeOutput.Add(item["dataPointName"].ToString(), item["correctString"].ToString());
+                        sectionNo.Add(item["dataPointName"].ToString(), item["onlySectionNo"].ToString());
+                        output.Add(item["dataPointName"].ToString(), item["output"].ToString());
+                        if (item["onlySummarization"].ToString() == "")
+                            summarization.Add(item["dataPointName"].ToString(), "Lease is silent");
+                        else
+                            summarization.Add(item["dataPointName"].ToString(), item["onlySummarization"].ToString());
+                    }
+
+                    // save data in excel
+                    try
+                    {
+                        var excelTempPath = DirectoryConfig + "\\" + ExcelPathConfig + "\\" + projName + "." + extension; // get the excel
+                        var excelCopyPth = path.Remove(path.LastIndexOf('\\')) + "\\" + projName + "_(" + date + ")-(" + time + ")" + "." + extension;
+                        var excelPath = path + "\\" + LeaseName + "_(" + date + ") - (" + time + ")" + "." + extension;
+                        System.IO.File.Copy(excelTempPath, excelCopyPth, true); // make a copy of file where changes need to be made and save it to new path
+                        File.Move(excelCopyPth, excelPath);
+
+
+                        // -----------------------------getting excel files ----------------------------------------------------
+                        object m = Type.Missing;
+                        app = new Microsoft.Office.Interop.Excel.Application();
+                        app.DisplayAlerts = false; // diable the aleart message
+                        wb = app.Workbooks.Open(excelPath, m, false, m, m, m, m, m, m, m, m, m, m, m, m);
+
+                        //----------------------------------------------------------------------------------------------------------
+
+                        foreach (Worksheet ws in wb.Sheets)
+                        {
+                            Microsoft.Office.Interop.Excel.Range r = (Microsoft.Office.Interop.Excel.Range)ws.UsedRange;
+
+                            foreach (var item in output)
+                            {
+                                var isSuccess = false;
+                                string replace = "{{" + item.Key + "_output" + "}}"; // replace text
+                                var stringLength = 250 - replace.Length; // char count pass  at once length
+                                string replacement = (item.Value).ToString(); // replacement string
+                                var replacementLength = replacement.Length; // length of replacement string
+                                for (int i = 0; i < replacementLength; i += stringLength)
+                                {
+                                    var strlength = i + stringLength;
+                                    if (strlength < replacementLength) // checks weather replacement string length is more than string to be passed at once 
+                                    {
+                                        var currentString = replacement.Substring(i, stringLength) + replace; // string to be passed with the replace string attached to it
+                                        bool success = (bool)r.Replace(
+                                        replace,
+                                        currentString,
+                                        XlLookAt.xlPart,
+                                        Microsoft.Office.Interop.Excel.XlSearchOrder.xlByRows,
+                                        true, m, m, m);
+                                        wb.Save();
+                                        if (success == true)
+                                            isSuccess = true;
+                                    }
+                                    else
+                                    {
+                                        var currentString = replacement.Substring(i, replacementLength - i);
+                                        bool success = (bool)r.Replace(
+                                        replace,
+                                        currentString,
+                                        XlLookAt.xlPart,
+                                        Microsoft.Office.Interop.Excel.XlSearchOrder.xlByRows,
+                                        true, m, m, m);
+                                        wb.Save();
+                                        if (success == true)
+                                            isSuccess = true;
+                                    }
+                                }
+                                if (isSuccess == false)
+                                {
+                                    bool success = (bool)r.Replace(
+                                        replace,
+                                        "",
+                                        XlLookAt.xlPart,
+                                        Microsoft.Office.Interop.Excel.XlSearchOrder.xlByRows,
+                                        true, m, m, m);
+                                    wb.Save();
+                                }
+                            }
+                            foreach (var item in completeOutput)
+                            {
+                                var isSuccess = false;
+                                string replace = "{{" + item.Key + "_complete output" + "}}"; // replace text
+                                var stringLength = 250 - replace.Length; // char count pass  at once length
+                                string replacement = item.Value.ToString(); // replacement string
+                                var replacementLength = replacement.Length; // length of replacement string
+                                for (int i = 0; i < replacementLength; i += stringLength)
+                                {
+                                    var strlength = i + stringLength;
+                                    if (strlength < replacementLength) // checks weather replacement string length is more than string to be passed at once 
+                                    {
+                                        var currentString = replacement.Substring(i, stringLength) + replace; // string to be passed with the replace string attached to it
+                                        bool success = (bool)r.Replace(
+                                        replace,
+                                        currentString,
+                                        XlLookAt.xlPart,
+                                        Microsoft.Office.Interop.Excel.XlSearchOrder.xlByRows,
+                                        true, m, m, m);
+                                        wb.Save();
+                                        if (success == true)
+                                            isSuccess = true;
+                                    }
+                                    else
+                                    {
+                                        var currentString = replacement.Substring(i, replacementLength - i);
+                                        bool success = (bool)r.Replace(
+                                        replace,
+                                        currentString,
+                                        XlLookAt.xlPart,
+                                        Microsoft.Office.Interop.Excel.XlSearchOrder.xlByRows,
+                                        true, m, m, m);
+                                        wb.Save();
+                                        if (success == true)
+                                            isSuccess = true;
+                                    }
+                                }
+                                if (isSuccess == false)
+                                {
+                                    bool success = (bool)r.Replace(
+                                        replace,
+                                        "",
+                                        XlLookAt.xlPart,
+                                        Microsoft.Office.Interop.Excel.XlSearchOrder.xlByRows,
+                                        true, m, m, m);
+                                    wb.Save();
+                                }
+                            }
+                            foreach (var item in summarization)
+                            {
+                                var isSuccess = false;
+                                string replace = "{{" + item.Key + "_summarization" + "}}"; // replace text
+                                var stringLength = 250 - replace.Length; // char count pass  at once length
+                                string replacement = item.Value.ToString(); // replacement string
+                                var replacementLength = replacement.Length; // length of replacement string
+                                for (int i = 0; i < replacementLength; i += stringLength)
+                                {
+                                    var strlength = i + stringLength;
+                                    if (strlength < replacementLength) // checks weather replacement string length is more than string to be passed at once 
+                                    {
+                                        var currentString = replacement.Substring(i, stringLength) + replace; // string to be passed with the replace string attached to it
+                                        bool success = (bool)r.Replace(
+                                        replace,
+                                        currentString,
+                                        XlLookAt.xlPart,
+                                        Microsoft.Office.Interop.Excel.XlSearchOrder.xlByRows,
+                                        true, m, m, m);
+                                        wb.Save();
+                                        if (success == true)
+                                            isSuccess = true;
+                                    }
+                                    else
+                                    {
+                                        var currentString = replacement.Substring(i, replacementLength - i);
+                                        bool success = (bool)r.Replace(
+                                        replace,
+                                        currentString,
+                                        XlLookAt.xlPart,
+                                        Microsoft.Office.Interop.Excel.XlSearchOrder.xlByRows,
+                                        true, m, m, m);
+                                        wb.Save();
+                                        if (success == true)
+                                            isSuccess = true;
+                                    }
+                                }
+                                if (isSuccess == false)
+                                {
+                                    bool success = (bool)r.Replace(
+                                        replace,
+                                        "",
+                                        XlLookAt.xlPart,
+                                        Microsoft.Office.Interop.Excel.XlSearchOrder.xlByRows,
+                                        true, m, m, m);
+                                    wb.Save();
+                                }
+                            }
+                            foreach (var item in fileName) // datapoint not been accepted loop
+                            {
+                                string replace = "{{" + item.Key + "_file name" + "}}";
+                                var currentString = item.Value.ToString();
                                 bool success = (bool)r.Replace(
                                 replace,
                                 currentString,
                                 XlLookAt.xlPart,
                                 Microsoft.Office.Interop.Excel.XlSearchOrder.xlByRows,
                                 true, m, m, m);
+                                if (success == false)
+                                {
+                                    bool success1 = (bool)r.Replace(
+                                        replace,
+                                        "",
+                                        XlLookAt.xlPart,
+                                        Microsoft.Office.Interop.Excel.XlSearchOrder.xlByRows,
+                                        true, m, m, m);
+                                }
                                 wb.Save();
-                                if (success == true)
-                                    isSuccess = true;
                             }
-                            else
+                            foreach (var item in dataPointName) // datapoint not been accepted loop
                             {
-                                var currentString = replacement.Substring(i, replacementLength - i);
+                                string replace = "{{" + item.Key + "_datapoint name" + "}}";
+                                var currentString = item.Value.ToString();
                                 bool success = (bool)r.Replace(
                                 replace,
                                 currentString,
                                 XlLookAt.xlPart,
                                 Microsoft.Office.Interop.Excel.XlSearchOrder.xlByRows,
                                 true, m, m, m);
+                                if (success == false)
+                                {
+                                    bool success1 = (bool)r.Replace(
+                                        replace,
+                                        "",
+                                        XlLookAt.xlPart,
+                                        Microsoft.Office.Interop.Excel.XlSearchOrder.xlByRows,
+                                        true, m, m, m);
+                                }
                                 wb.Save();
-                                if (success == true)
-                                    isSuccess = true;
                             }
-                        }
-                        if (isSuccess == false)
-                        {
-                            bool success = (bool)r.Replace(
-                                replace,
-                                "",
-                                XlLookAt.xlPart,
-                                Microsoft.Office.Interop.Excel.XlSearchOrder.xlByRows,
-                                true, m, m, m);
-                            wb.Save();
-                        }
-                    }
-                    foreach (var item in completeOutput)
-                    {
-                        var isSuccess = false;
-                        string replace = "{{" + item.Key + "_complete output" + "}}"; // replace text
-                        var stringLength = 250 - replace.Length; // char count pass  at once length
-                        string replacement = item.Value.ToString(); // replacement string
-                        var replacementLength = replacement.Length; // length of replacement string
-                        for (int i = 0; i < replacementLength; i += stringLength)
-                        {
-                            var strlength = i + stringLength;
-                            if (strlength < replacementLength) // checks weather replacement string length is more than string to be passed at once 
+                            foreach (var item in pageNo) // datapoint not been accepted loop
                             {
-                                var currentString = replacement.Substring(i, stringLength) + replace; // string to be passed with the replace string attached to it
+                                string replace = "{{" + item.Key + "_page no" + "}}";
+                                var currentString = item.Value.ToString();
                                 bool success = (bool)r.Replace(
                                 replace,
                                 currentString,
                                 XlLookAt.xlPart,
                                 Microsoft.Office.Interop.Excel.XlSearchOrder.xlByRows,
                                 true, m, m, m);
+                                if (success == false)
+                                {
+                                    bool success1 = (bool)r.Replace(
+                                        replace,
+                                        "",
+                                        XlLookAt.xlPart,
+                                        Microsoft.Office.Interop.Excel.XlSearchOrder.xlByRows,
+                                        true, m, m, m);
+                                }
                                 wb.Save();
-                                if (success == true)
-                                    isSuccess = true;
                             }
-                            else
+                            foreach (var item in sectionNo)
                             {
-                                var currentString = replacement.Substring(i, replacementLength - i);
-                                bool success = (bool)r.Replace(
-                                replace,
-                                currentString,
-                                XlLookAt.xlPart,
-                                Microsoft.Office.Interop.Excel.XlSearchOrder.xlByRows,
-                                true, m, m, m);
-                                wb.Save();
-                                if (success == true)
-                                    isSuccess = true;
-                            }
-                        }
-                        if (isSuccess == false)
-                        {
-                            bool success = (bool)r.Replace(
-                                replace,
-                                "",
-                                XlLookAt.xlPart,
-                                Microsoft.Office.Interop.Excel.XlSearchOrder.xlByRows,
-                                true, m, m, m);
-                            wb.Save();
-                        }
-                    }
-                    foreach (var item in summarization)
-                    {
-                        var isSuccess = false;
-                        string replace = "{{" + item.Key + "_summarization" + "}}"; // replace text
-                        var stringLength = 250 - replace.Length; // char count pass  at once length
-                        string replacement = item.Value.ToString(); // replacement string
-                        var replacementLength = replacement.Length; // length of replacement string
-                        for (int i = 0; i < replacementLength; i += stringLength)
-                        {
-                            var strlength = i + stringLength;
-                            if (strlength < replacementLength) // checks weather replacement string length is more than string to be passed at once 
-                            {
-                                var currentString = replacement.Substring(i, stringLength) + replace; // string to be passed with the replace string attached to it
-                                bool success = (bool)r.Replace(
-                                replace,
-                                currentString,
-                                XlLookAt.xlPart,
-                                Microsoft.Office.Interop.Excel.XlSearchOrder.xlByRows,
-                                true, m, m, m);
-                                wb.Save();
-                                if (success == true)
-                                    isSuccess = true;
-                            }
-                            else
-                            {
-                                var currentString = replacement.Substring(i, replacementLength - i);
-                                bool success = (bool)r.Replace(
-                                replace,
-                                currentString,
-                                XlLookAt.xlPart,
-                                Microsoft.Office.Interop.Excel.XlSearchOrder.xlByRows,
-                                true, m, m, m);
-                                wb.Save();
-                                if (success == true)
-                                    isSuccess = true;
-                            }
-                        }
-                        if (isSuccess == false)
-                        {
-                            bool success = (bool)r.Replace(
-                                replace,
-                                "",
-                                XlLookAt.xlPart,
-                                Microsoft.Office.Interop.Excel.XlSearchOrder.xlByRows,
-                                true, m, m, m);
-                            wb.Save();
-                        }
-                    }
-                    foreach (var item in fileName) // datapoint not been accepted loop
-                    {
-                        string replace = "{{" + item.Key + "_file name" + "}}";
-                        var currentString = item.Value.ToString();
-                        bool success = (bool)r.Replace(
-                        replace,
-                        currentString,
-                        XlLookAt.xlPart,
-                        Microsoft.Office.Interop.Excel.XlSearchOrder.xlByRows,
-                        true, m, m, m);
-                        if (success == false)
-                        {
-                            bool success1 = (bool)r.Replace(
-                                replace,
-                                "",
-                                XlLookAt.xlPart,
-                                Microsoft.Office.Interop.Excel.XlSearchOrder.xlByRows,
-                                true, m, m, m);
-                        }
-                        wb.Save();
-                    }
-                    foreach (var item in dataPointName) // datapoint not been accepted loop
-                    {
-                        string replace = "{{" + item.Key + "_datapoint name" + "}}";
-                        var currentString = item.Value.ToString();
-                        bool success = (bool)r.Replace(
-                        replace,
-                        currentString,
-                        XlLookAt.xlPart,
-                        Microsoft.Office.Interop.Excel.XlSearchOrder.xlByRows,
-                        true, m, m, m);
-                        if (success == false)
-                        {
-                            bool success1 = (bool)r.Replace(
-                                replace,
-                                "",
-                                XlLookAt.xlPart,
-                                Microsoft.Office.Interop.Excel.XlSearchOrder.xlByRows,
-                                true, m, m, m);
-                        }
-                        wb.Save();
-                    }
-                    foreach (var item in pageNo) // datapoint not been accepted loop
-                    {
-                        string replace = "{{" + item.Key + "_page no" + "}}";
-                        var currentString = item.Value.ToString();
-                        bool success = (bool)r.Replace(
-                        replace,
-                        currentString,
-                        XlLookAt.xlPart,
-                        Microsoft.Office.Interop.Excel.XlSearchOrder.xlByRows,
-                        true, m, m, m);
-                        if (success == false)
-                        {
-                            bool success1 = (bool)r.Replace(
-                                replace,
-                                "",
-                                XlLookAt.xlPart,
-                                Microsoft.Office.Interop.Excel.XlSearchOrder.xlByRows,
-                                true, m, m, m);
-                        }
-                        wb.Save();
-                    }
-                    foreach (var item in sectionNo)
-                    {
-                        var addSectionNo = true;
-                        if (addSectionNo == true)
-                        {
-                            string replace = "{{" + item.Key + "_section no" + "}}";
-                            var currentString = item.Value.ToString();
-                            bool success = (bool)r.Replace(
-                            replace,
-                            currentString,
-                            XlLookAt.xlPart,
-                            Microsoft.Office.Interop.Excel.XlSearchOrder.xlByRows,
-                            true, m, m, m);
-                            if (success == false)
-                            {
-                                bool success1 = (bool)r.Replace(
+                                var addSectionNo = true;
+                                if (addSectionNo == true)
+                                {
+                                    string replace = "{{" + item.Key + "_section no" + "}}";
+                                    var currentString = item.Value.ToString();
+                                    bool success = (bool)r.Replace(
                                     replace,
-                                    "",
+                                    currentString,
                                     XlLookAt.xlPart,
                                     Microsoft.Office.Interop.Excel.XlSearchOrder.xlByRows,
                                     true, m, m, m);
+                                    if (success == false)
+                                    {
+                                        bool success1 = (bool)r.Replace(
+                                            replace,
+                                            "",
+                                            XlLookAt.xlPart,
+                                            Microsoft.Office.Interop.Excel.XlSearchOrder.xlByRows,
+                                            true, m, m, m);
+                                    }
+                                    wb.Save();
+                                }
                             }
-                            wb.Save();
                         }
+                        wb.Save();
+                        wb.Close();
+                        wb = null;
+                        GC.Collect();
+                        GC.WaitForPendingFinalizers();
+                        app.Quit();
+                        app = null;
                     }
+                    catch (Exception ex)
+                    {
+                        var testPath = path + "\\test" + "_(" + date + ")-(" + time + ")" + ".txt";
+                        var myFile = File.Create(testPath);
+                        myFile.Close();
+                        var finalError = ex.Message.ToString() + "#################" + ex.Source.ToString();
+                        System.IO.File.WriteAllText(testPath, finalError);
+                        app.Quit();
+                        wb.Close();
+                        throw ex;
+                    }
+
+
                 }
-                wb.Save();
-                wb.Close();
-                wb = null;
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-                app.Quit();
-                app = null;
+                catch (Exception ex)
+                {
+                _Default.LogError("ReplaceTextInExcelFile", "", ex);
+                throw;
+                }
             }
-            catch (Exception ex)
-            {
-                var testPath = path + "\\test" + "_(" + date + ")-(" + time + ")" + ".txt";
-                var myFile = File.Create(testPath);
-                myFile.Close();
-                var finalError = ex.Message.ToString() + "#################" + ex.Source.ToString();
-                System.IO.File.WriteAllText(testPath, finalError);
-                app.Quit();
-                wb.Close();
-                throw ex;
-            }
-        }
 
         #endregion
+
+      
     }
 
-    // for section tree construction
-    public class Node
-    {
-        public string Value { get; set; }
-        public int Level { get; set; }
-        public List<Node> Children { get; set; }
-        public List<string> Para { get; set; }
-        public string Regex { get; set; }
-        public string SectionName { get; set; }
-        public int ParentCheck { get; set; }
-
-        public Node(string val, int level, List<string> para, string regexVal, string sectionName, int parentCheck)
+        // for section tree construction
+        public class Node
         {
-            Value = val;
-            Level = level;
-            Para = para;
-            Regex = regexVal;
-            SectionName = sectionName;
-            ParentCheck = parentCheck;
-            Children = new List<Node>();
-        }
+            public string Value { get; set; }
+            public int Level { get; set; }
+            public List<Node> Children { get; set; }
+            public List<string> Para { get; set; }
+            public string Regex { get; set; }
+            public string SectionName { get; set; }
+            public int ParentCheck { get; set; }
 
-        public Node(string val, int level)
-        {
-            Value = val;
-            Level = level;
-            Children = new List<Node>();
-        }
+            public Node(string val, int level, List<string> para, string regexVal, string sectionName, int parentCheck)
+            {
+                Value = val;
+                Level = level;
+                Para = para;
+                Regex = regexVal;
+                SectionName = sectionName;
+                ParentCheck = parentCheck;
+                Children = new List<Node>();
+            }
 
+            public Node(string val, int level)
+            {
+                Value = val;
+                Level = level;
+                Children = new List<Node>();
+            }
+
+        }
     }
-}

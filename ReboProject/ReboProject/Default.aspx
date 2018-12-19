@@ -52,22 +52,23 @@
         <tbody>
             <tr>
                 <td style="padding:10px;">
-                    </div> 
-                    JSON 1
-                    <asp:TextBox id="backEndData" TextMode="multiline" Columns="150" Rows="10" runat="server" />
-                    <br /><br />
-                    LIBRARY
-                    <asp:TextBox id="LibVal" TextMode="multiline" Columns="150" Rows="10" runat="server" />
-                    <br /><br />
+                  
+                    <p>JSON 1</p>
+                    <asp:TextBox id="backEndData" TextMode="multiline" Width="100%" Columns="150" Rows="10" runat="server" />
+                  
+                  <%--  <p>LIBRARY</p> 
+                    <asp:TextBox id="LibVal" TextMode="multiline" Width="100%" Columns="150" Rows="10" runat="server" />
+                    <br />--%>
 					<asp:Button ID="Button1" runat="server" OnClick="TestClick" Text="RESULT" />
                     <%--<input type="button" onclick="tableToExcel('.allVal', 'name12')" value="Export to Excel">--%>
                     <asp:TextBox ID="displayTime" runat="server"></asp:TextBox>
+                    <asp:Button ID="btnlog" runat="server" PostBackUrl="~/LogPage.aspx"  Text="View Log" OnClick="btnlog_Click" />
                     <asp:TextBox id="frontEndData" TextMode="multiline" Columns="150" Rows="10" style="display:none;" runat="server" />
                     
                     
                     <div class="setData">
 
-                        <table >
+                        <table style="width:100%" >
                             <td style="max-width:100px;">
                                 FILENAME
                             </td>
@@ -89,7 +90,7 @@
                             <td style="width:700px;">
                                 Sentences
                             </td>
-                        </table >
+                        </table>
 
                         <table class="setData" id="allVal">
                             
@@ -117,8 +118,7 @@
     }
 
     $(document).ready(function () {
-        debugger;
-
+    
         $(".LeaseSilent").css("display", "none");
         var jsonVal = $("#frontEndData").val();
         htmlBuilderProject = [];

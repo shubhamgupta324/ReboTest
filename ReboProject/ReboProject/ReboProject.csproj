@@ -168,6 +168,7 @@
     <Content Include="Default.aspx" />
     <Content Include="favicon.ico" />
     <Content Include="Global.asax" />
+    <Content Include="LogPage.aspx" />
     <Content Include="packages.config" />
     <Content Include="Web.config">
       <SubType>Designer</SubType>
@@ -195,6 +196,13 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="LogPage.aspx.cs">
+      <DependentUpon>LogPage.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="LogPage.aspx.designer.cs">
+      <DependentUpon>LogPage.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Node.cs" />
     <Compile Include="processing.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -202,6 +210,9 @@
   <ItemGroup>
     <Folder Include="App_Data\" />
     <Folder Include="App_Start\" />
+    <Folder Include="ErrorLog\" />
+    <Folder Include="ErrorProjectLog\" />
+    <Folder Include="SuccessProjectLog\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Rebo.Enum\Rebo.Enum.csproj">
