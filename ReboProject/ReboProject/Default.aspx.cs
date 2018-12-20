@@ -678,7 +678,7 @@ namespace ReboProject
             }
             catch (Exception ex)
             {
-                LogProjectError(projectname, "Lease file not exist");
+                LogProjectError(projectname, "Lease file not exist/Lease file not correct format");
                 return false;
             }
         }

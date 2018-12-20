@@ -163,7 +163,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include=".gitignore" />
     <Content Include="ABCpdfQuickStart.txt" />
     <Content Include="Default.aspx" />
     <Content Include="favicon.ico" />
